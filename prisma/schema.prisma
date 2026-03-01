@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  parentName    String
+  phone         String    @unique
+  password      String?
+  qrCode        String    @unique
+  lineUserId    String?
+  children      Child[]
+  coinPackages  CoinPackage[]
+  borrowRecords BorrowRecord[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Child {
+  id          String    @id @default(cuid())
+  name        String
+  birthDate   DateTime
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  createdAt   DateTime  @default(now())
+}
+
+model AdminUser {
+  id          String    @id @default(cuid())
+  name        String
+  email       String    @unique
+  password    String
+  role        AdminRole @default(ADMIN)
+  borrowRecords   BorrowRecord[]
+  coinTransactions CoinTransaction[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+enum AdminRole {
+  ADMIN
+  SUPER_ADMIN
+}
+
+model CoinPackage {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  packageType   String
+  totalCoins    Int
+  remainingCoins Int
+  pricePaid     Decimal
+  bonusAmount   Decimal   @default(0)
+  firstUsedAt   DateTime?
+  expiresAt     DateTime?
+  isExpired     Boolean   @default(false)
+  isExtended    Boolean   @default(false)
+  extendedAt    DateTime?
+  extendedBy    String?
+  note          String?
+  transactions  CoinTransaction[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model CoinTransaction {
+  id            String           @id @default(cuid())
+  packageId     String
+  package       CoinPackage      @relation(fields: [packageId], references: [id])
+  type          CoinTransactionType
+  coinsUsed     Int
+  className     String?
+  classHours    Decimal?
+  description   String?
+  borrowRecordId String?
+  processedById  String
+  processedBy    AdminUser       @relation(fields: [processedById], references: [id])
+  createdAt     DateTime         @default(now())
+}
+
+enum CoinTransactionType {
+  CLASS_FEE
+  BOOK_RENTAL
+  BOOK_DEPOSIT
+  BOOK_DEPOSIT_RETURN
+  BOOK_LATE_FEE
+  BOOK_DAMAGE_FEE
+  DEPOSIT_FORFEIT
+  EXPIRED
+  ADJUSTMENT
+  EXTENSION
+}
+
+model Book {
+  id          String    @id @default(cuid())
+  title       String
+  qrCode      String    @unique
+  isbn        String?
+  category    String?
+  ageRange    String?
+  coverImage  String?
+  youtubeUrl  String?
+  isAvailable Boolean   @default(true)
+  isActive    Boolean   @default(true)
+  borrowItems BorrowItem[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model BorrowRecord {
+  id            String        @id @default(cuid())
+  code          String        @unique
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  status        BorrowStatus  @default(BORROWED)
+  borrowDate    DateTime      @default(now())
+  dueDate       DateTime
+  returnDate    DateTime?
+  depositCoins  Int           @default(5)
+  rentalCoins   Int           @default(1)
+  lateFeeCoins  Int           @default(0)
+  damageFeeCoins Int          @default(0)
+  depositReturned Boolean     @default(false)
+  depositForfeited Boolean    @default(false)
+  processedById  String?
+  processedBy    AdminUser?  @relation(fields: [processedById], references: [id])
+  returnedById   String?
+  items          BorrowItem[]
+  note           String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+enum BorrowStatus {
+  RESERVED
+  BORROWED
+  RETURNED
+  OVERDUE
+  FORFEITED
+}
+
+model BorrowItem {
+  id            String    @id @default(cuid())
+  borrowRecordId String
+  borrowRecord  BorrowRecord @relation(fields: [borrowRecordId], references: [id])
+  bookId        String
+  book          Book      @relation(fields: [bookId], references: [id])
+  isDamaged     Boolean   @default(false)
+  damageNote    String?
+}
