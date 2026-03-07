@@ -59,56 +59,56 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             {/* Left: Content */}
             <div className="text-center md:text-left">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#d1cce7]/30 rounded-full text-sm font-medium text-[#a16b9f] mb-6">
-                <Sparkles size={14} />
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-[#d1cce7]/30 rounded-full text-xs sm:text-sm font-medium text-[#a16b9f] mb-4 sm:mb-6">
+                <Sparkles size={12} className="sm:w-[14px] sm:h-[14px]" />
                 Kids Creative Club
               </div>
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-4 sm:mb-6">
+              <h1 className="text-2xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-3 sm:mb-6">
                 <span className="text-[#3d405b]">Namoland</span>
                 <br />
                 <span className="bg-gradient-to-r from-[#81b29a] via-[#e07a5f] to-[#a16b9f] bg-clip-text text-transparent">
                   Kids Creative Club
                 </span>
               </h1>
-              <p className="text-base sm:text-lg text-[#3d405b]/70 mb-3 sm:mb-4 leading-relaxed max-w-lg mx-auto md:mx-0">
+              <p className="text-sm sm:text-lg text-[#3d405b]/70 mb-2 sm:mb-4 leading-relaxed max-w-lg mx-auto md:mx-0">
                 พื้นที่สร้างสรรค์สำหรับเด็กๆ ที่เต็มไปด้วย
                 <strong className="text-[#609279]"> ศิลปะ</strong>,{" "}
                 <strong className="text-[#e07a5f]">ภาษาอังกฤษ</strong>,{" "}
                 <strong className="text-[#a16b9f]">วิทยาศาสตร์</strong> และ
                 <strong className="text-[#f9b61a]"> จินตนาการ</strong>
               </p>
-              <p className="text-[#3d405b]/50 mb-6 sm:mb-8 text-xs sm:text-sm">
+              <p className="text-[#3d405b]/50 mb-5 sm:mb-8 text-[11px] sm:text-sm">
                 🎨 Jolly English &amp; Art &amp; Design for Kids · 📚 Playgroup · Grammar · Workshops · Private Classes
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start">
+              <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-4 justify-center md:justify-start">
                 <Link
                   href="/user/register"
-                  className="group px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-[#e07a5f] to-[#e55f15] text-white font-semibold rounded-xl sm:rounded-2xl shadow-lg shadow-[#e07a5f]/30 hover:shadow-xl hover:shadow-[#e07a5f]/40 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
+                  className="group px-5 sm:px-8 py-2.5 sm:py-4 bg-gradient-to-r from-[#e07a5f] to-[#e55f15] text-white font-semibold rounded-xl sm:rounded-2xl shadow-lg shadow-[#e07a5f]/30 hover:shadow-xl transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
                   เริ่มต้นใช้งาน
-                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link
                   href="/user/login"
-                  className="px-6 sm:px-8 py-3 sm:py-4 bg-white text-[#3d405b] font-semibold rounded-xl sm:rounded-2xl border-2 border-[#d1cce7]/50 shadow-sm hover:border-[#81b29a]/50 hover:shadow-md transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
+                  className="px-5 sm:px-8 py-2.5 sm:py-4 bg-white text-[#3d405b] font-semibold rounded-xl sm:rounded-2xl border-2 border-[#d1cce7]/50 shadow-sm hover:border-[#81b29a]/50 hover:shadow-md transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
                   เข้าสู่ระบบสมาชิก
                 </Link>
               </div>
 
               {/* Mini Stats */}
-              <div className="flex gap-6 sm:gap-8 mt-8 sm:mt-10 justify-center md:justify-start">
+              <div className="flex gap-6 sm:gap-8 mt-6 sm:mt-10 justify-center md:justify-start">
                 <div>
-                  <p className="text-xl sm:text-2xl font-bold text-[#81b29a]">160+</p>
+                  <p className="text-lg sm:text-2xl font-bold text-[#81b29a]">160+</p>
                   <p className="text-[10px] sm:text-xs text-[#3d405b]/50">สมาชิก</p>
                 </div>
                 <div>
-                  <p className="text-xl sm:text-2xl font-bold text-[#e07a5f]">10+</p>
+                  <p className="text-lg sm:text-2xl font-bold text-[#e07a5f]">10+</p>
                   <p className="text-[10px] sm:text-xs text-[#3d405b]/50">กิจกรรม/สัปดาห์</p>
                 </div>
                 <div>
-                  <p className="text-xl sm:text-2xl font-bold text-[#a16b9f]">5+</p>
+                  <p className="text-lg sm:text-2xl font-bold text-[#a16b9f]">5+</p>
                   <p className="text-[10px] sm:text-xs text-[#3d405b]/50">ปีประสบการณ์</p>
                 </div>
               </div>
