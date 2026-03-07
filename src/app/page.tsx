@@ -20,10 +20,10 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[#f4f1de] text-[#3d405b] overflow-x-hidden">
       {/* ─── Navigation ─────────────────────────────────── */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#d1cce7]/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-          <div className="flex items-center gap-3">
-            <Image src="/namoland-logo.png" alt="Namoland" width={40} height={40} className="w-10 h-10 rounded-xl object-cover" />
-            <span className="font-bold text-lg text-[#3d405b]">Namoland</span>
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center justify-between h-14 sm:h-16">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Image src="/namoland-logo.png" alt="Namoland" width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-cover" />
+            <span className="font-bold text-base sm:text-lg text-[#3d405b]">Namoland</span>
           </div>
           <div className="hidden md:flex items-center gap-6 text-sm font-medium">
             <a href="#activities" className="text-[#3d405b]/70 hover:text-[#3d405b] transition-colors">กิจกรรม</a>
@@ -31,16 +31,16 @@ export default function LandingPage() {
             <a href="#library" className="text-[#3d405b]/70 hover:text-[#3d405b] transition-colors">ห้องสมุด</a>
             <a href="#contact" className="text-[#3d405b]/70 hover:text-[#3d405b] transition-colors">ติดต่อ</a>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/user/login"
-              className="px-5 py-2 text-sm font-semibold text-[#3d405b] hover:text-[#609279] transition-colors"
+              className="px-3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-[#3d405b] hover:text-[#609279] transition-colors"
             >
               เข้าสู่ระบบ
             </Link>
             <Link
               href="/user/register"
-              className="px-5 py-2.5 text-sm font-semibold bg-gradient-to-r from-[#609279] to-[#a16b9f] text-white rounded-xl shadow-lg shadow-[#a16b9f]/20 hover:shadow-xl hover:shadow-[#a16b9f]/30 hover:scale-[1.02] transition-all"
+              className="px-3 sm:px-5 py-1.5 sm:py-2.5 text-xs sm:text-sm font-semibold bg-gradient-to-r from-[#609279] to-[#a16b9f] text-white rounded-lg sm:rounded-xl shadow-lg shadow-[#a16b9f]/20 hover:shadow-xl transition-all"
             >
               สมัครสมาชิก
             </Link>
@@ -49,7 +49,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ─── Hero Section ───────────────────────────────── */}
-      <section className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden">
+      <section className="relative pt-24 pb-12 sm:pt-32 sm:pb-20 md:pt-40 md:pb-32 overflow-hidden">
         {/* Decorative blobs */}
         <div className="absolute top-20 left-[-100px] w-[400px] h-[400px] bg-[#ecb4ce]/20 rounded-full blur-3xl" />
         <div className="absolute top-40 right-[-100px] w-[350px] h-[350px] bg-[#81b29a]/15 rounded-full blur-3xl" />
@@ -63,53 +63,53 @@ export default function LandingPage() {
                 <Sparkles size={14} />
                 Kids Creative Club
               </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-4 sm:mb-6">
                 <span className="text-[#3d405b]">Namoland</span>
                 <br />
                 <span className="bg-gradient-to-r from-[#81b29a] via-[#e07a5f] to-[#a16b9f] bg-clip-text text-transparent">
                   Kids Creative Club
                 </span>
               </h1>
-              <p className="text-lg text-[#3d405b]/70 mb-4 leading-relaxed max-w-lg mx-auto md:mx-0">
+              <p className="text-base sm:text-lg text-[#3d405b]/70 mb-3 sm:mb-4 leading-relaxed max-w-lg mx-auto md:mx-0">
                 พื้นที่สร้างสรรค์สำหรับเด็กๆ ที่เต็มไปด้วย
                 <strong className="text-[#609279]"> ศิลปะ</strong>,{" "}
                 <strong className="text-[#e07a5f]">ภาษาอังกฤษ</strong>,{" "}
                 <strong className="text-[#a16b9f]">วิทยาศาสตร์</strong> และ
                 <strong className="text-[#f9b61a]"> จินตนาการ</strong>
               </p>
-              <p className="text-[#3d405b]/50 mb-8 text-sm">
+              <p className="text-[#3d405b]/50 mb-6 sm:mb-8 text-xs sm:text-sm">
                 🎨 Jolly English &amp; Art &amp; Design for Kids · 📚 Playgroup · Grammar · Workshops · Private Classes
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start">
                 <Link
                   href="/user/register"
-                  className="group px-8 py-4 bg-gradient-to-r from-[#e07a5f] to-[#e55f15] text-white font-semibold rounded-2xl shadow-lg shadow-[#e07a5f]/30 hover:shadow-xl hover:shadow-[#e07a5f]/40 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+                  className="group px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-[#e07a5f] to-[#e55f15] text-white font-semibold rounded-xl sm:rounded-2xl shadow-lg shadow-[#e07a5f]/30 hover:shadow-xl hover:shadow-[#e07a5f]/40 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
                   เริ่มต้นใช้งาน
                   <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link
                   href="/user/login"
-                  className="px-8 py-4 bg-white text-[#3d405b] font-semibold rounded-2xl border-2 border-[#d1cce7]/50 shadow-sm hover:border-[#81b29a]/50 hover:shadow-md transition-all flex items-center justify-center gap-2"
+                  className="px-6 sm:px-8 py-3 sm:py-4 bg-white text-[#3d405b] font-semibold rounded-xl sm:rounded-2xl border-2 border-[#d1cce7]/50 shadow-sm hover:border-[#81b29a]/50 hover:shadow-md transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
                   เข้าสู่ระบบสมาชิก
                 </Link>
               </div>
 
               {/* Mini Stats */}
-              <div className="flex gap-8 mt-10 justify-center md:justify-start">
+              <div className="flex gap-6 sm:gap-8 mt-8 sm:mt-10 justify-center md:justify-start">
                 <div>
-                  <p className="text-2xl font-bold text-[#81b29a]">160+</p>
-                  <p className="text-xs text-[#3d405b]/50">สมาชิก</p>
+                  <p className="text-xl sm:text-2xl font-bold text-[#81b29a]">160+</p>
+                  <p className="text-[10px] sm:text-xs text-[#3d405b]/50">สมาชิก</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-[#e07a5f]">10+</p>
-                  <p className="text-xs text-[#3d405b]/50">กิจกรรม/สัปดาห์</p>
+                  <p className="text-xl sm:text-2xl font-bold text-[#e07a5f]">10+</p>
+                  <p className="text-[10px] sm:text-xs text-[#3d405b]/50">กิจกรรม/สัปดาห์</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-[#a16b9f]">5+</p>
-                  <p className="text-xs text-[#3d405b]/50">ปีประสบการณ์</p>
+                  <p className="text-xl sm:text-2xl font-bold text-[#a16b9f]">5+</p>
+                  <p className="text-[10px] sm:text-xs text-[#3d405b]/50">ปีประสบการณ์</p>
                 </div>
               </div>
             </div>
@@ -127,12 +127,12 @@ export default function LandingPage() {
                   priority
                 />
               </div>
-              {/* Floating badges */}
-              <div className="absolute -top-2 -right-2 md:top-4 md:-right-6 bg-white px-4 py-2.5 rounded-2xl shadow-lg flex items-center gap-2 animate-bounce" style={{ animationDuration: "3s" }}>
+              {/* Floating badges — hidden on mobile to avoid overlap */}
+              <div className="hidden sm:flex absolute top-4 -right-6 bg-white px-4 py-2.5 rounded-2xl shadow-lg items-center gap-2 animate-bounce" style={{ animationDuration: "3s" }}>
                 <span className="text-xl">🎨</span>
                 <span className="text-xs font-semibold text-[#3d405b]">Art & Design</span>
               </div>
-              <div className="absolute -bottom-2 -left-2 md:bottom-8 md:-left-6 bg-white px-4 py-2.5 rounded-2xl shadow-lg flex items-center gap-2 animate-bounce" style={{ animationDuration: "4s", animationDelay: "1s" }}>
+              <div className="hidden sm:flex absolute bottom-8 -left-6 bg-white px-4 py-2.5 rounded-2xl shadow-lg items-center gap-2 animate-bounce" style={{ animationDuration: "4s", animationDelay: "1s" }}>
                 <span className="text-xl">📚</span>
                 <span className="text-xs font-semibold text-[#3d405b]">Book Club</span>
               </div>
@@ -331,13 +331,13 @@ export default function LandingPage() {
       {/* ─── CTA Banner ─────────────────────────────────── */}
       <section className="py-20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative bg-gradient-to-r from-[#609279] to-[#a16b9f] rounded-[2.5rem] p-10 md:p-16 text-center text-white overflow-hidden">
+          <div className="relative bg-gradient-to-r from-[#609279] to-[#a16b9f] rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-10 md:p-16 text-center text-white overflow-hidden">
             {/* Decorative */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-[#81b29a]/20 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
             <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#ecb4ce]/15 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
 
             <div className="relative z-10">
-              <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
                 พร้อมให้ลูกน้อยเริ่มต้นการเรียนรู้? ✨
               </h2>
               <p className="text-white/70 max-w-lg mx-auto mb-8">
