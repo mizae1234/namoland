@@ -58,11 +58,13 @@ export default function Sidebar({ userName, userRole }: { userName: string; user
             {/* Logo */}
             <div className="p-6 border-b border-[#d1cce7]/20">
                 <div className="flex items-center gap-3">
-                    <Image src="/namoland-logo.png" alt="Namoland" width={40} height={40} className="w-10 h-10 rounded-xl object-cover" />
-                    <div>
-                        <h1 className="font-bold text-[#3d405b]">Namoland</h1>
-                        <p className="text-xs text-[#3d405b]/40">ระบบจัดการ</p>
-                    </div>
+                    <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                        <Image src="/namoland-logo.png" alt="Namoland" width={40} height={40} className="w-10 h-10 rounded-xl object-cover" />
+                        <div>
+                            <h1 className="font-bold text-[#3d405b]">Namoland</h1>
+                            <p className="text-xs text-[#3d405b]/40">ระบบจัดการ</p>
+                        </div>
+                    </Link>
                     {/* Close button on mobile */}
                     <button
                         onClick={() => setOpen(false)}
