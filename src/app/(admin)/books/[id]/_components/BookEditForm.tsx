@@ -86,17 +86,17 @@ export default function BookEditForm({ book }: { book: BookData }) {
 
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">
+                    <h1 className="text-2xl font-bold text-[#3d405b]">
                         แก้ไขหนังสือ
                     </h1>
-                    <p className="text-sm text-slate-400 font-mono mt-1">
+                    <p className="text-sm text-[#3d405b]/40 font-mono mt-1">
                         {book.qrCode}
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
                     <PrintQrButton qrCode={book.qrCode} title={book.title} />
                     {!isActive && (
-                        <span className="text-xs px-3 py-1.5 rounded-full font-medium bg-slate-200 text-slate-600">
+                        <span className="text-xs px-3 py-1.5 rounded-full font-medium bg-[#d1cce7]/25 text-[#3d405b]/70">
                             ปิดใช้งาน
                         </span>
                     )}
@@ -116,10 +116,10 @@ export default function BookEditForm({ book }: { book: BookData }) {
 
             <form
                 onSubmit={handleSubmit}
-                className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4"
+                className="bg-white rounded-2xl border border-[#d1cce7]/20 shadow-sm p-6 space-y-4"
             >
                 <div>
-                    <label className="block text-sm font-medium text-slate-600 mb-1.5">
+                    <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">
                         ชื่อหนังสือ *
                     </label>
                     <input
@@ -127,64 +127,64 @@ export default function BookEditForm({ book }: { book: BookData }) {
                         type="text"
                         required
                         defaultValue={book.title}
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none text-sm"
+                        className="w-full px-4 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm"
                     />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-slate-600 mb-1.5">
+                        <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">
                             ISBN
                         </label>
                         <input
                             name="isbn"
                             type="text"
                             defaultValue={book.isbn || ""}
-                            className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none text-sm"
+                            className="w-full px-4 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm"
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-slate-600 mb-1.5">
+                        <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">
                             หมวดหมู่
                         </label>
                         <input
                             name="category"
                             type="text"
                             defaultValue={book.category || ""}
-                            className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none text-sm"
+                            className="w-full px-4 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm"
                             placeholder="เช่น นิทาน, วิทยาศาสตร์"
                         />
                     </div>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-600 mb-1.5">
+                    <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">
                         ช่วงอายุ
                     </label>
                     <input
                         name="ageRange"
                         type="text"
                         defaultValue={book.ageRange || ""}
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none text-sm"
+                        className="w-full px-4 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm"
                         placeholder="เช่น 3-6 ปี"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-600 mb-1.5">
+                    <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">
                         YouTube URL
                     </label>
                     <input
                         name="youtubeUrl"
                         type="url"
                         defaultValue={book.youtubeUrl || ""}
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none text-sm"
+                        className="w-full px-4 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm"
                         placeholder="https://youtube.com/..."
                     />
                 </div>
 
                 {/* Active/Inactive Toggle */}
-                <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-100">
+                <div className="flex items-center justify-between p-4 rounded-xl bg-[#f4f1de]/50 border border-[#d1cce7]/20">
                     <div>
-                        <p className="text-sm font-medium text-slate-700">สถานะหนังสือ</p>
-                        <p className="text-xs text-slate-400 mt-0.5">
+                        <p className="text-sm font-medium text-[#3d405b]/80">สถานะหนังสือ</p>
+                        <p className="text-xs text-[#3d405b]/40 mt-0.5">
                             {isActive ? "เปิดใช้งาน — แสดงในระบบ" : "ปิดใช้งาน — ซ่อนจากระบบ"}
                         </p>
                     </div>
@@ -192,7 +192,7 @@ export default function BookEditForm({ book }: { book: BookData }) {
                     <button
                         type="button"
                         onClick={() => setIsActive(!isActive)}
-                        className={`relative w-12 h-7 rounded-full transition-colors ${isActive ? "bg-emerald-500" : "bg-slate-300"}`}
+                        className={`relative w-12 h-7 rounded-full transition-colors ${isActive ? "bg-emerald-500" : "bg-[#3d405b]/30"}`}
                     >
                         <span className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${isActive ? "left-[22px]" : "left-0.5"}`} />
                     </button>
@@ -202,7 +202,7 @@ export default function BookEditForm({ book }: { book: BookData }) {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition-colors shadow-lg shadow-blue-200 disabled:opacity-50"
+                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#609279] hover:bg-[#609279] text-white font-medium rounded-xl transition-colors shadow-lg shadow-[#81b29a]/30 disabled:opacity-50"
                     >
                         <Save size={18} />
                         {loading ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
@@ -220,13 +220,13 @@ export default function BookEditForm({ book }: { book: BookData }) {
             {/* Borrow History */}
             <Card className="mt-6">
                 <div className="flex items-center gap-2 mb-4">
-                    <Clock size={18} className="text-slate-400" />
-                    <h2 className="text-lg font-semibold text-slate-800">
+                    <Clock size={18} className="text-[#3d405b]/40" />
+                    <h2 className="text-lg font-semibold text-[#3d405b]">
                         ประวัติการยืม ({book.borrowItems.length})
                     </h2>
                 </div>
                 {book.borrowItems.length === 0 ? (
-                    <p className="text-sm text-slate-400 text-center py-4">ยังไม่มีประวัติการยืม</p>
+                    <p className="text-sm text-[#3d405b]/40 text-center py-4">ยังไม่มีประวัติการยืม</p>
                 ) : (
                     <div className="space-y-3">
                         {book.borrowItems.map((bi) => {
@@ -238,20 +238,20 @@ export default function BookEditForm({ book }: { book: BookData }) {
                             return (
                                 <div
                                     key={bi.id}
-                                    className="p-3 rounded-xl bg-slate-50 border border-slate-100"
+                                    className="p-3 rounded-xl bg-[#f4f1de]/50 border border-[#d1cce7]/20"
                                 >
                                     <div className="flex items-start justify-between mb-2">
                                         <div>
-                                            <p className="text-sm font-medium text-slate-700">
+                                            <p className="text-sm font-medium text-[#3d405b]/80">
                                                 {bi.borrowRecord.user.parentName}
                                             </p>
-                                            <p className="text-xs text-slate-400 font-mono">
+                                            <p className="text-xs text-[#3d405b]/40 font-mono">
                                                 {bi.borrowRecord.code}
                                             </p>
                                         </div>
                                         <StatusBadge status={bi.borrowRecord.status} />
                                     </div>
-                                    <div className="flex gap-4 text-xs text-slate-500">
+                                    <div className="flex gap-4 text-xs text-[#3d405b]/50">
                                         <span>📅 ยืม: {fmt(borrowDate)}</span>
                                         <span>⏰ กำหนดคืน: {fmt(dueDate)}</span>
                                         {returnDate && <span>✅ คืนจริง: {fmt(returnDate)}</span>}
@@ -274,18 +274,18 @@ export default function BookEditForm({ book }: { book: BookData }) {
                             <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
                                 <AlertTriangle size={20} className="text-red-600" />
                             </div>
-                            <h3 className="text-lg font-semibold text-slate-800">
+                            <h3 className="text-lg font-semibold text-[#3d405b]">
                                 ยืนยันการลบ
                             </h3>
                         </div>
-                        <p className="text-sm text-slate-500 mb-6">
+                        <p className="text-sm text-[#3d405b]/50 mb-6">
                             ต้องการลบหนังสือ &quot;{book.title}&quot; ใช่หรือไม่?
                             การกระทำนี้ไม่สามารถย้อนกลับได้
                         </p>
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setShowDeleteConfirm(false)}
-                                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition-colors text-sm"
+                                className="flex-1 py-2.5 bg-[#d1cce7]/15 hover:bg-[#d1cce7]/25 text-[#3d405b]/80 font-medium rounded-xl transition-colors text-sm"
                             >
                                 ยกเลิก
                             </button>

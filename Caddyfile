@@ -1,0 +1,3 @@
+namoland.popcorn-creator.com {
+    reverse_proxy localhost:3002
+}

@@ -1,27 +1,420 @@
-export default function HomePage() {
+import Link from "next/link";
+import Image from "next/image";
+import {
+  BookOpen,
+  Palette,
+  FlaskConical,
+  Music,
+  GraduationCap,
+  Globe,
+  Heart,
+  Star,
+  Sparkles,
+  ArrowRight,
+  Phone,
+  MapPin,
+} from "lucide-react";
+
+export default function LandingPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      <div className="text-center">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-500 rounded-3xl mb-6 shadow-xl shadow-blue-200">
-          <span className="text-white text-4xl font-bold">N</span>
+    <div className="min-h-screen bg-[#f4f1de] text-[#3d405b] overflow-x-hidden">
+      {/* ─── Navigation ─────────────────────────────────── */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#d1cce7]/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+          <div className="flex items-center gap-3">
+            <Image src="/namoland-logo.png" alt="Namoland" width={40} height={40} className="w-10 h-10 rounded-xl object-cover" />
+            <span className="font-bold text-lg text-[#3d405b]">Namoland</span>
+          </div>
+          <div className="hidden md:flex items-center gap-6 text-sm font-medium">
+            <a href="#activities" className="text-[#3d405b]/70 hover:text-[#3d405b] transition-colors">กิจกรรม</a>
+            <a href="#programs" className="text-[#3d405b]/70 hover:text-[#3d405b] transition-colors">โปรแกรม</a>
+            <a href="#library" className="text-[#3d405b]/70 hover:text-[#3d405b] transition-colors">ห้องสมุด</a>
+            <a href="#contact" className="text-[#3d405b]/70 hover:text-[#3d405b] transition-colors">ติดต่อ</a>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/user/login"
+              className="px-5 py-2 text-sm font-semibold text-[#3d405b] hover:text-[#609279] transition-colors"
+            >
+              เข้าสู่ระบบ
+            </Link>
+            <Link
+              href="/user/register"
+              className="px-5 py-2.5 text-sm font-semibold bg-gradient-to-r from-[#609279] to-[#a16b9f] text-white rounded-xl shadow-lg shadow-[#a16b9f]/20 hover:shadow-xl hover:shadow-[#a16b9f]/30 hover:scale-[1.02] transition-all"
+            >
+              สมัครสมาชิก
+            </Link>
+          </div>
         </div>
-        <h1 className="text-3xl font-bold text-slate-800 mb-2">Namoland</h1>
-        <p className="text-slate-500 mb-8">ระบบจัดการนโมแลนด์</p>
-        <div className="flex gap-4 justify-center">
-          <a
-            href="/login"
-            className="px-6 py-3 bg-blue-500 text-white font-medium rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-600 transition-colors"
-          >
-            Admin เข้าสู่ระบบ
-          </a>
-          <a
-            href="/youtube"
-            className="px-6 py-3 bg-white text-slate-700 font-medium rounded-xl border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors"
-          >
-            ดู YouTube
-          </a>
+      </nav>
+
+      {/* ─── Hero Section ───────────────────────────────── */}
+      <section className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden">
+        {/* Decorative blobs */}
+        <div className="absolute top-20 left-[-100px] w-[400px] h-[400px] bg-[#ecb4ce]/20 rounded-full blur-3xl" />
+        <div className="absolute top-40 right-[-100px] w-[350px] h-[350px] bg-[#81b29a]/15 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#f2cc8f]/15 rounded-full blur-3xl" />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            {/* Left: Content */}
+            <div className="text-center md:text-left">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#d1cce7]/30 rounded-full text-sm font-medium text-[#a16b9f] mb-6">
+                <Sparkles size={14} />
+                Kids Creative Club
+              </div>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
+                <span className="text-[#3d405b]">Namoland</span>
+                <br />
+                <span className="bg-gradient-to-r from-[#81b29a] via-[#e07a5f] to-[#a16b9f] bg-clip-text text-transparent">
+                  Kids Creative Club
+                </span>
+              </h1>
+              <p className="text-lg text-[#3d405b]/70 mb-4 leading-relaxed max-w-lg mx-auto md:mx-0">
+                พื้นที่สร้างสรรค์สำหรับเด็กๆ ที่เต็มไปด้วย
+                <strong className="text-[#609279]"> ศิลปะ</strong>,{" "}
+                <strong className="text-[#e07a5f]">ภาษาอังกฤษ</strong>,{" "}
+                <strong className="text-[#a16b9f]">วิทยาศาสตร์</strong> และ
+                <strong className="text-[#f9b61a]"> จินตนาการ</strong>
+              </p>
+              <p className="text-[#3d405b]/50 mb-8 text-sm">
+                🎨 Jolly English &amp; Art &amp; Design for Kids · 📚 Playgroup · Grammar · Workshops · Private Classes
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                <Link
+                  href="/user/register"
+                  className="group px-8 py-4 bg-gradient-to-r from-[#e07a5f] to-[#e55f15] text-white font-semibold rounded-2xl shadow-lg shadow-[#e07a5f]/30 hover:shadow-xl hover:shadow-[#e07a5f]/40 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+                >
+                  เริ่มต้นใช้งาน
+                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <Link
+                  href="/user/login"
+                  className="px-8 py-4 bg-white text-[#3d405b] font-semibold rounded-2xl border-2 border-[#d1cce7]/50 shadow-sm hover:border-[#81b29a]/50 hover:shadow-md transition-all flex items-center justify-center gap-2"
+                >
+                  เข้าสู่ระบบสมาชิก
+                </Link>
+              </div>
+
+              {/* Mini Stats */}
+              <div className="flex gap-8 mt-10 justify-center md:justify-start">
+                <div>
+                  <p className="text-2xl font-bold text-[#81b29a]">160+</p>
+                  <p className="text-xs text-[#3d405b]/50">สมาชิก</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-[#e07a5f]">10+</p>
+                  <p className="text-xs text-[#3d405b]/50">กิจกรรม/สัปดาห์</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-[#a16b9f]">5+</p>
+                  <p className="text-xs text-[#3d405b]/50">ปีประสบการณ์</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Hero Image */}
+            <div className="relative flex items-center justify-center">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#81b29a]/10 via-[#ecb4ce]/10 to-[#f2cc8f]/10 rounded-[3rem] rotate-3" />
+              <div className="relative w-full max-w-[480px] rounded-[2.5rem] overflow-hidden shadow-2xl shadow-[#3d405b]/10 border-4 border-white">
+                <Image
+                  src="/hero-kids.png"
+                  alt="เด็กๆ กำลังสร้างสรรค์ผลงานศิลปะที่ Namoland"
+                  width={480}
+                  height={480}
+                  className="w-full h-auto object-cover"
+                  priority
+                />
+              </div>
+              {/* Floating badges */}
+              <div className="absolute -top-2 -right-2 md:top-4 md:-right-6 bg-white px-4 py-2.5 rounded-2xl shadow-lg flex items-center gap-2 animate-bounce" style={{ animationDuration: "3s" }}>
+                <span className="text-xl">🎨</span>
+                <span className="text-xs font-semibold text-[#3d405b]">Art & Design</span>
+              </div>
+              <div className="absolute -bottom-2 -left-2 md:bottom-8 md:-left-6 bg-white px-4 py-2.5 rounded-2xl shadow-lg flex items-center gap-2 animate-bounce" style={{ animationDuration: "4s", animationDelay: "1s" }}>
+                <span className="text-xl">📚</span>
+                <span className="text-xs font-semibold text-[#3d405b]">Book Club</span>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* ─── Activities Section ─────────────────────────── */}
+      <section id="activities" className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#81b29a]/10 rounded-full text-sm font-medium text-[#609279] mb-4">
+              <Star size={14} />
+              กิจกรรมของเรา
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-[#3d405b] mb-4">
+              เรียนรู้ผ่าน<span className="text-[#81b29a]">การสร้างสรรค์</span>
+            </h2>
+            <p className="text-[#3d405b]/60 max-w-2xl mx-auto">
+              กิจกรรมที่ออกแบบมาเพื่อให้เด็กๆ ได้พัฒนาทักษะหลากหลายด้าน ผ่านการเล่น การทดลอง และการสร้างสรรค์
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                icon: <Palette size={28} />,
+                title: "Namo Little Artist",
+                desc: "ศิลปะสร้างสรรค์สำหรับเด็กเล็ก เรียนรู้เทคนิคต่างๆ ผ่านการทดลองสื่อหลากหลาย",
+                color: "#e07a5f",
+                bg: "#e07a5f",
+                time: "14.00-15.00",
+              },
+              {
+                icon: <GraduationCap size={28} />,
+                title: "Jolly Grammar",
+                desc: "เรียนภาษาอังกฤษแบบ Jolly Phonics สนุก เข้าใจง่าย สำหรับเด็กทุกวัย",
+                color: "#81b29a",
+                bg: "#81b29a",
+                time: "10.00-11.00",
+              },
+              {
+                icon: <FlaskConical size={28} />,
+                title: "Namo Little Explorers",
+                desc: "สำรวจโลกวิทยาศาสตร์ ทดลอง ค้นพบ และเข้าใจธรรมชาติรอบตัว",
+                color: "#a16b9f",
+                bg: "#a16b9f",
+                time: "10.00-11.30",
+              },
+              {
+                icon: <BookOpen size={28} />,
+                title: "Namo SenStory Play",
+                desc: "เรียนรู้ผ่านเรื่องเล่าและละครสร้างสรรค์ พัฒนาจินตนาการและการสื่อสาร",
+                color: "#f9b61a",
+                bg: "#f9b61a",
+                time: "14.00-15.00",
+              },
+              {
+                icon: <Music size={28} />,
+                title: "Namo Inspire Hour",
+                desc: "ชั่วโมงสร้างแรงบันดาลใจ เปิดโลกให้เด็กๆ ผ่านกิจกรรมพิเศษหลากหลาย",
+                color: "#ecb4ce",
+                bg: "#ecb4ce",
+                time: "15.30-16.30",
+              },
+              {
+                icon: <Heart size={28} />,
+                title: "Namo Grow to Glow",
+                desc: "Playgroup สำหรับเด็กเล็ก เรียนรู้การเข้าสังคมและพัฒนาทักษะพื้นฐาน",
+                color: "#fab885",
+                bg: "#fab885",
+                time: "10.00-12.00",
+              },
+            ].map((item, i) => (
+              <div
+                key={i}
+                className="group relative bg-white rounded-3xl p-6 border border-slate-100 hover:border-transparent hover:shadow-xl transition-all duration-300 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity duration-300" style={{ background: `linear-gradient(135deg, ${item.bg}22, ${item.bg}11)` }} />
+                <div
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 text-white shadow-lg"
+                  style={{ backgroundColor: item.color, boxShadow: `0 8px 24px ${item.color}33` }}
+                >
+                  {item.icon}
+                </div>
+                <h3 className="text-lg font-bold text-[#3d405b] mb-2">{item.title}</h3>
+                <p className="text-sm text-[#3d405b]/60 leading-relaxed mb-3">{item.desc}</p>
+                <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ backgroundColor: `${item.color}15`, color: item.color }}>
+                  🕐 {item.time}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Programs Highlight ─────────────────────────── */}
+      <section id="programs" className="py-20 bg-gradient-to-b from-[#f4f1de] to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-2 gap-16 items-center">
+            <div className="relative flex justify-center">
+              <div className="w-80 h-80 bg-gradient-to-br from-[#d1cce7]/20 to-[#ecb4ce]/20 rounded-full absolute" />
+              <Image
+                src="/activities-circle.png"
+                alt="กิจกรรมสร้างสรรค์"
+                width={380}
+                height={380}
+                className="relative z-10 drop-shadow-lg"
+              />
+            </div>
+            <div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#a16b9f]/10 rounded-full text-sm font-medium text-[#a16b9f] mb-4">
+                <GraduationCap size={14} />
+                โปรแกรมพิเศษ
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-bold text-[#3d405b] mb-6 leading-tight">
+                เปิดโลก<span className="text-[#a16b9f]">จินตนาการ</span>
+                <br />ให้ลูกน้อยของคุณ
+              </h2>
+              <div className="space-y-4">
+                {[
+                  { emoji: "🎨", label: "Jolly English & Art & Design", desc: "เรียนภาษาอังกฤษผ่านศิลปะและการออกแบบ" },
+                  { emoji: "👥", label: "Playgroup", desc: "กิจกรรมกลุ่มสำหรับเด็กเล็ก เพื่อพัฒนาทักษะสังคม" },
+                  { emoji: "📝", label: "Grammar & Workshops", desc: "เวิร์คช็อปภาษาอังกฤษและไวยากรณ์เชิงลึก" },
+                  { emoji: "🎓", label: "Private Classes", desc: "คอร์สเรียนส่วนตัว ออกแบบตามความต้องการ" },
+                  { emoji: "✈️", label: "Summer Camp in Milan", desc: "ค่ายฤดูร้อนที่มิลาน ร่วมกับ Marangoni Institute" },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-4 p-4 bg-white rounded-2xl border border-slate-100 hover:shadow-md transition-shadow">
+                    <span className="text-2xl">{item.emoji}</span>
+                    <div>
+                      <p className="font-semibold text-[#3d405b]">{item.label}</p>
+                      <p className="text-sm text-[#3d405b]/60">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Library / Coin System ───────────────────────── */}
+      <section id="library" className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#f9b61a]/10 rounded-full text-sm font-medium text-[#e55f15] mb-4">
+              <BookOpen size={14} />
+              ระบบสมาชิก
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-[#3d405b] mb-4">
+              ยืมหนังสือ &amp; <span className="text-[#f9b61a]">ระบบเหรียญ</span>
+            </h2>
+            <p className="text-[#3d405b]/60 max-w-2xl mx-auto">
+              สมาชิกสามารถยืมหนังสือจากห้องสมุดของเรา และใช้ระบบเหรียญในการเข้าร่วมกิจกรรมต่างๆ
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-3 gap-8">
+            {[
+              {
+                step: "01",
+                title: "สมัครสมาชิก",
+                desc: "ลงทะเบียนผ่านเว็บไซต์หรือที่ Namoland โดยตรง รับ QR Code สำหรับใช้งาน",
+                color: "#81b29a",
+                icon: "🪪",
+              },
+              {
+                step: "02",
+                title: "เติมเหรียญ",
+                desc: "ซื้อแพ็คเกจเหรียญเพื่อใช้ยืมหนังสือ เข้าเรียน และเข้าร่วมกิจกรรมต่างๆ",
+                color: "#f9b61a",
+                icon: "🪙",
+              },
+              {
+                step: "03",
+                title: "เริ่มใช้งาน",
+                desc: "ยืมหนังสือ จองคลาส และใช้เหรียญเข้าร่วมกิจกรรมสร้างสรรค์ได้เลย!",
+                color: "#e07a5f",
+                icon: "🚀",
+              },
+            ].map((item, i) => (
+              <div key={i} className="relative text-center p-8 bg-gradient-to-b from-white to-[#f4f1de]/30 rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg transition-shadow group">
+                <div className="text-5xl mb-4">{item.icon}</div>
+                <span className="text-xs font-bold tracking-widest uppercase" style={{ color: item.color }}>
+                  STEP {item.step}
+                </span>
+                <h3 className="text-xl font-bold text-[#3d405b] mt-2 mb-3">{item.title}</h3>
+                <p className="text-sm text-[#3d405b]/60 leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── CTA Banner ─────────────────────────────────── */}
+      <section className="py-20">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative bg-gradient-to-r from-[#609279] to-[#a16b9f] rounded-[2.5rem] p-10 md:p-16 text-center text-white overflow-hidden">
+            {/* Decorative */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#81b29a]/20 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#ecb4ce]/15 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
+
+            <div className="relative z-10">
+              <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+                พร้อมให้ลูกน้อยเริ่มต้นการเรียนรู้? ✨
+              </h2>
+              <p className="text-white/70 max-w-lg mx-auto mb-8">
+                สมัครสมาชิกวันนี้ เพื่อเข้าถึงกิจกรรมสร้างสรรค์ ห้องสมุด และโปรแกรมพิเศษมากมาย
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link
+                  href="/user/register"
+                  className="px-8 py-4 bg-white text-[#3d405b] font-bold rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
+                >
+                  สมัครสมาชิก — ฟรี!
+                </Link>
+                <Link
+                  href="/user/login"
+                  className="px-8 py-4 bg-white/10 text-white font-semibold rounded-2xl border border-white/20 hover:bg-white/20 transition-all"
+                >
+                  เข้าสู่ระบบสมาชิกเดิม
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Contact / Footer ───────────────────────────── */}
+      <footer id="contact" className="bg-[#3d405b] text-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-3 gap-12">
+            {/* Brand */}
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <Image src="/namoland-logo.png" alt="Namoland" width={40} height={40} className="w-10 h-10 rounded-xl object-cover" />
+                <span className="font-bold text-lg">Namoland Kids Creative Club</span>
+              </div>
+              <p className="text-white/50 text-sm leading-relaxed">
+                พื้นที่สร้างสรรค์สำหรับเด็กๆ ที่เต็มไปด้วยศิลปะ ภาษา วิทยาศาสตร์ และจินตนาการ
+              </p>
+            </div>
+
+            {/* Links */}
+            <div>
+              <h3 className="font-semibold mb-4 text-white/80">ลิงก์ด่วน</h3>
+              <ul className="space-y-3 text-sm text-white/50">
+                <li><Link href="/user/login" className="hover:text-white transition-colors">เข้าสู่ระบบสมาชิก</Link></li>
+                <li><Link href="/user/register" className="hover:text-white transition-colors">สมัครสมาชิก</Link></li>
+                <li><Link href="/login" className="hover:text-white transition-colors">Admin เข้าสู่ระบบ</Link></li>
+                <li><Link href="/youtube" className="hover:text-white transition-colors">ดู YouTube</Link></li>
+              </ul>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <h3 className="font-semibold mb-4 text-white/80">ติดต่อเรา</h3>
+              <ul className="space-y-3 text-sm text-white/50">
+                <li className="flex items-center gap-2">
+                  <MapPin size={14} className="text-[#81b29a]" />
+                  Samut Prakan
+                </li>
+                <li className="flex items-center gap-2">
+                  <Phone size={14} className="text-[#81b29a]" />
+                  Line OA: @namoland
+                </li>
+                <li className="flex items-center gap-2">
+                  <Globe size={14} className="text-[#81b29a]" />
+                  <a href="https://www.facebook.com/namolandkidscreativeclub" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                    Facebook: Namoland Kids Creative Club
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-white/10 mt-12 pt-8 text-center text-xs text-white/30">
+            © {new Date().getFullYear()} Namoland Kids Creative Club. All rights reserved.
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

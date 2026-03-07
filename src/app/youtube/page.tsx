@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { Youtube } from "lucide-react";
+import Link from "next/link";
 
 export default async function YouTubePage() {
     const books = await prisma.book.findMany({
@@ -8,20 +9,20 @@ export default async function YouTubePage() {
     });
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-[#f4f1de]/50">
             <div className="max-w-4xl mx-auto p-4 md:p-8">
                 {/* Header */}
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center justify-center w-14 h-14 bg-red-100 rounded-2xl mb-3">
                         <Youtube size={28} className="text-red-500" />
                     </div>
-                    <h1 className="text-2xl font-bold text-slate-800">Namoland YouTube</h1>
-                    <p className="text-slate-500 mt-1">ดูหนังสือและกิจกรรมจากนโมแลนด์</p>
+                    <h1 className="text-2xl font-bold text-[#3d405b]">Namoland YouTube</h1>
+                    <p className="text-[#3d405b]/50 mt-1">ดูหนังสือและกิจกรรมจากนโมแลนด์</p>
                 </div>
 
                 {/* Videos Grid */}
                 {books.length === 0 ? (
-                    <div className="text-center py-12 text-slate-400">
+                    <div className="text-center py-12 text-[#3d405b]/40">
                         ยังไม่มีวิดีโอ YouTube
                     </div>
                 ) : (
@@ -33,7 +34,7 @@ export default async function YouTubePage() {
                             return (
                                 <div
                                     key={book.id}
-                                    className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                                    className="bg-white rounded-2xl border border-[#d1cce7]/20 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
                                 >
                                     {videoId ? (
                                         <div className="aspect-video">
@@ -50,15 +51,15 @@ export default async function YouTubePage() {
                                             href={book.youtubeUrl!}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="block aspect-video bg-slate-100 flex items-center justify-center"
+                                            className="block aspect-video bg-[#d1cce7]/15 flex items-center justify-center"
                                         >
                                             <Youtube size={48} className="text-red-300" />
                                         </a>
                                     )}
                                     <div className="p-4">
-                                        <h3 className="font-semibold text-slate-800">{book.title}</h3>
+                                        <h3 className="font-semibold text-[#3d405b]">{book.title}</h3>
                                         {book.category && (
-                                            <p className="text-xs text-slate-400 mt-1">{book.category}</p>
+                                            <p className="text-xs text-[#3d405b]/40 mt-1">{book.category}</p>
                                         )}
                                     </div>
                                 </div>
@@ -68,12 +69,12 @@ export default async function YouTubePage() {
                 )}
 
                 <div className="text-center mt-8">
-                    <a
+                    <Link
                         href="/"
-                        className="text-sm text-blue-500 hover:text-blue-700 font-medium"
+                        className="text-sm text-[#609279] hover:text-[#609279] font-medium"
                     >
                         ← กลับหน้าหลัก
-                    </a>
+                    </Link>
                 </div>
             </div>
         </div>

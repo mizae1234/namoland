@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { getMemberByQrCode } from "@/actions/member";
 import { getBookByQrCode } from "@/actions/borrow";
 import { useRouter } from "next/navigation";
-import { Camera, User, BookOpen, QrCode } from "lucide-react";
+import { Camera, User, BookOpen } from "lucide-react";
 import BackLink from "@/components/ui/BackLink";
 import AlertMessage from "@/components/ui/AlertMessage";
 import Card from "@/components/ui/Card";
@@ -83,7 +83,7 @@ export default function ScanPage() {
                 },
                 () => { }
             );
-        } catch (err) {
+        } catch {
             setError("ไม่สามารถเปิดกล้องได้");
             setScanning(false);
         }
@@ -116,7 +116,7 @@ export default function ScanPage() {
         <div className="max-w-2xl mx-auto">
             <BackLink href="/borrows" label="กลับไปหน้ายืม-คืน" />
 
-            <h1 className="text-2xl font-bold text-slate-800 mb-6">สแกน QR Code</h1>
+            <h1 className="text-2xl font-bold text-[#3d405b] mb-6">สแกน QR Code</h1>
 
             {/* Scanner Area */}
             <Card className="mb-6">
@@ -134,7 +134,7 @@ export default function ScanPage() {
                     <div className="text-center">
                         <button
                             onClick={startScanner}
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors shadow-md shadow-blue-200"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-[#609279] text-white rounded-xl font-medium hover:bg-[#609279] transition-colors shadow-md shadow-[#81b29a]/30"
                         >
                             <Camera size={20} />
                             เปิดกล้องสแกน
@@ -143,20 +143,20 @@ export default function ScanPage() {
                 )}
 
                 {/* Manual Input */}
-                <div className="mt-6 pt-6 border-t border-slate-100">
-                    <p className="text-sm text-slate-500 mb-3">หรือกรอก QR Code ด้วยตนเอง</p>
+                <div className="mt-6 pt-6 border-t border-[#d1cce7]/20">
+                    <p className="text-sm text-[#3d405b]/50 mb-3">หรือกรอก QR Code ด้วยตนเอง</p>
                     <form onSubmit={handleManualSearch} className="flex gap-2">
                         <input
                             type="text"
                             value={manualCode}
                             onChange={(e) => setManualCode(e.target.value)}
                             placeholder="NML-... หรือ BOOK-..."
-                            className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:bg-white focus:border-blue-400 outline-none"
+                            className="flex-1 px-4 py-2.5 border border-[#d1cce7]/30 rounded-xl text-sm bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] outline-none"
                         />
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-4 py-2.5 bg-slate-800 text-white rounded-xl text-sm font-medium hover:bg-slate-700 disabled:opacity-50"
+                            className="px-4 py-2.5 bg-[#3d405b] text-white rounded-xl text-sm font-medium hover:bg-[#3d405b]/80 disabled:opacity-50"
                         >
                             ค้นหา
                         </button>
@@ -167,8 +167,8 @@ export default function ScanPage() {
             <AlertMessage message={error} />
 
             {loading && (
-                <div className="text-center py-8 text-slate-400">
-                    <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                <div className="text-center py-8 text-[#3d405b]/40">
+                    <div className="w-8 h-8 border-2 border-[#609279] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
                     กำลังค้นหา...
                 </div>
             )}
@@ -177,15 +177,15 @@ export default function ScanPage() {
             {result?.type === "member" && result.data && (
                 <Card>
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center">
-                            <User size={24} className="text-blue-500" />
+                        <div className="w-12 h-12 bg-[#81b29a]/15 rounded-2xl flex items-center justify-center">
+                            <User size={24} className="text-[#609279]" />
                         </div>
                         <div>
-                            <h2 className="font-bold text-slate-800">{result.data.parentName}</h2>
-                            <p className="text-sm text-slate-500">{result.data.phone}</p>
+                            <h2 className="font-bold text-[#3d405b]">{result.data.parentName}</h2>
+                            <p className="text-sm text-[#3d405b]/50">{result.data.phone}</p>
                         </div>
                         <div className="ml-auto text-right">
-                            <p className="text-xs text-slate-400">เหรียญคงเหลือ</p>
+                            <p className="text-xs text-[#3d405b]/40">เหรียญคงเหลือ</p>
                             <p className="text-xl font-bold text-emerald-600">{totalCoins}</p>
                         </div>
                     </div>
@@ -193,7 +193,7 @@ export default function ScanPage() {
                     {result.data.children.length > 0 && (
                         <div className="flex gap-2 mb-4">
                             {result.data.children.map((c) => (
-                                <span key={c.id} className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">{c.name}</span>
+                                <span key={c.id} className="text-xs bg-[#81b29a]/10 text-[#609279] px-2 py-0.5 rounded-full">{c.name}</span>
                             ))}
                         </div>
                     )}
@@ -214,7 +214,7 @@ export default function ScanPage() {
                     <div className="flex gap-3">
                         <button
                             onClick={() => router.push(`/borrows/new/${result.data!.id}`)}
-                            className="flex-1 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-medium hover:bg-blue-600 transition-colors"
+                            className="flex-1 py-2.5 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#609279] transition-colors"
                         >
                             ยืมหนังสือ
                         </button>
@@ -228,7 +228,7 @@ export default function ScanPage() {
                         )}
                         <button
                             onClick={() => router.push(`/members/${result.data!.id}`)}
-                            className="flex-1 py-2.5 bg-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-300 transition-colors"
+                            className="flex-1 py-2.5 bg-[#d1cce7]/25 text-[#3d405b]/80 rounded-xl text-sm font-medium hover:bg-[#3d405b]/30 transition-colors"
                         >
                             ดูโปรไฟล์
                         </button>
@@ -244,13 +244,13 @@ export default function ScanPage() {
                             <BookOpen size={24} className="text-amber-600" />
                         </div>
                         <div>
-                            <h2 className="font-bold text-slate-800">{result.data.title}</h2>
-                            <p className="text-sm text-slate-500">{result.data.qrCode}</p>
+                            <h2 className="font-bold text-[#3d405b]">{result.data.title}</h2>
+                            <p className="text-sm text-[#3d405b]/50">{result.data.qrCode}</p>
                         </div>
                     </div>
 
                     {result.data.category && (
-                        <p className="text-sm text-slate-500 mb-2">หมวดหมู่: {result.data.category}</p>
+                        <p className="text-sm text-[#3d405b]/50 mb-2">หมวดหมู่: {result.data.category}</p>
                     )}
 
                     <div className="flex gap-3">
@@ -272,7 +272,7 @@ export default function ScanPage() {
                                     setResult(null);
                                     setError("กรุณาสแกน QR Code สมาชิกเพื่อยืมหนังสือเล่มนี้");
                                 }}
-                                className="flex-1 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-medium hover:bg-blue-600 text-center transition-colors"
+                                className="flex-1 py-2.5 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#609279] text-center transition-colors"
                             >
                                 ยืมหนังสือ
                             </button>

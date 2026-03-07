@@ -1,0 +1,14 @@
+services:
+  app:
+    container_name: namoland-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - AUTH_SECRET=${AUTH_SECRET}
+      - TZ=Asia/Bangkok

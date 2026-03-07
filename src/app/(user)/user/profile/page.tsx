@@ -1,9 +1,8 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { User, Phone, Baby, QrCode } from "lucide-react";
-import { format } from "date-fns";
-import { th } from "date-fns/locale";
+import { User, QrCode } from "lucide-react";
 import UserLogout from "./UserLogout";
+import ProfileEditForm from "./ProfileEditForm";
 
 export default async function UserProfilePage() {
     const session = await auth();
@@ -14,53 +13,36 @@ export default async function UserProfilePage() {
         include: { children: true },
     });
 
-    if (!user) return <div className="p-4 text-center text-slate-400">ไม่พบข้อมูล</div>;
+    if (!user) return <div className="p-4 text-center text-[#3d405b]/40">ไม่พบข้อมูล</div>;
 
     return (
         <div className="p-4">
-            <h1 className="text-xl font-bold text-slate-800 mb-4">โปรไฟล์</h1>
+            <h1 className="text-xl font-bold text-[#3d405b] mb-4">โปรไฟล์</h1>
 
-            {/* Profile Card */}
-            <div className="bg-white rounded-2xl p-6 border border-slate-100 mb-4">
+            {/* Avatar & QR */}
+            <div className="bg-white rounded-2xl p-6 border border-[#d1cce7]/20 mb-4">
                 <div className="flex items-center gap-4 mb-4">
-                    <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center">
-                        <User size={24} className="text-blue-500" />
+                    <div className="w-14 h-14 bg-[#81b29a]/15 rounded-full flex items-center justify-center flex-shrink-0">
+                        <User size={24} className="text-[#609279]" />
                     </div>
                     <div>
-                        <h2 className="font-semibold text-slate-800 text-lg">{user.parentName}</h2>
-                        <div className="flex items-center gap-1 text-slate-500 text-sm">
-                            <Phone size={14} />
-                            {user.phone}
-                        </div>
+                        <h2 className="font-semibold text-[#3d405b] text-lg">{user.parentName}</h2>
+                        <p className="text-sm text-[#3d405b]/50">{user.phone}</p>
                     </div>
                 </div>
-
-                <div className="flex items-center gap-2 mt-3 p-3 bg-slate-50 rounded-xl">
-                    <QrCode size={16} className="text-slate-400" />
-                    <span className="text-sm text-slate-600 font-mono">{user.qrCode}</span>
+                <div className="flex items-center gap-2 p-3 bg-[#f4f1de]/50 rounded-xl">
+                    <QrCode size={16} className="text-[#3d405b]/40" />
+                    <span className="text-sm text-[#3d405b]/70 font-mono">{user.qrCode}</span>
                 </div>
             </div>
 
-            {/* Children */}
-            <div className="bg-white rounded-2xl p-6 border border-slate-100 mb-4">
-                <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                    <Baby size={18} className="text-pink-500" />
-                    เด็กในครอบครัว ({user.children.length})
-                </h3>
-                <div className="space-y-2">
-                    {user.children.map((child) => (
-                        <div key={child.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                            <span className="text-sm font-medium text-slate-700">{child.name}</span>
-                            <span className="text-xs text-slate-400">
-                                {format(new Date(child.birthDate), "d MMM yyyy", { locale: th })}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            </div>
+            {/* Editable Profile + Password */}
+            <ProfileEditForm user={JSON.parse(JSON.stringify(user))} />
 
             {/* Logout */}
-            <UserLogout />
+            <div className="mt-4">
+                <UserLogout />
+            </div>
         </div>
     );
 }

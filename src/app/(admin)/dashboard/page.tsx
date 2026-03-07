@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import Card from "@/components/ui/Card";
 import StatusBadge from "@/components/ui/StatusBadge";
-import { COIN_TX_TYPE_MAP, BORROW_STATUS_MAP } from "@/lib/constants";
+import { COIN_TX_TYPE_MAP } from "@/lib/constants";
 
 async function getDashboardStats() {
     const [
@@ -79,7 +79,7 @@ export default async function DashboardPage() {
             value: stats.totalMembers,
             sub: `${stats.totalChildren} เด็ก`,
             icon: Users,
-            color: "blue",
+            color: "green",
         },
         {
             label: "แพ็คเกจเหรียญ Active",
@@ -105,7 +105,7 @@ export default async function DashboardPage() {
     ];
 
     const colorMap: Record<string, { bg: string; text: string; icon: string }> = {
-        blue: { bg: "bg-blue-50", text: "text-blue-600", icon: "text-blue-500" },
+        green: { bg: "bg-[#81b29a]/10", text: "text-[#609279]", icon: "text-[#609279]" },
         emerald: { bg: "bg-emerald-50", text: "text-emerald-600", icon: "text-emerald-500" },
         amber: { bg: "bg-amber-50", text: "text-amber-600", icon: "text-amber-500" },
         red: { bg: "bg-red-50", text: "text-red-600", icon: "text-red-500" },
@@ -117,8 +117,8 @@ export default async function DashboardPage() {
         <div>
             {/* Header */}
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-slate-800">Admin Dashboard</h1>
-                <p className="text-slate-500 mt-1">ภาพรวมระบบ Namoland</p>
+                <h1 className="text-2xl font-bold text-[#3d405b]">Admin Dashboard</h1>
+                <p className="text-[#3d405b]/50 mt-1">ภาพรวมระบบ Namoland</p>
             </div>
 
             {/* Stat Cards */}
@@ -129,15 +129,15 @@ export default async function DashboardPage() {
                     return (
                         <div
                             key={card.label}
-                            className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-shadow"
+                            className="bg-white rounded-2xl p-6 border border-[#d1cce7]/20 shadow-sm hover:shadow-md transition-shadow"
                         >
                             <div className="flex items-start justify-between">
                                 <div>
-                                    <p className="text-sm text-slate-500 font-medium">{card.label}</p>
+                                    <p className="text-sm text-[#3d405b]/50 font-medium">{card.label}</p>
                                     <p className={`text-3xl font-bold ${colors.text} mt-2`}>
                                         {card.value}
                                     </p>
-                                    <p className="text-xs text-slate-400 mt-1">{card.sub}</p>
+                                    <p className="text-xs text-[#3d405b]/40 mt-1">{card.sub}</p>
                                 </div>
                                 <div className={`${colors.bg} p-3 rounded-xl`}>
                                     <Icon size={22} className={colors.icon} />
@@ -152,25 +152,24 @@ export default async function DashboardPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Recent Borrows */}
                 <Card padding={false}>
-                    <div className="p-6 border-b border-slate-100">
-                        <h2 className="font-semibold text-slate-800 flex items-center gap-2">
-                            <BookOpen size={18} className="text-blue-500" />
+                    <div className="p-6 border-b border-[#d1cce7]/20">
+                        <h2 className="font-semibold text-[#3d405b] flex items-center gap-2">
+                            <BookOpen size={18} className="text-[#609279]" />
                             รายการยืมล่าสุด
                         </h2>
                     </div>
-                    <div className="divide-y divide-slate-50">
+                    <div className="divide-y divide-[#d1cce7]/15">
                         {recentBorrows.length === 0 ? (
-                            <div className="p-6 text-center text-slate-400 text-sm">
+                            <div className="p-6 text-center text-[#3d405b]/40 text-sm">
                                 ยังไม่มีรายการยืม
                             </div>
                         ) : (
                             recentBorrows.map((b) => {
-                                const st = BORROW_STATUS_MAP[b.status] || { label: b.status, className: "bg-slate-100 text-slate-700" };
                                 return (
                                     <div key={b.id} className="px-6 py-4 flex items-center justify-between">
                                         <div>
-                                            <p className="text-sm font-medium text-slate-700">{b.user.parentName}</p>
-                                            <p className="text-xs text-slate-400">{b.code} · {b.items.length} เล่ม</p>
+                                            <p className="text-sm font-medium text-[#3d405b]/80">{b.user.parentName}</p>
+                                            <p className="text-xs text-[#3d405b]/40">{b.code} · {b.items.length} เล่ม</p>
                                         </div>
                                         <StatusBadge status={b.status} />
                                     </div>
@@ -182,25 +181,25 @@ export default async function DashboardPage() {
 
                 {/* Recent Transactions */}
                 <Card padding={false}>
-                    <div className="p-6 border-b border-slate-100">
-                        <h2 className="font-semibold text-slate-800 flex items-center gap-2">
+                    <div className="p-6 border-b border-[#d1cce7]/20">
+                        <h2 className="font-semibold text-[#3d405b] flex items-center gap-2">
                             <Coins size={18} className="text-emerald-500" />
                             ธุรกรรมเหรียญล่าสุด
                         </h2>
                     </div>
-                    <div className="divide-y divide-slate-50">
+                    <div className="divide-y divide-[#d1cce7]/15">
                         {recentTransactions.length === 0 ? (
-                            <div className="p-6 text-center text-slate-400 text-sm">
+                            <div className="p-6 text-center text-[#3d405b]/40 text-sm">
                                 ยังไม่มีธุรกรรมเหรียญ
                             </div>
                         ) : (
                             recentTransactions.map((tx) => (
                                 <div key={tx.id} className="px-6 py-4 flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm font-medium text-slate-700">
+                                        <p className="text-sm font-medium text-[#3d405b]/80">
                                             {tx.package.user.parentName}
                                         </p>
-                                        <p className="text-xs text-slate-400">
+                                        <p className="text-xs text-[#3d405b]/40">
                                             {COIN_TX_TYPE_MAP[tx.type] || tx.type}
                                             {tx.className ? ` · ${tx.className}` : ""}
                                         </p>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AlertMessage from "@/components/ui/AlertMessage";
+import Image from "next/image";
 
 export default function LoginForm() {
     const router = useRouter();
@@ -35,23 +36,21 @@ export default function LoginForm() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-[#f4f1de] via-[#f4f1de] to-[#d1cce7]/20 flex items-center justify-center p-4">
             <div className="w-full max-w-sm">
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-2xl text-white text-2xl font-bold shadow-lg shadow-blue-200 mb-3">
-                        N
-                    </div>
-                    <h1 className="text-xl font-bold text-slate-800">Namoland</h1>
-                    <p className="text-slate-500 text-sm mt-1">เข้าสู่ระบบสมาชิก</p>
+                    <Image src="/namoland-logo.png" alt="Namoland" width={64} height={64} className="w-16 h-16 rounded-2xl object-cover mx-auto shadow-lg shadow-[#81b29a]/30 mb-3" />
+                    <h1 className="text-xl font-bold text-[#3d405b]">Namoland</h1>
+                    <p className="text-[#3d405b]/50 text-sm mt-1">เข้าสู่ระบบสมาชิก</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 shadow-sm border border-[#d1cce7]/20">
                     <AlertMessage message={error} className="text-center" />
 
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-600 mb-1">
+                            <label className="block text-sm font-medium text-[#3d405b]/70 mb-1">
                                 เบอร์โทรศัพท์
                             </label>
                             <input
@@ -59,12 +58,12 @@ export default function LoginForm() {
                                 value={phone}
                                 onChange={(e) => setPhone(e.target.value)}
                                 placeholder="08x-xxx-xxxx"
-                                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 outline-none transition-all text-lg"
+                                className="w-full px-4 py-3 border border-[#d1cce7]/30 rounded-xl focus:ring-2 focus:ring-[#81b29a]/30 focus:border-[#81b29a] outline-none transition-all text-lg"
                                 required
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-600 mb-1">
+                            <label className="block text-sm font-medium text-[#3d405b]/70 mb-1">
                                 รหัสผ่าน
                             </label>
                             <input
@@ -72,10 +71,10 @@ export default function LoginForm() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••"
-                                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-400 outline-none transition-all text-lg"
+                                className="w-full px-4 py-3 border border-[#d1cce7]/30 rounded-xl focus:ring-2 focus:ring-[#81b29a]/30 focus:border-[#81b29a] outline-none transition-all text-lg"
                                 required
                             />
-                            <p className="text-xs text-slate-400 mt-1.5">
+                            <p className="text-xs text-[#3d405b]/40 mt-1.5">
                                 รหัสผ่านเริ่มต้น: 4 ตัวท้ายของเบอร์โทร
                             </p>
                         </div>
@@ -84,17 +83,17 @@ export default function LoginForm() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full mt-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl font-semibold shadow-lg shadow-blue-200 hover:shadow-xl hover:shadow-blue-300 transition-all disabled:opacity-50"
+                        className="w-full mt-6 py-3 bg-gradient-to-r from-[#3d405b] to-[#609279] text-white rounded-xl font-semibold shadow-lg shadow-[#81b29a]/30 hover:shadow-xl hover:shadow-[#81b29a]/30 transition-all disabled:opacity-50"
                     >
                         {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
                     </button>
                 </form>
 
-                <p className="text-center text-sm text-slate-500 mt-4">
+                <p className="text-center text-sm text-[#3d405b]/50 mt-4">
                     ยังไม่มีบัญชี?{" "}
                     <a
                         href={`/user/register?callbackUrl=${encodeURIComponent(callbackUrl)}`}
-                        className="text-blue-500 font-medium hover:text-blue-700"
+                        className="text-[#609279] font-medium hover:text-[#609279]"
                     >
                         สมัครสมาชิก
                     </a>

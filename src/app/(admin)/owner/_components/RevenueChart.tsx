@@ -15,15 +15,15 @@ export default function RevenueChart({ data }: Props) {
     return (
         <div>
             <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold text-slate-800 text-lg">
+                <h2 className="font-semibold text-[#3d405b] text-lg">
                     📈 Revenue Trend
                 </h2>
-                <div className="flex bg-slate-100 rounded-lg overflow-hidden">
+                <div className="flex bg-[#d1cce7]/15 rounded-lg overflow-hidden">
                     <button
                         onClick={() => setRange(7)}
                         className={`px-3 py-1.5 text-xs font-medium transition-colors ${range === 7
-                            ? "bg-blue-500 text-white"
-                            : "text-slate-500 hover:text-slate-700"
+                            ? "bg-[#609279] text-white"
+                            : "text-[#3d405b]/50 hover:text-[#3d405b]/80"
                             }`}
                     >
                         7 วัน
@@ -31,8 +31,8 @@ export default function RevenueChart({ data }: Props) {
                     <button
                         onClick={() => setRange(30)}
                         className={`px-3 py-1.5 text-xs font-medium transition-colors ${range === 30
-                            ? "bg-blue-500 text-white"
-                            : "text-slate-500 hover:text-slate-700"
+                            ? "bg-[#609279] text-white"
+                            : "text-[#3d405b]/50 hover:text-[#3d405b]/80"
                             }`}
                     >
                         30 วัน
@@ -43,7 +43,7 @@ export default function RevenueChart({ data }: Props) {
             {/* Chart */}
             <div className="relative" style={{ height: chartHeight + 40 }}>
                 {/* Y-axis labels */}
-                <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-slate-400 pr-2" style={{ height: chartHeight }}>
+                <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-[#3d405b]/40 pr-2" style={{ height: chartHeight }}>
                     <span>{maxRevenue.toLocaleString()}</span>
                     <span>{Math.round(maxRevenue / 2).toLocaleString()}</span>
                     <span>0</span>
@@ -56,7 +56,7 @@ export default function RevenueChart({ data }: Props) {
                         return (
                             <div key={i} className="flex-1 flex flex-col items-center group relative">
                                 {/* Tooltip */}
-                                <div className="absolute -top-10 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                <div className="absolute -top-10 bg-[#3d405b] text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
                                     ฿{d.revenue.toLocaleString()}
                                 </div>
 
@@ -81,7 +81,7 @@ export default function RevenueChart({ data }: Props) {
                         const show = range === 7 || i % 5 === 0 || i === chartData.length - 1;
                         return (
                             <div key={i} className="flex-1 text-center">
-                                <span className="text-[10px] text-slate-400">
+                                <span className="text-[10px] text-[#3d405b]/40">
                                     {show ? d.date : ""}
                                 </span>
                             </div>

@@ -17,8 +17,6 @@ export default function PrintQrButton({
         const printWindow = window.open("", "_blank", "width=400,height=500");
         if (!printWindow) return;
 
-        const bookUrl = `${window.location.origin}/book/${qrCode}`;
-
         printWindow.document.write(`
             <!DOCTYPE html>
             <html>
@@ -81,7 +79,7 @@ export default function PrintQrButton({
 
             <button
                 onClick={handlePrint}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors"
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-[#d1cce7]/15 hover:bg-[#d1cce7]/25 text-[#3d405b]/70 rounded-lg transition-colors"
             >
                 <Printer size={14} />
                 พิมพ์ QR

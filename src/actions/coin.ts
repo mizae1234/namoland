@@ -3,13 +3,7 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
-
-const PACKAGE_TABLE: Record<string, { coins: number; price: number; bonus: number }> = {
-    "5_COINS": { coins: 5, price: 1000, bonus: 0 },
-    "10_COINS": { coins: 10, price: 1900, bonus: 100 },
-    "20_COINS": { coins: 20, price: 3700, bonus: 300 },
-    "30_COINS": { coins: 30, price: 5400, bonus: 600 },
-};
+import { getPackageByKey } from "@/actions/packageConfig";
 
 export async function purchasePackage(formData: FormData) {
     const session = await auth();
@@ -19,6 +13,8 @@ export async function purchasePackage(formData: FormData) {
     const packageType = formData.get("packageType") as string;
     const customCoins = formData.get("customCoins") as string;
     const customPrice = formData.get("customPrice") as string;
+    const note = (formData.get("note") as string) || null;
+    const paymentMethod = (formData.get("paymentMethod") as string) || null;
 
     let coins: number;
     let price: number;
@@ -31,11 +27,11 @@ export async function purchasePackage(formData: FormData) {
             return { error: "กรุณากรอกจำนวนเหรียญและราคาให้ถูกต้อง" };
         }
     } else {
-        const pkg = PACKAGE_TABLE[packageType];
-        if (!pkg) return { error: "แพ็คเกจไม่ถูกต้อง" };
-        coins = pkg.coins;
-        price = pkg.price;
-        bonus = pkg.bonus;
+        const pkgConfig = await getPackageByKey(packageType);
+        if (!pkgConfig) return { error: "แพ็คเกจไม่ถูกต้อง" };
+        coins = pkgConfig.coins;
+        price = pkgConfig.price;
+        bonus = pkgConfig.bonus;
     }
 
     await prisma.coinPackage.create({
@@ -46,6 +42,8 @@ export async function purchasePackage(formData: FormData) {
             remainingCoins: coins,
             pricePaid: price,
             bonusAmount: bonus,
+            note,
+            paymentMethod,
         },
     });
 
@@ -54,7 +52,7 @@ export async function purchasePackage(formData: FormData) {
     return { success: true };
 }
 
-export async function useCoins(formData: FormData) {
+export async function spendCoins(formData: FormData) {
     const session = await auth();
     if (!session?.user) return { error: "Unauthorized" };
 
@@ -77,12 +75,13 @@ export async function useCoins(formData: FormData) {
         remainingCoins: pkg.remainingCoins - coinsUsed,
     };
 
+    let newExpiresAt: Date | null = null;
     if (!pkg.firstUsedAt) {
         const now = new Date();
-        const expiresAt = new Date(now);
-        expiresAt.setMonth(expiresAt.getMonth() + 1);
+        newExpiresAt = new Date(now);
+        newExpiresAt.setMonth(newExpiresAt.getMonth() + 1);
         updateData.firstUsedAt = now;
-        updateData.expiresAt = expiresAt;
+        updateData.expiresAt = newExpiresAt;
     }
 
     await prisma.$transaction([
@@ -102,6 +101,20 @@ export async function useCoins(formData: FormData) {
             },
         }),
     ]);
+
+    // Auto-update coinExpiryOverride if new expiresAt is further
+    if (newExpiresAt) {
+        const user = await prisma.user.findUnique({
+            where: { id: pkg.userId },
+            select: { coinExpiryOverride: true },
+        });
+        if (!user?.coinExpiryOverride || newExpiresAt > new Date(user.coinExpiryOverride)) {
+            await prisma.user.update({
+                where: { id: pkg.userId },
+                data: { coinExpiryOverride: newExpiresAt },
+            });
+        }
+    }
 
     revalidatePath("/members");
     revalidatePath("/coins");
@@ -125,63 +138,304 @@ export async function getExpiringPackages() {
     });
 }
 
-export async function confirmExpiry(packageId: string) {
-    const session = await auth();
-    if (!session?.user) return { error: "Unauthorized" };
+export async function extendExpiry(formData: FormData) {
+    try {
+        const session = await auth();
+        if (!session?.user || session.user.type !== "ADMIN") return { error: "Unauthorized" };
 
-    const pkg = await prisma.coinPackage.findUnique({ where: { id: packageId } });
-    if (!pkg) return { error: "ไม่พบแพ็คเกจ" };
+        const userId = formData.get("userId") as string;
+        const targetDateStr = formData.get("targetDate") as string;
+        const note = formData.get("note") as string;
 
-    await prisma.$transaction([
-        prisma.coinPackage.update({
-            where: { id: packageId },
-            data: { isExpired: true, remainingCoins: 0 },
-        }),
-        prisma.coinTransaction.create({
-            data: {
-                packageId,
-                type: "EXPIRED",
-                coinsUsed: pkg.remainingCoins,
-                description: "เหรียญหมดอายุ",
-                processedById: session.user.id,
-            },
-        }),
-    ]);
+        if (!userId || !targetDateStr) {
+            return { error: "ข้อมูลไม่ถูกต้อง" };
+        }
 
-    revalidatePath("/coins");
-    return { success: true };
+        const targetDate = new Date(targetDateStr);
+        targetDate.setHours(23, 59, 59, 999);
+
+        if (isNaN(targetDate.getTime())) {
+            return { error: "วันที่ไม่ถูกต้อง" };
+        }
+
+        // Get current override for history
+        const currentUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { coinExpiryOverride: true },
+        });
+
+        // Update member-level override + create history log
+        await prisma.$transaction([
+            prisma.user.update({
+                where: { id: userId },
+                data: { coinExpiryOverride: targetDate },
+            }),
+            prisma.expiryLog.create({
+                data: {
+                    userId,
+                    previousDate: currentUser?.coinExpiryOverride || null,
+                    newDate: targetDate,
+                    note: note || null,
+                    performedBy: session.user.id,
+                },
+            }),
+        ]);
+
+        revalidatePath("/coins");
+        revalidatePath("/members");
+        return { success: true };
+    } catch (err) {
+        console.error("extendExpiry error:", err);
+        return { error: `เกิดข้อผิดพลาด: ${err instanceof Error ? err.message : "Unknown"}` };
+    }
 }
 
-export async function extendExpiry(formData: FormData) {
+// ===== Deduct / Adjust Coins =====
+
+export async function deductCoins(formData: FormData) {
+    try {
+        const session = await auth();
+        if (!session?.user || session.user.type !== "ADMIN") return { error: "Unauthorized" };
+
+        const userId = formData.get("userId") as string;
+        const coinsToDeduct = parseInt(formData.get("coinsToDeduct") as string);
+        const reason = (formData.get("reason") as string) || "ปรับลดเหรียญ";
+
+        if (!userId || isNaN(coinsToDeduct) || coinsToDeduct <= 0) {
+            return { error: "ข้อมูลไม่ถูกต้อง" };
+        }
+
+        // Get active packages ordered by oldest first (FIFO)
+        const activePackages = await prisma.coinPackage.findMany({
+            where: { userId, isExpired: false, remainingCoins: { gt: 0 } },
+            orderBy: { createdAt: "asc" },
+        });
+
+        const totalAvailable = activePackages.reduce((s, p) => s + p.remainingCoins, 0);
+        if (totalAvailable < coinsToDeduct) {
+            return { error: `เหรียญไม่เพียงพอ (คงเหลือ ${totalAvailable} เหรียญ)` };
+        }
+
+        // Distribute deduction across packages (FIFO)
+        let remaining = coinsToDeduct;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const ops: any[] = [];
+
+        for (const pkg of activePackages) {
+            if (remaining <= 0) break;
+            const deduct = Math.min(remaining, pkg.remainingCoins);
+            remaining -= deduct;
+
+            ops.push(
+                prisma.coinPackage.update({
+                    where: { id: pkg.id },
+                    data: { remainingCoins: pkg.remainingCoins - deduct },
+                }),
+                prisma.coinTransaction.create({
+                    data: {
+                        packageId: pkg.id,
+                        type: "ADJUSTMENT",
+                        coinsUsed: deduct,
+                        description: reason,
+                        processedById: session.user.id,
+                    },
+                }),
+            );
+        }
+
+        await prisma.$transaction(ops);
+
+        revalidatePath("/members");
+        revalidatePath("/coins");
+        return { success: true };
+    } catch (err) {
+        console.error("deductCoins error:", err);
+        return { error: `เกิดข้อผิดพลาด: ${err instanceof Error ? err.message : "Unknown"}` };
+    }
+}
+
+export async function adjustCoinsUp(formData: FormData) {
+    try {
+        const session = await auth();
+        if (!session?.user || session.user.type !== "ADMIN") return { error: "Unauthorized" };
+
+        const userId = formData.get("userId") as string;
+        const coinsToAdd = parseInt(formData.get("coinsToAdd") as string);
+        const reason = (formData.get("reason") as string) || "ปรับเพิ่มเหรียญ";
+
+        if (!userId || isNaN(coinsToAdd) || coinsToAdd <= 0) {
+            return { error: "ข้อมูลไม่ถูกต้อง" };
+        }
+
+        // Add to the oldest active package, or create a new adjustment package
+        const activePackage = await prisma.coinPackage.findFirst({
+            where: { userId, isExpired: false, remainingCoins: { gt: 0 } },
+            orderBy: { createdAt: "asc" },
+        });
+
+        if (activePackage) {
+            await prisma.$transaction([
+                prisma.coinPackage.update({
+                    where: { id: activePackage.id },
+                    data: {
+                        remainingCoins: { increment: coinsToAdd },
+                        totalCoins: { increment: coinsToAdd },
+                    },
+                }),
+                prisma.coinTransaction.create({
+                    data: {
+                        packageId: activePackage.id,
+                        type: "ADJUSTMENT",
+                        coinsUsed: -coinsToAdd, // negative = added
+                        description: `[เพิ่ม] ${reason}`,
+                        processedById: session.user.id,
+                    },
+                }),
+            ]);
+        } else {
+            // No active package — create a new one
+            const newPkg = await prisma.coinPackage.create({
+                data: {
+                    userId,
+                    packageType: "ADJUSTMENT",
+                    totalCoins: coinsToAdd,
+                    remainingCoins: coinsToAdd,
+                    pricePaid: 0,
+                },
+            });
+            await prisma.coinTransaction.create({
+                data: {
+                    packageId: newPkg.id,
+                    type: "ADJUSTMENT",
+                    coinsUsed: -coinsToAdd,
+                    description: `[เพิ่ม] ${reason}`,
+                    processedById: session.user.id,
+                },
+            });
+        }
+
+        revalidatePath("/members");
+        revalidatePath("/coins");
+        return { success: true };
+    } catch (err) {
+        console.error("adjustCoinsUp error:", err);
+        return { error: `เกิดข้อผิดพลาด: ${err instanceof Error ? err.message : "Unknown"}` };
+    }
+}
+
+// ===== Top-Up Request Actions =====
+
+export async function createTopUpRequest(packageType: string, slipNote?: string) {
     const session = await auth();
-    if (!session?.user) return { error: "Unauthorized" };
-
-    const packageId = formData.get("packageId") as string;
-    const days = parseInt(formData.get("days") as string);
-    const note = formData.get("note") as string;
-
-    if (!packageId || isNaN(days) || days <= 0) {
-        return { error: "ข้อมูลไม่ถูกต้อง" };
+    if (!session?.user || session.user.type !== "USER") {
+        return { error: "Unauthorized" };
     }
 
-    const pkg = await prisma.coinPackage.findUnique({ where: { id: packageId } });
-    if (!pkg || !pkg.expiresAt) return { error: "ไม่พบแพ็คเกจ" };
+    const pkgConfig = await getPackageByKey(packageType);
+    if (!pkgConfig) return { error: "แพ็คเกจไม่ถูกต้อง" };
 
-    const newExpiry = new Date(pkg.expiresAt);
-    newExpiry.setDate(newExpiry.getDate() + days);
+    // Check if user already has a pending request
+    const pending = await prisma.topUpRequest.findFirst({
+        where: { userId: session.user.id, status: "PENDING" },
+    });
+    if (pending) {
+        return { error: "คุณมีคำขอเติมเหรียญที่รอดำเนินการอยู่แล้ว กรุณารอ admin ตรวจสอบ" };
+    }
 
-    await prisma.coinPackage.update({
-        where: { id: packageId },
+    await prisma.topUpRequest.create({
         data: {
-            expiresAt: newExpiry,
-            isExtended: true,
-            extendedAt: new Date(),
-            extendedBy: session.user.id,
-            note: note || null,
-            isExpired: false,
+            userId: session.user.id,
+            packageType,
+            coins: pkgConfig.coins,
+            amount: pkgConfig.price,
+            slipNote: slipNote || null,
         },
     });
 
-    revalidatePath("/coins");
+    revalidatePath("/user/coins");
     return { success: true };
 }
+
+export async function getUserTopUpRequests() {
+    const session = await auth();
+    if (!session?.user) return [];
+
+    return prisma.topUpRequest.findMany({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+    });
+}
+
+export async function getPendingTopUps() {
+    return prisma.topUpRequest.findMany({
+        where: { status: "PENDING" },
+        include: { user: true },
+        orderBy: { createdAt: "asc" },
+    });
+}
+
+export async function getAllTopUps() {
+    return prisma.topUpRequest.findMany({
+        include: { user: true, processedBy: true },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+    });
+}
+
+export async function processTopUp(requestId: string, action: "APPROVED" | "REJECTED", adminNote?: string) {
+    const session = await auth();
+    if (!session?.user || session.user.type !== "ADMIN") {
+        return { error: "Unauthorized" };
+    }
+
+    const request = await prisma.topUpRequest.findUnique({
+        where: { id: requestId },
+    });
+    if (!request) return { error: "ไม่พบคำขอ" };
+    if (request.status !== "PENDING") return { error: "คำขอนี้ถูกดำเนินการแล้ว" };
+
+    if (action === "APPROVED") {
+        const pkgConfig = await getPackageByKey(request.packageType);
+        const coins = pkgConfig ? pkgConfig.coins : request.coins;
+        const bonus = pkgConfig ? pkgConfig.bonus : 0;
+
+        await prisma.$transaction([
+            prisma.topUpRequest.update({
+                where: { id: requestId },
+                data: {
+                    status: "APPROVED",
+                    adminNote: adminNote || null,
+                    processedById: session.user.id,
+                    processedAt: new Date(),
+                },
+            }),
+            prisma.coinPackage.create({
+                data: {
+                    userId: request.userId,
+                    packageType: request.packageType,
+                    totalCoins: coins,
+                    remainingCoins: coins,
+                    pricePaid: request.amount,
+                    bonusAmount: bonus,
+                },
+            }),
+        ]);
+    } else {
+        await prisma.topUpRequest.update({
+            where: { id: requestId },
+            data: {
+                status: "REJECTED",
+                adminNote: adminNote || null,
+                processedById: session.user.id,
+                processedAt: new Date(),
+            },
+        });
+    }
+
+    revalidatePath("/coins");
+    revalidatePath("/coins/top-ups");
+    revalidatePath("/user/coins");
+    return { success: true };
+}
+

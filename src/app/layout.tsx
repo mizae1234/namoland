@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Kanit } from "next/font/google";
 import "./globals.css";
 
@@ -18,6 +18,12 @@ export const metadata: Metadata = {
   description: "Namoland System for Book Borrowing and Coin Management",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -26,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="th">
       <body
-        className={`${inter.variable} ${kanit.variable} font-sans antialiased bg-slate-50 text-slate-800`}
+        className={`${inter.variable} ${kanit.variable} font-sans antialiased bg-[#f4f1de] text-[#3d405b]`}
       >
         {children}
       </body>

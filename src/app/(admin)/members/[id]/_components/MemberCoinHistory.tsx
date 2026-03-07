@@ -1,13 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
+import { ArrowUpCircle, ArrowDownCircle, RefreshCw, ChevronDown, ChevronUp, Filter } from "lucide-react";
 
 type Transaction = {
     id: string;
     type: string;
     coinsUsed: number;
     className: string | null;
+    description: string | null;
     createdAt: string | Date;
 };
 
@@ -19,214 +22,342 @@ type Package = {
     pricePaid: number | string;
     bonusAmount: number | string;
     isExpired: boolean;
+    isExtended: boolean;
     expiresAt: string | Date | null;
+    note: string | null;
+    paymentMethod: string | null;
     createdAt: string | Date;
     transactions: Transaction[];
 };
 
-type HistoryRow = {
+type BorrowRecord = {
+    id: string;
+    code: string;
+    status: string;
+    rentalCoins: number;
+    depositCoins: number;
+    lateFeeCoins: number;
+    damageFeeCoins: number;
+    depositReturned: boolean;
+    depositForfeited: boolean;
+    borrowDate: string | Date;
+    returnDate: string | Date | null;
+    createdAt: string | Date;
+    items: Array<{ book: { title: string } }>;
+};
+
+type ExpiryLogEntry = {
+    id: string;
+    previousDate: string | Date | null;
+    newDate: string | Date;
+    note: string | null;
+    performedBy: string;
+    createdAt: string | Date;
+};
+
+// Unified timeline event
+type TimelineEvent = {
     date: Date;
-    month: string;
+    type: "IN" | "OUT" | "REFUND" | "ADJUST";
     label: string;
-    className: string | null;
-    amount: number;
-    coinPurchase: number;
-    coinUsage: number;
-    balance: number;
-    validUntil: string | null;
-    isExpired: boolean;
-    isPurchase: boolean;
+    detail: string | null;
+    coins: number;
+    source: string;
 };
 
-const TX_TYPE_MAP: Record<string, string> = {
-    CLASS_FEE: "ค่าเรียน",
-    BOOK_RENTAL: "ค่ายืมหนังสือ",
-    BOOK_DEPOSIT: "เงินมัดจำ",
-    BOOK_DEPOSIT_RETURN: "คืนมัดจำ",
-    BOOK_LATE_FEE: "ค่าปรับช้า",
-    BOOK_DAMAGE_FEE: "ค่าปรับเสียหาย",
-    DEPOSIT_FORFEIT: "ยึดมัดจำ",
-    EXPIRED: "หมดอายุ",
-    ADJUSTMENT: "ปรับเหรียญ",
-    EXTENSION: "ขยายเวลา",
+const TX_TYPE_MAP: Record<string, { label: string; type: TimelineEvent["type"] }> = {
+    CLASS_FEE: { label: "ค่าเรียน", type: "OUT" },
+    BOOK_RENTAL: { label: "ค่ายืมหนังสือ", type: "OUT" },
+    BOOK_DEPOSIT: { label: "มัดจำหนังสือ", type: "OUT" },
+    BOOK_DEPOSIT_RETURN: { label: "คืนมัดจำ", type: "REFUND" },
+    BOOK_LATE_FEE: { label: "ค่าปรับช้า", type: "OUT" },
+    BOOK_DAMAGE_FEE: { label: "ค่าปรับเสียหาย", type: "OUT" },
+    DEPOSIT_FORFEIT: { label: "ยึดมัดจำ", type: "OUT" },
+    EXPIRED: { label: "หมดอายุ", type: "OUT" },
+    ADJUSTMENT: { label: "ปรับเหรียญ", type: "ADJUST" },
+    EXTENSION: { label: "ขยายเวลา", type: "ADJUST" },
 };
 
-const MONTH_NAMES = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
+const PAYMENT_MAP: Record<string, string> = {
+    CASH: "เงินสด",
+    TRANSFER: "เงินโอน",
+};
 
-export default function MemberCoinHistory({ packages }: { packages: Package[] }) {
-    // Build all events: purchases + transactions
-    const rows: HistoryRow[] = [];
+type FilterType = "ALL" | "IN" | "OUT";
 
-    // Add package purchases
+export default function MemberCoinHistory({
+    packages,
+    borrowRecords,
+    expiryLogs,
+}: {
+    packages: Package[];
+    borrowRecords?: BorrowRecord[];
+    expiryLogs?: ExpiryLogEntry[];
+}) {
+    const [filterType, setFilterType] = useState<FilterType>("ALL");
+    const [expanded, setExpanded] = useState(true);
+
+    // Build unified timeline
+    const events: TimelineEvent[] = [];
+
+    // 1. Package purchases (coins IN)
     for (const pkg of packages) {
-        rows.push({
+        events.push({
             date: new Date(pkg.createdAt),
-            month: MONTH_NAMES[new Date(pkg.createdAt).getMonth()],
-            label: `ซื้อแพ็คเกจ ${pkg.packageType.replace("_", " ")}`,
-            className: null,
-            amount: Number(pkg.pricePaid),
-            coinPurchase: pkg.totalCoins,
-            coinUsage: 0,
-            balance: 0, // will compute after sorting
-            validUntil: pkg.expiresAt
-                ? format(new Date(pkg.expiresAt), "d-MMM-yy", { locale: th })
-                : null,
-            isExpired: false,
-            isPurchase: true,
+            type: "IN",
+            label: `ซื้อแพ็คเกจ ${pkg.packageType.replace(/_/g, " ")}`,
+            detail: [
+                `${Number(pkg.pricePaid).toLocaleString()} บาท`,
+                pkg.paymentMethod ? PAYMENT_MAP[pkg.paymentMethod] || pkg.paymentMethod : null,
+                pkg.note,
+            ].filter(Boolean).join(" · "),
+            coins: pkg.totalCoins,
+            source: "purchase",
         });
 
-        // Add transactions for this package
+        // Package transactions
         for (const tx of pkg.transactions) {
-            rows.push({
+            const config = TX_TYPE_MAP[tx.type] || { label: tx.type, type: "OUT" as const };
+            events.push({
                 date: new Date(tx.createdAt),
-                month: MONTH_NAMES[new Date(tx.createdAt).getMonth()],
-                label: TX_TYPE_MAP[tx.type] || tx.type,
-                className: tx.className || null,
-                amount: tx.type === "CLASS_FEE" ? -(Number(pkg.pricePaid) / pkg.totalCoins * tx.coinsUsed) : 0,
-                coinPurchase: 0,
-                coinUsage: tx.coinsUsed,
-                balance: 0,
-                validUntil: pkg.expiresAt
-                    ? format(new Date(pkg.expiresAt), "d-MMM-yy", { locale: th })
-                    : null,
-                isExpired: tx.type === "EXPIRED",
-                isPurchase: false,
+                type: config.type,
+                label: config.label,
+                detail: tx.className || tx.description || null,
+                coins: tx.coinsUsed,
+                source: "transaction",
+            });
+        }
+
+        // Expired package
+        if (pkg.isExpired && pkg.remainingCoins === 0) {
+            const expiryDate = pkg.expiresAt ? new Date(pkg.expiresAt) : new Date(pkg.createdAt);
+            // Only add if no EXPIRED transaction already exists
+            const hasExpiredTx = pkg.transactions.some(t => t.type === "EXPIRED");
+            if (!hasExpiredTx && pkg.expiresAt) {
+                events.push({
+                    date: expiryDate,
+                    type: "OUT",
+                    label: "หมดอายุ",
+                    detail: `แพ็คเกจ ${pkg.packageType.replace(/_/g, " ")}`,
+                    coins: 0,
+                    source: "expiry",
+                });
+            }
+        }
+    }
+
+    // 2. Expiry extension logs
+    if (expiryLogs) {
+        for (const log of expiryLogs) {
+            const prev = log.previousDate
+                ? format(new Date(log.previousDate), "d MMM yy", { locale: th })
+                : "ไม่มี";
+            const next = format(new Date(log.newDate), "d MMM yy", { locale: th });
+            events.push({
+                date: new Date(log.createdAt),
+                type: "ADJUST",
+                label: "ขยายเวลาหมดอายุ",
+                detail: [`${prev} → ${next}`, log.note].filter(Boolean).join(" · "),
+                coins: 0,
+                source: "expiry_extend",
             });
         }
     }
 
-    // Sort by date ascending
-    rows.sort((a, b) => a.date.getTime() - b.date.getTime());
+    // 3. Borrow-related events (from BorrowRecords — only events NOT already in CoinTransaction)
+    if (borrowRecords) {
+        for (const br of borrowRecords) {
+            const bookNames = br.items.map(i => i.book.title).join(", ");
 
-    // Compute running balance
-    let balance = 0;
-    for (const row of rows) {
-        balance = balance + row.coinPurchase - row.coinUsage;
-        row.balance = balance;
+            // Rental coin deduction (on reservation)
+            if (br.rentalCoins > 0) {
+                events.push({
+                    date: new Date(br.createdAt),
+                    type: "OUT",
+                    label: "ค่ายืมหนังสือ (จอง)",
+                    detail: bookNames,
+                    coins: br.rentalCoins,
+                    source: `borrow-rental-${br.id}`,
+                });
+            }
+
+            // Deposit deduction (on approval)
+            if (br.depositCoins > 0 && br.status !== "RESERVED") {
+                events.push({
+                    date: new Date(br.borrowDate),
+                    type: "OUT",
+                    label: "มัดจำหนังสือ",
+                    detail: bookNames,
+                    coins: br.depositCoins,
+                    source: `borrow-deposit-${br.id}`,
+                });
+            }
+
+            // Deposit returned
+            if (br.depositReturned && br.returnDate) {
+                events.push({
+                    date: new Date(br.returnDate),
+                    type: "REFUND",
+                    label: "คืนมัดจำ",
+                    detail: bookNames,
+                    coins: br.depositCoins,
+                    source: `borrow-refund-${br.id}`,
+                });
+            }
+
+            // Late fee
+            if (br.lateFeeCoins > 0 && br.returnDate) {
+                events.push({
+                    date: new Date(br.returnDate),
+                    type: "OUT",
+                    label: "ค่าปรับล่าช้า",
+                    detail: bookNames,
+                    coins: br.lateFeeCoins,
+                    source: `borrow-late-${br.id}`,
+                });
+            }
+
+            // Deposit forfeited
+            if (br.depositForfeited) {
+                events.push({
+                    date: new Date(br.returnDate || br.borrowDate),
+                    type: "OUT",
+                    label: "ยึดมัดจำ",
+                    detail: bookNames,
+                    coins: br.depositCoins,
+                    source: `borrow-forfeit-${br.id}`,
+                });
+            }
+        }
     }
 
-    // Compute monthly end balances
-    const monthlyBalances: Record<string, number> = {};
-    for (const row of rows) {
-        const key = `${row.date.getFullYear()}-${row.date.getMonth()}`;
-        monthlyBalances[key] = row.balance;
-    }
-
-    // Get unique months for sidebar
-    const uniqueMonths = Object.entries(monthlyBalances).map(([key, bal]) => {
-        const [year, month] = key.split("-").map(Number);
-        return { year, month, balance: bal, label: MONTH_NAMES[month] };
+    // Deduplicate: if a CoinTransaction already covers a borrow event, remove the borrow-generated one
+    // Simple approach: remove borrow-rental and borrow-deposit events if matching CoinTransaction exists
+    const txDates = new Set(
+        events
+            .filter(e => e.source === "transaction")
+            .map(e => `${e.label}-${e.date.getTime()}`)
+    );
+    const dedupedEvents = events.filter(e => {
+        if (e.source.startsWith("borrow-")) {
+            const key = `${e.label}-${e.date.getTime()}`;
+            return !txDates.has(key);
+        }
+        return true;
     });
-    uniqueMonths.sort((a, b) => a.year - b.year || a.month - b.month);
 
-    if (rows.length === 0) {
+    // Sort by date descending (newest first)
+    dedupedEvents.sort((a, b) => b.date.getTime() - a.date.getTime());
+
+    // Apply filter
+    const filteredEvents = dedupedEvents.filter(e => {
+        if (filterType === "ALL") return true;
+        if (filterType === "IN") return e.type === "IN" || e.type === "REFUND";
+        return e.type === "OUT";
+    });
+
+    // Compute summary
+    const totalIn = dedupedEvents.filter(e => e.type === "IN" || e.type === "REFUND").reduce((s, e) => s + e.coins, 0);
+    const totalOut = dedupedEvents.filter(e => e.type === "OUT").reduce((s, e) => s + e.coins, 0);
+
+    if (dedupedEvents.length === 0) {
         return (
-            <div className="p-6 text-center text-slate-400 text-sm">
+            <div className="p-6 text-center text-[#3d405b]/40 text-sm">
                 ยังไม่มีประวัติเหรียญ
             </div>
         );
     }
 
+    const typeConfig = {
+        IN: { icon: ArrowUpCircle, color: "text-emerald-600", bg: "bg-emerald-50", sign: "+" },
+        OUT: { icon: ArrowDownCircle, color: "text-red-500", bg: "bg-red-50", sign: "-" },
+        REFUND: { icon: RefreshCw, color: "text-blue-500", bg: "bg-blue-50", sign: "+" },
+        ADJUST: { icon: RefreshCw, color: "text-amber-500", bg: "bg-amber-50", sign: "~" },
+    };
+
     return (
-        <div className="flex gap-6">
-            {/* Main Table */}
-            <div className="flex-1 overflow-x-auto">
-                <table className="w-full text-sm">
-                    <thead>
-                        <tr className="bg-slate-50 border-b border-slate-200">
-                            <th className="text-left px-3 py-2.5 font-semibold text-slate-600">วันที่</th>
-                            <th className="text-left px-3 py-2.5 font-semibold text-slate-600">เดือน</th>
-                            <th className="text-left px-3 py-2.5 font-semibold text-slate-600">รายการ / คลาส</th>
-                            <th className="text-right px-3 py-2.5 font-semibold text-slate-600">จำนวนเงิน</th>
-                            <th className="text-center px-3 py-2.5 font-semibold text-slate-600" colSpan={2}>
-                                <div className="flex">
-                                    <span className="flex-1 text-center">ซื้อ</span>
-                                    <span className="flex-1 text-center">ใช้</span>
-                                </div>
-                            </th>
-                            <th className="text-right px-3 py-2.5 font-semibold text-slate-600">คงเหลือ</th>
-                            <th className="text-right px-3 py-2.5 font-semibold text-slate-600">ใช้ได้ถึง</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows.map((row, i) => (
-                            <tr
-                                key={i}
-                                className={`border-b border-slate-50 ${row.isExpired
-                                        ? "bg-red-50 text-red-700"
-                                        : row.isPurchase
-                                            ? "bg-blue-50/40"
-                                            : "hover:bg-slate-50/50"
-                                    }`}
-                            >
-                                <td className="px-3 py-2.5 text-slate-600 font-mono text-xs whitespace-nowrap">
-                                    {format(row.date, "d-MMM-yy", { locale: th })}
-                                </td>
-                                <td className="px-3 py-2.5 text-slate-500 text-xs">
-                                    {row.month}
-                                </td>
-                                <td className="px-3 py-2.5">
-                                    <span className={`text-xs ${row.isExpired ? "text-red-600 font-semibold" : "text-slate-700"}`}>
-                                        {row.label}
-                                    </span>
-                                    {row.className && (
-                                        <span className="ml-2 text-xs text-slate-400">
-                                            {row.className}
-                                        </span>
-                                    )}
-                                </td>
-                                <td className="px-3 py-2.5 text-right font-mono text-xs">
-                                    {row.amount !== 0 ? (
-                                        <span className={row.amount > 0 ? "text-slate-700" : "text-red-500"}>
-                                            {row.amount > 0 ? "" : "("}
-                                            {Math.abs(row.amount).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            {row.amount > 0 ? "" : ")"}
-                                        </span>
-                                    ) : ""}
-                                </td>
-                                <td className="px-3 py-2.5 text-center font-mono text-xs text-blue-600 font-medium w-[60px]">
-                                    {row.coinPurchase > 0 ? row.coinPurchase : ""}
-                                </td>
-                                <td className="px-3 py-2.5 text-center font-mono text-xs text-red-500 w-[60px]">
-                                    {row.coinUsage > 0 ? row.coinUsage : ""}
-                                </td>
-                                <td className={`px-3 py-2.5 text-right font-mono text-xs font-semibold ${row.balance === 0 && row.isExpired ? "text-red-600" : "text-slate-800"
-                                    }`}>
-                                    {row.balance}
-                                </td>
-                                <td className="px-3 py-2.5 text-right text-xs text-slate-400 whitespace-nowrap">
-                                    {row.validUntil || ""}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+        <div>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-3 gap-3 p-4 border-b border-[#d1cce7]/20">
+                <div className="bg-emerald-50 rounded-xl p-3 text-center">
+                    <p className="text-xs text-emerald-600/60 mb-1">เข้า (ซื้อ/คืน)</p>
+                    <p className="text-lg font-bold text-emerald-600">+{totalIn}</p>
+                </div>
+                <div className="bg-red-50 rounded-xl p-3 text-center">
+                    <p className="text-xs text-red-500/60 mb-1">ออก (ใช้/หัก)</p>
+                    <p className="text-lg font-bold text-red-500">-{totalOut}</p>
+                </div>
+                <div className="bg-[#f4f1de] rounded-xl p-3 text-center">
+                    <p className="text-xs text-[#3d405b]/40 mb-1">สุทธิ</p>
+                    <p className={`text-lg font-bold ${totalIn - totalOut >= 0 ? "text-[#609279]" : "text-red-500"}`}>
+                        {totalIn - totalOut}
+                    </p>
+                </div>
             </div>
 
-            {/* Monthly Balance Sidebar */}
-            {uniqueMonths.length > 0 && (
-                <div className="w-[160px] shrink-0">
-                    <div className="bg-slate-50 rounded-xl p-3 sticky top-4">
-                        <h4 className="text-xs font-semibold text-slate-500 mb-2">
-                            Balance at month end
-                        </h4>
-                        <div className="space-y-1">
-                            {uniqueMonths.map((m, i) => (
-                                <div
-                                    key={i}
-                                    className="flex justify-between text-xs"
-                                >
-                                    <span className="text-slate-500">{m.label}</span>
-                                    <span className={`font-mono font-medium ${m.balance === 0 ? "text-red-500" : "text-slate-800"}`}>
-                                        {m.balance}
-                                    </span>
+            {/* Filter + Toggle */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[#d1cce7]/10">
+                <div className="flex gap-1.5">
+                    {([["ALL", "ทั้งหมด"], ["IN", "เข้า"], ["OUT", "ออก"]] as [FilterType, string][]).map(([val, label]) => (
+                        <button
+                            key={val}
+                            onClick={() => setFilterType(val)}
+                            className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${filterType === val
+                                ? "bg-[#609279] text-white"
+                                : "bg-[#f4f1de]/50 text-[#3d405b]/40 hover:text-[#3d405b]/60"
+                                }`}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+                <button
+                    onClick={() => setExpanded(!expanded)}
+                    className="text-xs text-[#3d405b]/40 flex items-center gap-1 hover:text-[#3d405b]/60"
+                >
+                    {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    {filteredEvents.length} รายการ
+                </button>
+            </div>
+
+            {/* Timeline */}
+            {expanded && (
+                <div className="divide-y divide-[#d1cce7]/10">
+                    {filteredEvents.map((event, i) => {
+                        const config = typeConfig[event.type];
+                        const Icon = config.icon;
+                        return (
+                            <div key={`${event.source}-${i}`} className="flex items-start gap-3 px-4 py-3 hover:bg-[#f4f1de]/20 transition-colors">
+                                {/* Icon */}
+                                <div className={`w-8 h-8 rounded-lg ${config.bg} flex items-center justify-center shrink-0 mt-0.5`}>
+                                    <Icon size={14} className={config.color} />
                                 </div>
-                            ))}
-                        </div>
-                    </div>
+
+                                {/* Content */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div>
+                                            <p className="text-sm font-medium text-[#3d405b]">{event.label}</p>
+                                            {event.detail && (
+                                                <p className="text-xs text-[#3d405b]/40 mt-0.5 truncate">{event.detail}</p>
+                                            )}
+                                        </div>
+                                        <span className={`text-sm font-bold shrink-0 ${event.type === "IN" || event.type === "REFUND"
+                                            ? "text-emerald-600"
+                                            : event.type === "OUT"
+                                                ? "text-red-500"
+                                                : "text-amber-500"
+                                            }`}>
+                                            {config.sign}{event.coins}
+                                        </span>
+                                    </div>
+                                    <p className="text-[10px] text-[#3d405b]/30 mt-1">
+                                        {format(event.date, "d MMM yyyy · HH:mm", { locale: th })}
+                                    </p>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             )}
         </div>

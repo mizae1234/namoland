@@ -10,7 +10,7 @@ export default async function UserLayout({ children }: { children: React.ReactNo
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 pb-20">
+        <div className="min-h-screen bg-[#f4f1de] pb-20">
             <main className="max-w-lg mx-auto">{children}</main>
             <UserNav />
         </div>

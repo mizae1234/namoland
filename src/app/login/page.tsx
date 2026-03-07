@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { LogIn, Eye, EyeOff } from "lucide-react";
 import AlertMessage from "@/components/ui/AlertMessage";
+import Image from "next/image";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -39,51 +40,49 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-[#f4f1de] via-white to-[#d1cce7]/30 flex items-center justify-center p-4">
             <div className="w-full max-w-md">
                 {/* Logo Section */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500 rounded-2xl mb-4 shadow-lg shadow-blue-200">
-                        <span className="text-white text-2xl font-bold">N</span>
-                    </div>
-                    <h1 className="text-2xl font-bold text-slate-800">Namoland</h1>
-                    <p className="text-slate-500 mt-1">ระบบจัดการนโมแลนด์</p>
+                    <Image src="/namoland-logo.png" alt="Namoland" width={64} height={64} className="w-16 h-16 rounded-2xl mx-auto mb-4 shadow-lg shadow-[#a16b9f]/20" />
+                    <h1 className="text-2xl font-bold text-[#3d405b]">Namoland</h1>
+                    <p className="text-[#3d405b]/50 mt-1">ระบบจัดการนโมแลนด์</p>
                 </div>
 
                 {/* Login Card */}
-                <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 p-8 border border-slate-100">
-                    <h2 className="text-xl font-semibold text-slate-800 mb-6">เข้าสู่ระบบ Admin</h2>
+                <div className="bg-white rounded-2xl shadow-xl shadow-[#a16b9f]/10 p-8 border border-[#d1cce7]/20">
+                    <h2 className="text-xl font-semibold text-[#3d405b] mb-6">เข้าสู่ระบบ Admin</h2>
 
                     <AlertMessage message={error} />
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div>
-                            <label className="block text-sm font-medium text-slate-600 mb-2">อีเมล</label>
+                            <label className="block text-sm font-medium text-[#3d405b]/70 mb-2">อีเมล</label>
                             <input
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                                className="w-full px-4 py-3 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#a16b9f] focus:ring-2 focus:ring-[#a16b9f]/20 outline-none transition-all"
                                 placeholder="admin@namoland.com"
                                 required
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-600 mb-2">รหัสผ่าน</label>
+                            <label className="block text-sm font-medium text-[#3d405b]/70 mb-2">รหัสผ่าน</label>
                             <div className="relative">
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all pr-12"
+                                    className="w-full px-4 py-3 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#a16b9f] focus:ring-2 focus:ring-[#a16b9f]/20 outline-none transition-all pr-12"
                                     placeholder="••••••••"
                                     required
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3d405b]/40 hover:text-[#3d405b]/70"
                                 >
                                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                 </button>
@@ -93,7 +92,7 @@ export default function LoginPage() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full py-3 bg-gradient-to-r from-[#609279] to-[#a16b9f] hover:from-[#81b29a] hover:to-[#a16b9f] text-white font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-[#a16b9f]/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loading ? (
                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -107,7 +106,7 @@ export default function LoginPage() {
                     </form>
                 </div>
 
-                <p className="text-center text-xs text-slate-400 mt-6">
+                <p className="text-center text-xs text-[#3d405b]/40 mt-6">
                     © 2026 Namoland. All rights reserved.
                 </p>
             </div>

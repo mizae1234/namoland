@@ -247,6 +247,7 @@ export async function returnBooks(formData: FormData) {
     const borrowId = formData.get("borrowId") as string;
     const damagedItemsJson = formData.get("damagedItems") as string;
     const damagedItems: string[] = damagedItemsJson ? JSON.parse(damagedItemsJson) : [];
+    const customDamageFeeStr = formData.get("customDamageFee") as string;
 
     const record = await prisma.borrowRecord.findUnique({
         where: { id: borrowId },
@@ -257,8 +258,25 @@ export async function returnBooks(formData: FormData) {
 
     const now = new Date();
     const { feeCoins, forfeitDeposit } = calculateLateFee(record.dueDate, now);
-    const damageCount = damagedItems.length;
-    const damageFee = damageCount * DAMAGE_FEE_PER_BOOK;
+    // Use custom damage fee if provided, otherwise fall back to per-book constant
+    const damageFee = customDamageFeeStr ? parseInt(customDamageFeeStr) : damagedItems.length * DAMAGE_FEE_PER_BOOK;
+
+    // Check if user has OTHER active borrowed records (excluding this one)
+    const otherActiveBorrows = await prisma.borrowRecord.count({
+        where: {
+            userId: record.userId,
+            id: { not: borrowId },
+            status: "BORROWED",
+            depositReturned: false,
+            depositForfeited: false,
+        },
+    });
+    const isLastBorrow = otherActiveBorrows === 0;
+
+    // Only return deposit if this is the last active borrow AND not forfeited
+    const shouldReturnDeposit = isLastBorrow && !forfeitDeposit && record.depositCoins > 0;
+    // For records with depositCoins=0 (shared deposit), just mark as returned
+    const shouldMarkReturned = record.depositCoins === 0 ? true : shouldReturnDeposit;
 
     const updates = [];
 
@@ -271,12 +289,40 @@ export async function returnBooks(formData: FormData) {
                 returnDate: now,
                 lateFeeCoins: feeCoins,
                 damageFeeCoins: damageFee,
-                depositReturned: !forfeitDeposit,
+                depositReturned: shouldMarkReturned,
                 depositForfeited: forfeitDeposit,
                 returnedById: session.user.id,
             },
         })
     );
+
+    // If this is the last borrow and deposit is returned, also mark all other
+    // RETURNED records (with depositCoins=0) as depositReturned
+    if (shouldReturnDeposit) {
+        updates.push(
+            prisma.borrowRecord.updateMany({
+                where: {
+                    userId: record.userId,
+                    status: "RETURNED",
+                    depositReturned: false,
+                    depositForfeited: false,
+                    depositCoins: 0,
+                },
+                data: { depositReturned: true },
+            })
+        );
+
+        // Refund deposit coins to the earliest active package
+        const refundPkg = record.user.coinPackages[0];
+        if (refundPkg) {
+            updates.push(
+                prisma.coinPackage.update({
+                    where: { id: refundPkg.id },
+                    data: { remainingCoins: { increment: record.depositCoins } },
+                })
+            );
+        }
+    }
 
     // Mark damaged items
     for (const itemId of damagedItems) {
@@ -303,13 +349,15 @@ export async function returnBooks(formData: FormData) {
     revalidatePath("/borrows");
     revalidatePath("/members");
     revalidatePath("/books");
+    revalidatePath("/user");
 
     return {
         success: true,
         lateFee: feeCoins,
         damageFee,
         forfeitDeposit,
-        depositReturned: !forfeitDeposit ? BORROW_DEPOSIT_COINS : 0,
+        depositReturned: shouldReturnDeposit ? record.depositCoins : 0,
+        isLastBorrow,
     };
 }
 
@@ -390,14 +438,14 @@ export async function reserveBook(bookId: string) {
     });
     if (existingReserve) return { error: "คุณจองหนังสือเล่มนี้อยู่แล้ว" };
 
-    // Get user's coin packages
+    // Get user's coin packages — only hold RENTAL coins (not deposit yet)
     const packages = await prisma.coinPackage.findMany({
         where: { userId, isExpired: false, remainingCoins: { gt: 0 } },
         orderBy: { createdAt: "asc" },
     });
 
     const totalCoins = packages.reduce((sum, p) => sum + p.remainingCoins, 0);
-    const requiredCoins = BORROW_DEPOSIT_COINS + BORROW_RENTAL_COINS;
+    const requiredCoins = BORROW_RENTAL_COINS; // Only rental on reserve
 
     if (totalCoins < requiredCoins) {
         return { error: `เหรียญไม่เพียงพอ (ต้องการ ${requiredCoins} เหรียญ, มี ${totalCoins})` };
@@ -412,7 +460,7 @@ export async function reserveBook(bookId: string) {
     const dueDate = new Date(now);
     dueDate.setDate(dueDate.getDate() + BORROW_DURATION_DAYS);
 
-    // Deduct coins
+    // Deduct ONLY rental coins
     let remaining = requiredCoins;
     const deductions: { packageId: string; amount: number }[] = [];
 
@@ -431,6 +479,8 @@ export async function reserveBook(bookId: string) {
                 status: "RESERVED",
                 borrowDate: now,
                 dueDate,
+                rentalCoins: BORROW_RENTAL_COINS,
+                depositCoins: 0, // Deposit not charged yet
                 items: {
                     create: [{ bookId }],
                 },
@@ -457,8 +507,25 @@ export async function reserveBook(bookId: string) {
         }),
     ]);
 
+    // Auto-update coinExpiryOverride if any package got a new expiresAt
+    const hasNewExpiry = deductions.some(d => !packages.find(p => p.id === d.packageId)?.firstUsedAt);
+    if (hasNewExpiry) {
+        const newExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { coinExpiryOverride: true },
+        });
+        if (!user?.coinExpiryOverride || newExpiresAt > new Date(user.coinExpiryOverride)) {
+            await prisma.user.update({
+                where: { id: userId },
+                data: { coinExpiryOverride: newExpiresAt },
+            });
+        }
+    }
+
     revalidatePath("/borrows");
     revalidatePath("/user");
+    revalidatePath("/user/books");
     return { success: true, code };
 }
 
@@ -470,21 +537,153 @@ export async function confirmReservation(borrowId: string) {
 
     const record = await prisma.borrowRecord.findUnique({
         where: { id: borrowId },
+        include: { user: true },
     });
 
     if (!record) return { error: "ไม่พบรายการ" };
     if (record.status !== "RESERVED") return { error: "รายการนี้ไม่ได้อยู่ในสถานะรอรับ" };
 
-    await prisma.borrowRecord.update({
-        where: { id: borrowId },
-        data: {
+    // Check how many active BORROWED books user has (with deposit already paid)
+    const activeBorrowedCount = await prisma.borrowRecord.count({
+        where: {
+            userId: record.userId,
             status: "BORROWED",
-            borrowDate: new Date(),
-            dueDate: new Date(Date.now() + BORROW_DURATION_DAYS * 24 * 60 * 60 * 1000),
-            processedById: session.user.id,
+            depositReturned: false,
+            depositForfeited: false,
         },
     });
 
+    // Deposit covers up to 5 books. If user already has active deposit, skip deposit charge.
+    const hasActiveDeposit = activeBorrowedCount > 0;
+    const depositToCharge = hasActiveDeposit ? 0 : BORROW_DEPOSIT_COINS;
+
+    const now = new Date();
+
+    if (depositToCharge > 0) {
+        // Need to deduct deposit coins
+        const packages = await prisma.coinPackage.findMany({
+            where: { userId: record.userId, isExpired: false, remainingCoins: { gt: 0 } },
+            orderBy: { createdAt: "asc" },
+        });
+
+        const totalCoins = packages.reduce((sum, p) => sum + p.remainingCoins, 0);
+
+        if (totalCoins < depositToCharge) {
+            return { error: `สมาชิกมีเหรียญไม่พอสำหรับมัดจำ (ต้องการ ${depositToCharge}, มี ${totalCoins})` };
+        }
+
+        let remaining = depositToCharge;
+        const deductions: { packageId: string; amount: number }[] = [];
+        for (const pkg of packages) {
+            if (remaining <= 0) break;
+            const deduct = Math.min(pkg.remainingCoins, remaining);
+            deductions.push({ packageId: pkg.id, amount: deduct });
+            remaining -= deduct;
+        }
+
+        await prisma.$transaction([
+            prisma.borrowRecord.update({
+                where: { id: borrowId },
+                data: {
+                    status: "BORROWED",
+                    borrowDate: now,
+                    dueDate: new Date(now.getTime() + BORROW_DURATION_DAYS * 24 * 60 * 60 * 1000),
+                    depositCoins: BORROW_DEPOSIT_COINS,
+                    processedById: session.user.id,
+                },
+            }),
+            ...deductions.map((d) =>
+                prisma.coinPackage.update({
+                    where: { id: d.packageId },
+                    data: { remainingCoins: { decrement: d.amount } },
+                })
+            ),
+        ]);
+    } else {
+        // No deposit needed — already covered by existing deposit
+        await prisma.borrowRecord.update({
+            where: { id: borrowId },
+            data: {
+                status: "BORROWED",
+                borrowDate: now,
+                dueDate: new Date(now.getTime() + BORROW_DURATION_DAYS * 24 * 60 * 60 * 1000),
+                depositCoins: 0, // No deposit charged for this record
+                processedById: session.user.id,
+            },
+        });
+    }
+
     revalidatePath("/borrows");
+    revalidatePath("/user");
     return { success: true };
+}
+
+export async function cancelReservation(borrowId: string) {
+    const session = await auth();
+    if (!session?.user) return { error: "กรุณาเข้าสู่ระบบก่อน" };
+
+    const record = await prisma.borrowRecord.findUnique({
+        where: { id: borrowId },
+        include: { items: true },
+    });
+
+    if (!record) return { error: "ไม่พบรายการ" };
+    if (record.status !== "RESERVED") return { error: "รายการนี้ไม่ได้อยู่ในสถานะจอง" };
+
+    // Only the owner or admin can cancel
+    if (session.user.type === "USER" && record.userId !== session.user.id) {
+        return { error: "ไม่มีสิทธิ์ยกเลิกรายการนี้" };
+    }
+
+    // Refund rental coins
+    const refundCoins = record.rentalCoins;
+    const packages = await prisma.coinPackage.findMany({
+        where: { userId: record.userId, isExpired: false },
+        orderBy: { createdAt: "asc" },
+    });
+
+    // Refund to the earliest non-expired package
+    const targetPkg = packages[0];
+    if (!targetPkg) return { error: "ไม่พบแพ็คเกจเหรียญสำหรับคืน" };
+
+    await prisma.$transaction([
+        // Refund coins
+        prisma.coinPackage.update({
+            where: { id: targetPkg.id },
+            data: { remainingCoins: { increment: refundCoins } },
+        }),
+        // Release books
+        ...record.items.map((item) =>
+            prisma.book.update({
+                where: { id: item.bookId },
+                data: { isAvailable: true },
+            })
+        ),
+        // Set status to CANCELLED (preserve history)
+        prisma.borrowRecord.update({
+            where: { id: borrowId },
+            data: {
+                status: "CANCELLED",
+                returnDate: new Date(),
+                depositReturned: false,
+                depositForfeited: false,
+            },
+        }),
+    ]);
+
+    revalidatePath("/borrows");
+    revalidatePath("/user");
+    revalidatePath("/user/books");
+    revalidatePath("/user/borrows");
+    return { success: true };
+}
+
+export async function rejectReservation(borrowId: string) {
+    const session = await auth();
+    if (!session?.user || session.user.type !== "ADMIN") {
+        return { error: "Unauthorized" };
+    }
+
+    // Reuse cancel logic — same coin refund
+    return cancelReservation(borrowId);
 }

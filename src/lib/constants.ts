@@ -31,6 +31,7 @@ export const BORROW_STATUS_MAP: Record<string, { label: string; className: strin
     RETURNED: { label: "คืนแล้ว", className: "bg-emerald-100 text-emerald-700" },
     OVERDUE: { label: "เกินกำหนด", className: "bg-red-100 text-red-700" },
     FORFEITED: { label: "ยึดมัดจำ", className: "bg-slate-200 text-slate-700" },
+    CANCELLED: { label: "ยกเลิก", className: "bg-orange-100 text-orange-700" },
 };
 
 export const COIN_TX_TYPE_MAP: Record<string, string> = {

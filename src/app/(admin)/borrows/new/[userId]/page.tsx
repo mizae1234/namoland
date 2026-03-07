@@ -66,13 +66,13 @@ export default function NewBorrowPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center py-20">
-                <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-[#609279] border-t-transparent rounded-full animate-spin" />
             </div>
         );
     }
 
     if (!member) {
-        return <div className="text-center py-20 text-slate-400">ไม่พบสมาชิก</div>;
+        return <div className="text-center py-20 text-[#3d405b]/40">ไม่พบสมาชิก</div>;
     }
 
     const totalCoins = member.coinPackages
@@ -83,33 +83,33 @@ export default function NewBorrowPage() {
         <div className="max-w-3xl">
             <BackLink href="/borrows/scan" label="กลับ" />
 
-            <h1 className="text-2xl font-bold text-slate-800 mb-2">ยืมหนังสือ</h1>
-            <p className="text-slate-500 mb-6">
-                สมาชิก: <span className="font-medium text-slate-700">{member.parentName}</span>
+            <h1 className="text-2xl font-bold text-[#3d405b] mb-2">ยืมหนังสือ</h1>
+            <p className="text-[#3d405b]/50 mb-6">
+                สมาชิก: <span className="font-medium text-[#3d405b]/80">{member.parentName}</span>
                 {" · "}เหรียญคงเหลือ: <span className="font-semibold text-emerald-600">{totalCoins}</span>
             </p>
 
             <AlertMessage message={error} />
 
             {/* Cost Preview */}
-            <div className="bg-blue-50 rounded-2xl p-4 mb-6 border border-blue-100">
-                <p className="text-sm font-medium text-blue-700">ค่าใช้จ่าย</p>
-                <div className="flex gap-6 mt-2 text-sm text-blue-600">
+            <div className="bg-[#81b29a]/10 rounded-2xl p-4 mb-6 border border-[#81b29a]/20">
+                <p className="text-sm font-medium text-[#609279]">ค่าใช้จ่าย</p>
+                <div className="flex gap-6 mt-2 text-sm text-[#609279]">
                     <span>ค่ามัดจำ: 5 เหรียญ</span>
                     <span>ค่าเช่า: 1 เหรียญ</span>
                     <span className="font-bold">รวม: 6 เหรียญ</span>
                 </div>
-                <p className="text-xs text-blue-400 mt-1">ระยะเวลายืม 14 วัน · สูงสุด 5 เล่ม</p>
+                <p className="text-xs text-[#81b29a] mt-1">ระยะเวลายืม 14 วัน · สูงสุด 5 เล่ม</p>
             </div>
 
             {/* Book Selection */}
             <Card className="mb-6">
-                <h2 className="font-semibold text-slate-800 mb-4">
+                <h2 className="font-semibold text-[#3d405b] mb-4">
                     เลือกหนังสือ ({selectedBooks.length}/5)
                 </h2>
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                     {books.length === 0 ? (
-                        <p className="text-slate-400 text-sm text-center py-4">ไม่มีหนังสือที่ว่าง</p>
+                        <p className="text-[#3d405b]/40 text-sm text-center py-4">ไม่มีหนังสือที่ว่าง</p>
                     ) : (
                         books.map((book) => {
                             const isSelected = selectedBooks.includes(book.id);
@@ -118,23 +118,23 @@ export default function NewBorrowPage() {
                                     key={book.id}
                                     onClick={() => toggleBook(book.id)}
                                     className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${isSelected
-                                        ? "border-blue-400 bg-blue-50"
-                                        : "border-slate-100 hover:border-blue-200 hover:bg-slate-50"
+                                        ? "border-[#81b29a] bg-[#81b29a]/10"
+                                        : "border-[#d1cce7]/20 hover:border-[#81b29a]/30 hover:bg-[#f4f1de]/50"
                                         }`}
                                 >
                                     <div
-                                        className={`w-6 h-6 rounded-lg flex items-center justify-center ${isSelected ? "bg-blue-500" : "bg-slate-200"
+                                        className={`w-6 h-6 rounded-lg flex items-center justify-center ${isSelected ? "bg-[#609279]" : "bg-[#d1cce7]/25"
                                             }`}
                                     >
                                         {isSelected && <Check size={14} className="text-white" />}
                                     </div>
                                     <div className="flex-1">
-                                        <p className="text-sm font-medium text-slate-700">{book.title}</p>
+                                        <p className="text-sm font-medium text-[#3d405b]/80">{book.title}</p>
                                         {book.category && (
-                                            <p className="text-xs text-slate-400">{book.category}</p>
+                                            <p className="text-xs text-[#3d405b]/40">{book.category}</p>
                                         )}
                                     </div>
-                                    <BookOpen size={16} className="text-slate-300" />
+                                    <BookOpen size={16} className="text-[#3d405b]/30" />
                                 </button>
                             );
                         })
@@ -145,7 +145,7 @@ export default function NewBorrowPage() {
             <button
                 onClick={handleSubmit}
                 disabled={submitting || selectedBooks.length === 0 || totalCoins < 6}
-                className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition-colors shadow-lg shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 bg-[#609279] hover:bg-[#609279] text-white font-medium rounded-xl transition-colors shadow-lg shadow-[#81b29a]/30 disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {submitting
                     ? "กำลังบันทึก..."

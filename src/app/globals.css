@@ -2,8 +2,24 @@
 
 @theme inline {
   --font-sans: var(--font-kanit), var(--font-inter), sans-serif;
-  --color-primary: #3B82F6;
-  --color-primary-light: #EBF5FF;
+
+  /* ─── Namoland Brand Colors ─── */
+  --color-brand-green: #81b29a;
+  --color-brand-green-dark: #609279;
+  --color-brand-blue: #3d405b;
+  --color-brand-purple: #a16b9f;
+  --color-brand-purple-light: #d1cce7;
+  --color-brand-orange: #e07a5f;
+  --color-brand-orange-dark: #e55f15;
+  --color-brand-pink: #ecb4ce;
+  --color-brand-cream: #f2cc8f;
+  --color-brand-offwhite: #f4f1de;
+  --color-brand-yellow: #f9b61a;
+  --color-brand-peach: #fab885;
+
+  /* ─── Semantic Tokens ─── */
+  --color-primary: #609279;
+  --color-primary-light: #81b29a;
 }
 
 @utility container {

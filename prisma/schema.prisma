@@ -13,11 +13,25 @@ model User {
   password      String?
   qrCode        String    @unique
   lineUserId    String?
+  coinExpiryOverride DateTime?
   children      Child[]
   coinPackages  CoinPackage[]
   borrowRecords BorrowRecord[]
+  topUpRequests TopUpRequest[]
+  expiryLogs    ExpiryLog[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+}
+
+model ExpiryLog {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  previousDate  DateTime?
+  newDate       DateTime
+  note          String?
+  performedBy   String
+  createdAt     DateTime  @default(now())
 }
 
 model Child {
@@ -37,6 +51,7 @@ model AdminUser {
   role        AdminRole @default(ADMIN)
   borrowRecords   BorrowRecord[]
   coinTransactions CoinTransaction[]
+  topUpRequests    TopUpRequest[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -44,6 +59,39 @@ model AdminUser {
 enum AdminRole {
   ADMIN
   SUPER_ADMIN
+}
+
+model ShopInfo {
+  id            String   @id @default(cuid())
+  shopName      String   @default("Namoland")
+  bankName      String?
+  accountNumber String?
+  accountName   String?
+  note          String?
+  updatedAt     DateTime @updatedAt
+}
+
+model TopUpRequest {
+  id            String       @id @default(cuid())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id])
+  packageType   String
+  coins         Int
+  amount        Decimal
+  status        TopUpStatus  @default(PENDING)
+  slipNote      String?
+  adminNote     String?
+  processedById String?
+  processedBy   AdminUser?   @relation(fields: [processedById], references: [id])
+  processedAt   DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+enum TopUpStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model CoinPackage {
@@ -62,6 +110,7 @@ model CoinPackage {
   extendedAt    DateTime?
   extendedBy    String?
   note          String?
+  paymentMethod String?
   transactions  CoinTransaction[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -141,6 +190,7 @@ enum BorrowStatus {
   RETURNED
   OVERDUE
   FORFEITED
+  CANCELLED
 }
 
 model BorrowItem {
@@ -151,4 +201,17 @@ model BorrowItem {
   book          Book      @relation(fields: [bookId], references: [id])
   isDamaged     Boolean   @default(false)
   damageNote    String?
+}
+
+model PackageConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  label     String
+  coins     Int
+  price     Int
+  bonus     Int      @default(0)
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

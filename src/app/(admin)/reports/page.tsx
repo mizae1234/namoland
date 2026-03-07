@@ -9,11 +9,11 @@ export default async function ReportsPage() {
     return (
         <div className="max-w-[1200px] mx-auto">
             <div className="mb-6">
-                <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
+                <h1 className="text-2xl font-bold text-[#3d405b] flex items-center gap-3">
                     <Coins size={24} className="text-amber-500" />
                     Outstanding Coin
                 </h1>
-                <p className="text-slate-500 mt-1">
+                <p className="text-[#3d405b]/50 mt-1">
                     สรุปยอดเหรียญคงเหลือในระบบ แยกตามเดือน
                 </p>
             </div>

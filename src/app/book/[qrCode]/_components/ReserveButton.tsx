@@ -47,7 +47,7 @@ export default function ReserveButton({ bookId }: { bookId: string }) {
             <button
                 onClick={handleReserve}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition-colors shadow-lg shadow-blue-200 disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 py-3 bg-[#609279] hover:bg-[#609279] text-white font-medium rounded-xl transition-colors shadow-lg shadow-[#81b29a]/30 disabled:opacity-50"
             >
                 <ShoppingCart size={20} />
                 {loading ? "กำลังจอง..." : "จองยืมหนังสือ (หัก 6 เหรียญ)"}

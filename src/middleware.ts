@@ -15,7 +15,6 @@ const adminRoutes = [
     "/owner",
 ];
 
-const protectedUserRoutes = ["/profile", "/coins", "/borrows"];
 
 export default auth((req) => {
     const { nextUrl } = req;
