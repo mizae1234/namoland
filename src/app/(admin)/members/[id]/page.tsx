@@ -1,14 +1,16 @@
 import { getMemberById } from "@/actions/member";
 import { getActivePackages } from "@/actions/packageConfig";
+import { getTopUpsByUser } from "@/actions/coin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { User, Coins, BookOpen, History } from "lucide-react";
+import { User, BookOpen, History, ArrowUpCircle } from "lucide-react";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
 import MemberActions from "./_components/MemberActions";
 import MemberEditForm from "./_components/MemberEditForm";
 import MemberCoinHistory from "./_components/MemberCoinHistory";
 import ConfirmReserveButton from "../../borrows/_components/ConfirmReserveButton";
+import TopUpActions from "../../coins/top-ups/_components/TopUpActions";
 import BackLink from "@/components/ui/BackLink";
 import Card from "@/components/ui/Card";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -19,9 +21,10 @@ export default async function MemberDetailPage({
     params: Promise<{ id: string }>;
 }) {
     const { id } = await params;
-    const [member, dbPackages] = await Promise.all([
+    const [member, dbPackages, topUpRequests] = await Promise.all([
         getMemberById(id),
         getActivePackages(),
+        getTopUpsByUser(id),
     ]);
 
     if (!member) notFound();
@@ -42,9 +45,10 @@ export default async function MemberDetailPage({
 
     // Effective expiry — auto-maintained by spendCoins/reserveBook/extendExpiry
     const latestExpiry = member.coinExpiryOverride ? new Date(member.coinExpiryOverride) : null;
+    const now = new Date();
 
     const daysUntilExpiry = latestExpiry
-        ? Math.ceil((latestExpiry.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+        ? Math.ceil((latestExpiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
         : null;
 
     return (
@@ -104,46 +108,6 @@ export default async function MemberDetailPage({
 
             <MemberActions member={member} packages={packageOptions} />
 
-            {/* Coin Packages */}
-            <Card padding={false} className="mb-6">
-                <div className="p-6 border-b border-[#d1cce7]/20">
-                    <h2 className="font-semibold text-[#3d405b] flex items-center gap-2">
-                        <Coins size={18} className="text-amber-500" />
-                        แพ็คเกจเหรียญ
-                    </h2>
-                </div>
-                <div className="divide-y divide-[#d1cce7]/15">
-                    {member.coinPackages.length === 0 ? (
-                        <div className="p-6 text-center text-[#3d405b]/40 text-sm">ยังไม่มีแพ็คเกจเหรียญ</div>
-                    ) : (
-                        member.coinPackages.map((pkg) => (
-                            <div key={pkg.id} className="px-6 py-4">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm font-medium text-[#3d405b]/80">
-                                            {pkg.packageType.replace("_", " ")} — {pkg.totalCoins} เหรียญ
-                                        </p>
-                                        <p className="text-xs text-[#3d405b]/40">
-                                            ราคา {Number(pkg.pricePaid).toLocaleString()} บาท
-                                            {pkg.expiresAt &&
-                                                ` · หมดอายุ ${format(new Date(pkg.expiresAt), "d MMM yyyy", { locale: th })}`}
-                                        </p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className={`text-sm font-semibold ${pkg.isExpired ? "text-red-500" : "text-emerald-600"}`}>
-                                            {pkg.isExpired ? "หมดอายุ" : `${pkg.remainingCoins} เหรียญ`}
-                                        </p>
-                                        {pkg.isExtended && (
-                                            <span className="text-xs text-amber-500">ขยายเวลาแล้ว</span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
-            </Card>
-
             {/* Coin Movement History */}
             <Card padding={false} className="mb-6">
                 <div className="p-6 border-b border-[#d1cce7]/20">
@@ -156,8 +120,68 @@ export default async function MemberDetailPage({
                     packages={JSON.parse(JSON.stringify(member.coinPackages))}
                     borrowRecords={JSON.parse(JSON.stringify(member.borrowRecords))}
                     expiryLogs={JSON.parse(JSON.stringify(member.expiryLogs))}
+                    actualBalance={totalCoins}
                 />
             </Card>
+
+            {/* Top-Up Requests */}
+            {topUpRequests.length > 0 && (
+                <Card padding={false} className="mb-6">
+                    <div className="p-6 border-b border-[#d1cce7]/20">
+                        <h2 className="font-semibold text-[#3d405b] flex items-center gap-2">
+                            <ArrowUpCircle size={18} className="text-amber-500" />
+                            คำขอเติมเหรียญ
+                            {topUpRequests.filter(t => t.status === "PENDING").length > 0 && (
+                                <span className="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                                    {topUpRequests.filter(t => t.status === "PENDING").length} รอดำเนินการ
+                                </span>
+                            )}
+                        </h2>
+                    </div>
+                    <div className="divide-y divide-[#d1cce7]/15">
+                        {topUpRequests.map((req) => {
+                            const statusMap: Record<string, { label: string; className: string }> = {
+                                PENDING: { label: "รอดำเนินการ", className: "bg-amber-100 text-amber-700" },
+                                APPROVED: { label: "อนุมัติแล้ว", className: "bg-emerald-100 text-emerald-700" },
+                                REJECTED: { label: "ปฏิเสธ", className: "bg-red-100 text-red-700" },
+                            };
+                            const status = statusMap[req.status] || statusMap.PENDING;
+                            return (
+                                <div key={req.id} className="px-6 py-4">
+                                    <div className="flex items-start justify-between mb-2">
+                                        <div>
+                                            <p className="text-sm font-medium text-[#3d405b]/80">
+                                                {req.coins} เหรียญ · ฿{Number(req.amount).toLocaleString()}
+                                            </p>
+                                            <p className="text-xs text-[#3d405b]/40">
+                                                {format(new Date(req.createdAt), "d MMM yy HH:mm", { locale: th })}
+                                            </p>
+                                        </div>
+                                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${status.className}`}>
+                                            {status.label}
+                                        </span>
+                                    </div>
+                                    {req.slipNote && (
+                                        <p className="text-xs text-[#3d405b]/50 bg-[#f4f1de]/50 px-3 py-2 rounded-lg mb-2">
+                                            💬 {req.slipNote}
+                                        </p>
+                                    )}
+                                    {req.adminNote && (
+                                        <p className="text-xs text-[#3d405b]/50 bg-amber-50 px-3 py-2 rounded-lg mb-2">
+                                            📝 {req.adminNote}
+                                        </p>
+                                    )}
+                                    {req.status === "PENDING" && (
+                                        <div className="mt-2">
+                                            <TopUpActions requestId={req.id} />
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </Card>
+            )}
 
             {/* Borrow History */}
             <Card padding={false}>

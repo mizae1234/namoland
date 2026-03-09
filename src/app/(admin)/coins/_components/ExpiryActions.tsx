@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
 import Modal from "@/components/ui/Modal";
+import DateInput from "@/components/ui/DateInput";
 
 interface ExpiryActionsProps {
     packageId: string;
@@ -14,7 +15,7 @@ interface ExpiryActionsProps {
     currentExpiry: string | null;
 }
 
-export default function ExpiryActions({ packageId, userId, remainingCoins, currentExpiry }: ExpiryActionsProps) {
+export default function ExpiryActions({ userId, remainingCoins, currentExpiry }: ExpiryActionsProps) {
     const router = useRouter();
     const [showExtend, setShowExtend] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -22,11 +23,12 @@ export default function ExpiryActions({ packageId, userId, remainingCoins, curre
 
     // Extend state — date picker (same as member page)
     const currentDate = currentExpiry ? new Date(currentExpiry) : null;
-    const [extendDate, setExtendDate] = useState(
-        currentDate
-            ? format(currentDate, "yyyy-MM-dd")
-            : format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd")
-    );
+    const [extendDate, setExtendDate] = useState(() => {
+        if (currentDate) return format(currentDate, "yyyy-MM-dd");
+        const d = new Date();
+        d.setDate(d.getDate() + 30);
+        return format(d, "yyyy-MM-dd");
+    });
     const [extendNote, setExtendNote] = useState("");
 
     const handleExtend = async () => {
@@ -87,12 +89,11 @@ export default function ExpiryActions({ packageId, userId, remainingCoins, curre
                         {/* Date picker */}
                         <div>
                             <label className="text-xs text-[#3d405b]/50 block mb-1">วันหมดอายุใหม่</label>
-                            <input
-                                type="date"
+                            <DateInput
                                 value={extendDate}
-                                onChange={(e) => setExtendDate(e.target.value)}
+                                onChange={(val) => setExtendDate(val)}
                                 min={format(new Date(), "yyyy-MM-dd")}
-                                className="w-full px-3 py-1.5 border border-[#d1cce7]/30 rounded-lg text-sm"
+                                yearForward={3}
                             />
                         </div>
 
@@ -107,7 +108,8 @@ export default function ExpiryActions({ packageId, userId, remainingCoins, curre
                                     key={opt.days}
                                     type="button"
                                     onClick={() => {
-                                        const d = new Date();
+                                        const base = currentDate || new Date();
+                                        const d = new Date(base);
                                         d.setDate(d.getDate() + opt.days);
                                         setExtendDate(format(d, "yyyy-MM-dd"));
                                     }}

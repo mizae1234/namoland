@@ -28,11 +28,9 @@ export default async function UserCoinsPage() {
         prisma.user.findUnique({ where: { id: userId }, select: { coinExpiryOverride: true } }),
     ]);
 
-    const activePackages = packages.filter((p) => !p.isExpired && p.remainingCoins > 0);
-    const totalCoins = activePackages.reduce((s, p) => s + p.remainingCoins, 0);
+    const totalCoins = packages.filter((p) => !p.isExpired && p.remainingCoins > 0).reduce((s, p) => s + p.remainingCoins, 0);
     const pendingRequests = topUpRequests.filter((r) => r.status === "PENDING");
     const now = new Date();
-    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     // Effective expiry — auto-maintained by actions
     const latestExpiry = userRecord?.coinExpiryOverride ? new Date(userRecord.coinExpiryOverride) : null;
@@ -95,69 +93,96 @@ export default async function UserCoinsPage() {
                 </div>
             )}
 
-            {/* Active Packages */}
-            <h2 className="font-semibold text-[#3d405b] mb-3">แพ็คเกจเหรียญ</h2>
-            <div className="space-y-3 mb-6">
-                {activePackages.length === 0 ? (
-                    <div className="bg-white rounded-xl p-6 border border-[#d1cce7]/20 text-center text-[#3d405b]/40 text-sm">
-                        ยังไม่มีแพ็คเกจเหรียญ
-                    </div>
-                ) : (
-                    activePackages.map((pkg) => (
-                        <div key={pkg.id} className="bg-white rounded-xl p-4 border border-[#d1cce7]/20">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-medium text-[#3d405b]/80">
-                                    แพ็คเกจ {pkg.totalCoins} เหรียญ
-                                </span>
-                                <span className="text-lg font-bold text-amber-500">
-                                    {pkg.remainingCoins} <span className="text-xs font-normal text-[#3d405b]/40">เหลือ</span>
-                                </span>
-                            </div>
-                            {/* Progress bar */}
-                            <div className="w-full bg-[#d1cce7]/15 rounded-full h-1.5 mb-2">
-                                <div
-                                    className="bg-amber-400 h-1.5 rounded-full"
-                                    style={{ width: `${(pkg.remainingCoins / pkg.totalCoins) * 100}%` }}
-                                />
-                            </div>
-                            <div className="flex justify-between text-xs text-[#3d405b]/40">
-                                <span>ใช้ไป {pkg.totalCoins - pkg.remainingCoins}</span>
-                                {pkg.expiresAt && (
-                                    <span className={new Date(pkg.expiresAt) < sevenDaysFromNow ? "text-red-500 font-medium" : ""}>
-                                        หมดอายุ {format(new Date(pkg.expiresAt), "d MMM yy", { locale: th })}
-                                    </span>
-                                )}
-                                {!pkg.firstUsedAt && <span className="text-emerald-500">ยังไม่เริ่มใช้</span>}
-                            </div>
-                        </div>
-                    ))
-                )}
-            </div>
+            {/* ประวัติการเติมเหรียญ (รวมทั้งจาก Admin และ User) */}
+            <h2 className="font-semibold text-[#3d405b] mb-3">ประวัติการเติมเหรียญ</h2>
+            {(() => {
+                // Build unified top-up history from both sources
+                type HistoryItem = {
+                    id: string;
+                    coins: number;
+                    amount: number;
+                    date: Date;
+                    source: "admin" | "user";
+                    status: "APPROVED" | "PENDING" | "REJECTED";
+                    packageType: string;
+                    note?: string | null;
+                };
 
-            {/* Recent Top-Up History */}
-            {topUpRequests.length > 0 && (
-                <>
-                    <h2 className="font-semibold text-[#3d405b] mb-3">ประวัติเติมเหรียญ</h2>
+                const history: HistoryItem[] = [];
+
+                // 1. Admin-purchased packages (CoinPackage records)
+                for (const pkg of packages) {
+                    // Skip ADJUSTMENT packages — they're not "เติมเหรียญ"
+                    if (pkg.packageType === "ADJUSTMENT") continue;
+                    history.push({
+                        id: `pkg-${pkg.id}`,
+                        coins: pkg.totalCoins,
+                        amount: Number(pkg.pricePaid),
+                        date: new Date(pkg.createdAt),
+                        source: "admin",
+                        status: "APPROVED",
+                        packageType: pkg.packageType,
+                        note: pkg.note,
+                    });
+                }
+
+                // 2. User top-up requests (approved → already have a matching CoinPackage, so skip approved ones to avoid duplicates)
+                for (const req of topUpRequests) {
+                    if (req.status === "APPROVED") continue; // Already shown via CoinPackage
+                    history.push({
+                        id: `topup-${req.id}`,
+                        coins: req.coins,
+                        amount: Number(req.amount),
+                        date: new Date(req.createdAt),
+                        source: "user",
+                        status: req.status as "PENDING" | "REJECTED",
+                        packageType: req.packageType,
+                        note: req.slipNote,
+                    });
+                }
+
+                // Sort by date descending
+                history.sort((a, b) => b.date.getTime() - a.date.getTime());
+
+                if (history.length === 0) {
+                    return (
+                        <div className="bg-white rounded-xl p-6 border border-[#d1cce7]/20 text-center text-[#3d405b]/40 text-sm mb-6">
+                            ยังไม่มีประวัติการเติมเหรียญ
+                        </div>
+                    );
+                }
+
+                return (
                     <div className="bg-white rounded-xl border border-[#d1cce7]/20 divide-y divide-[#d1cce7]/15 mb-6">
-                        {topUpRequests.filter((r) => r.status !== "PENDING").map((req) => {
-                            const status = TOPUP_STATUS_MAP[req.status];
-                            const StatusIcon = status.icon;
+                        {history.map((item) => {
+                            const statusConfig = {
+                                APPROVED: { label: "เติมแล้ว", className: "text-emerald-500 bg-emerald-50", Icon: CheckCircle },
+                                PENDING: { label: "รอดำเนินการ", className: "text-amber-500 bg-amber-50", Icon: Clock },
+                                REJECTED: { label: "ปฏิเสธ", className: "text-red-500 bg-red-50", Icon: XCircle },
+                            };
+                            const config = statusConfig[item.status];
+                            const Icon = config.Icon;
                             return (
-                                <div key={req.id} className="px-4 py-3 flex items-center justify-between">
+                                <div key={item.id} className="px-4 py-3 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <StatusIcon size={14} className={status.className.split(" ")[0]} />
+                                        <Icon size={14} className={config.className.split(" ")[0]} />
                                         <div>
-                                            <p className="text-sm text-[#3d405b]/80">{req.coins} เหรียญ · ฿{Number(req.amount).toLocaleString()}</p>
-                                            <p className="text-xs text-[#3d405b]/40">{format(new Date(req.createdAt), "d MMM yy", { locale: th })}</p>
+                                            <p className="text-sm text-[#3d405b]/80">
+                                                {item.coins} เหรียญ · ฿{item.amount.toLocaleString()}
+                                            </p>
+                                            <p className="text-xs text-[#3d405b]/40">
+                                                {format(item.date, "d MMM yy HH:mm", { locale: th })}
+                                                {item.source === "admin" && " · เติมโดยแอดมิน"}
+                                            </p>
                                         </div>
                                     </div>
-                                    <span className={`text-xs px-2 py-0.5 rounded-full ${status.className}`}>{status.label}</span>
+                                    <span className={`text-xs px-2 py-0.5 rounded-full ${config.className}`}>{config.label}</span>
                                 </div>
                             );
                         })}
                     </div>
-                </>
-            )}
+                );
+            })()}
 
             {/* Recent Transactions */}
             <h2 className="font-semibold text-[#3d405b] mb-3">ธุรกรรมล่าสุด</h2>
@@ -172,7 +197,9 @@ export default async function UserCoinsPage() {
                                 {format(new Date(tx.createdAt), "d MMM yy", { locale: th })}
                             </p>
                         </div>
-                        <span className="text-sm font-semibold text-red-500">-{tx.coinsUsed}</span>
+                        <span className={`text-sm font-semibold ${tx.coinsUsed < 0 ? "text-emerald-500" : "text-red-500"}`}>
+                            {tx.coinsUsed < 0 ? `+${Math.abs(tx.coinsUsed)}` : `-${tx.coinsUsed}`}
+                        </span>
                     </div>
                 ))}
                 {packages.flatMap((p) => p.transactions).length === 0 && (

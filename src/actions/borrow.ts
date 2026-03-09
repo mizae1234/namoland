@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import crypto from "crypto";
 import { calculateLateFee } from "@/lib/utils";
-import { BORROW_DEPOSIT_COINS, BORROW_RENTAL_COINS, BORROW_DURATION_DAYS, DAMAGE_FEE_PER_BOOK } from "@/lib/constants";
+import { BORROW_DEPOSIT_COINS, BORROW_DURATION_DAYS, DAMAGE_FEE_PER_BOOK } from "@/lib/constants";
 
 export async function createBook(formData: FormData) {
     const title = formData.get("title") as string;
@@ -13,6 +13,7 @@ export async function createBook(formData: FormData) {
     const category = formData.get("category") as string;
     const ageRange = formData.get("ageRange") as string;
     const youtubeUrl = formData.get("youtubeUrl") as string;
+    const rentalCostStr = formData.get("rentalCost") as string;
 
     if (!title) return { error: "กรุณากรอกชื่อหนังสือ" };
 
@@ -26,6 +27,7 @@ export async function createBook(formData: FormData) {
             category: category || null,
             ageRange: ageRange || null,
             youtubeUrl: youtubeUrl || null,
+            rentalCost: rentalCostStr ? parseInt(rentalCostStr) : 1,
         },
     });
 
@@ -40,7 +42,7 @@ export async function getBookById(id: string) {
             borrowItems: {
                 include: {
                     borrowRecord: {
-                        include: { user: true },
+                        include: { user: true, items: true },
                     },
                 },
                 orderBy: { borrowRecord: { createdAt: "desc" } },
@@ -56,6 +58,7 @@ export async function updateBook(id: string, formData: FormData) {
     const ageRange = formData.get("ageRange") as string;
     const youtubeUrl = formData.get("youtubeUrl") as string;
     const isActive = formData.get("isActive") === "true";
+    const rentalCostStr = formData.get("rentalCost") as string;
 
     if (!title) return { error: "กรุณากรอกชื่อหนังสือ" };
 
@@ -68,6 +71,7 @@ export async function updateBook(id: string, formData: FormData) {
             ageRange: ageRange || null,
             youtubeUrl: youtubeUrl || null,
             isActive,
+            rentalCost: rentalCostStr ? parseInt(rentalCostStr) : 1,
         },
     });
 
@@ -147,6 +151,30 @@ export async function createBorrow(formData: FormData) {
     if (!userId || bookIds.length === 0) return { error: "ข้อมูลไม่ครบ" };
     if (bookIds.length > 5) return { error: "ยืมได้สูงสุด 5 เล่ม" };
 
+    // Get books to calculate per-book rental
+    const books = await prisma.book.findMany({
+        where: { id: { in: bookIds } },
+        select: { id: true, title: true, rentalCost: true, isAvailable: true },
+    });
+
+    if (books.length !== bookIds.length) return { error: "ไม่พบหนังสือบางเล่ม" };
+    const unavailable = books.filter(b => !b.isAvailable);
+    if (unavailable.length > 0) return { error: "หนังสือบางเล่มถูกยืมอยู่แล้ว" };
+
+    const totalRentalCoins = books.reduce((sum, b) => sum + b.rentalCost, 0);
+
+    // Check if user already has an active deposit (BORROWED with deposit not returned/forfeited)
+    const activeDepositCount = await prisma.borrowRecord.count({
+        where: {
+            userId,
+            status: "BORROWED",
+            depositReturned: false,
+            depositForfeited: false,
+        },
+    });
+    const hasActiveDeposit = activeDepositCount > 0;
+    const depositCoins = hasActiveDeposit ? 0 : BORROW_DEPOSIT_COINS;
+
     // Get user's active coin packages
     const packages = await prisma.coinPackage.findMany({
         where: { userId, isExpired: false, remainingCoins: { gt: 0 } },
@@ -154,7 +182,7 @@ export async function createBorrow(formData: FormData) {
     });
 
     const totalCoins = packages.reduce((sum, p) => sum + p.remainingCoins, 0);
-    const requiredCoins = BORROW_DEPOSIT_COINS + BORROW_RENTAL_COINS;
+    const requiredCoins = depositCoins + totalRentalCoins;
 
     if (totalCoins < requiredCoins) {
         return { error: `เหรียญไม่เพียงพอ (ต้องการ ${requiredCoins} เหรียญ, มี ${totalCoins})` };
@@ -180,7 +208,7 @@ export async function createBorrow(formData: FormData) {
         remaining -= deduct;
     }
 
-    await prisma.$transaction([
+    const txOps = [
         // Create borrow record
         prisma.borrowRecord.create({
             data: {
@@ -188,6 +216,8 @@ export async function createBorrow(formData: FormData) {
                 userId,
                 borrowDate: now,
                 dueDate,
+                rentalCoins: totalRentalCoins,
+                depositCoins,
                 processedById: session.user.id,
                 items: {
                     create: bookIds.map((bookId) => ({ bookId })),
@@ -212,14 +242,14 @@ export async function createBorrow(formData: FormData) {
                 },
             })
         ),
-        // Record transactions
-        ...deductions.map((d) =>
+        // Record per-book rental transactions
+        ...books.map((book) =>
             prisma.coinTransaction.create({
                 data: {
-                    packageId: d.packageId,
-                    type: "BOOK_DEPOSIT",
-                    coinsUsed: Math.min(d.amount, BORROW_DEPOSIT_COINS),
-                    description: `เงินมัดจำหนังสือ (${code})`,
+                    packageId: deductions[0].packageId,
+                    type: "BOOK_RENTAL",
+                    coinsUsed: book.rentalCost,
+                    description: `${book.title} (${code})`,
                     processedById: session.user.id,
                 },
             })
@@ -231,7 +261,24 @@ export async function createBorrow(formData: FormData) {
                 data: { isAvailable: false },
             })
         ),
-    ]);
+    ];
+
+    // Only record deposit transaction if actually charging deposit
+    if (depositCoins > 0) {
+        txOps.push(
+            prisma.coinTransaction.create({
+                data: {
+                    packageId: deductions[0].packageId,
+                    type: "BOOK_DEPOSIT",
+                    coinsUsed: depositCoins,
+                    description: `เงินมัดจำหนังสือ (${code})`,
+                    processedById: session.user.id,
+                },
+            })
+        );
+    }
+
+    await prisma.$transaction(txOps);
 
     revalidatePath("/borrows");
     revalidatePath("/members");
@@ -248,6 +295,8 @@ export async function returnBooks(formData: FormData) {
     const damagedItemsJson = formData.get("damagedItems") as string;
     const damagedItems: string[] = damagedItemsJson ? JSON.parse(damagedItemsJson) : [];
     const customDamageFeeStr = formData.get("customDamageFee") as string;
+    const returnItemIdsJson = formData.get("returnItemIds") as string;
+    const returnItemIds: string[] | null = returnItemIdsJson ? JSON.parse(returnItemIdsJson) : null;
 
     const record = await prisma.borrowRecord.findUnique({
         where: { id: borrowId },
@@ -256,86 +305,112 @@ export async function returnBooks(formData: FormData) {
 
     if (!record) return { error: "ไม่พบรายการยืม" };
 
+    // Determine which items to return
+    const itemsToReturn = returnItemIds
+        ? record.items.filter(item => returnItemIds.includes(item.id))
+        : record.items;
+
+    if (itemsToReturn.length === 0) return { error: "กรุณาเลือกหนังสือที่ต้องการคืน" };
+
+    // Check which items remain after this return
+    const previouslyReturnedIds = record.items.filter(item => item.returned).map(item => item.id);
+    const newReturnIds = itemsToReturn.map(item => item.id);
+    const allReturnedIds = [...previouslyReturnedIds, ...newReturnIds];
+    const isFullReturn = allReturnedIds.length >= record.items.length;
+
     const now = new Date();
     const { feeCoins, forfeitDeposit } = calculateLateFee(record.dueDate, now);
     // Use custom damage fee if provided, otherwise fall back to per-book constant
     const damageFee = customDamageFeeStr ? parseInt(customDamageFeeStr) : damagedItems.length * DAMAGE_FEE_PER_BOOK;
 
-    // Check if user has OTHER active borrowed records (excluding this one)
-    const otherActiveBorrows = await prisma.borrowRecord.count({
-        where: {
-            userId: record.userId,
-            id: { not: borrowId },
-            status: "BORROWED",
-            depositReturned: false,
-            depositForfeited: false,
-        },
-    });
-    const isLastBorrow = otherActiveBorrows === 0;
-
-    // Only return deposit if this is the last active borrow AND not forfeited
-    const shouldReturnDeposit = isLastBorrow && !forfeitDeposit && record.depositCoins > 0;
-    // For records with depositCoins=0 (shared deposit), just mark as returned
-    const shouldMarkReturned = record.depositCoins === 0 ? true : shouldReturnDeposit;
-
     const updates = [];
 
-    // Update borrow record
-    updates.push(
-        prisma.borrowRecord.update({
-            where: { id: borrowId },
-            data: {
-                status: forfeitDeposit ? "FORFEITED" : "RETURNED",
-                returnDate: now,
-                lateFeeCoins: feeCoins,
-                damageFeeCoins: damageFee,
-                depositReturned: shouldMarkReturned,
-                depositForfeited: forfeitDeposit,
-                returnedById: session.user.id,
+    if (isFullReturn) {
+        // All books returned — finalize the record
+        // Check if user has OTHER active borrowed records (excluding this one)
+        const otherActiveBorrows = await prisma.borrowRecord.count({
+            where: {
+                userId: record.userId,
+                id: { not: borrowId },
+                status: "BORROWED",
+                depositReturned: false,
+                depositForfeited: false,
             },
-        })
-    );
+        });
+        const isLastBorrow = otherActiveBorrows === 0;
 
-    // If this is the last borrow and deposit is returned, also mark all other
-    // RETURNED records (with depositCoins=0) as depositReturned
-    if (shouldReturnDeposit) {
+        // Only return deposit if this is the last active borrow AND not forfeited
+        const shouldReturnDeposit = isLastBorrow && !forfeitDeposit && record.depositCoins > 0;
+        // For records with depositCoins=0 (shared deposit), just mark as returned
+        const shouldMarkReturned = record.depositCoins === 0 ? true : shouldReturnDeposit;
+
+        // Update borrow record
         updates.push(
-            prisma.borrowRecord.updateMany({
-                where: {
-                    userId: record.userId,
-                    status: "RETURNED",
-                    depositReturned: false,
-                    depositForfeited: false,
-                    depositCoins: 0,
+            prisma.borrowRecord.update({
+                where: { id: borrowId },
+                data: {
+                    status: forfeitDeposit ? "FORFEITED" : "RETURNED",
+                    returnDate: now,
+                    lateFeeCoins: feeCoins,
+                    damageFeeCoins: damageFee,
+                    depositReturned: shouldMarkReturned,
+                    depositForfeited: forfeitDeposit,
+                    returnedById: session.user.id,
                 },
-                data: { depositReturned: true },
             })
         );
 
-        // Refund deposit coins to the earliest active package
-        const refundPkg = record.user.coinPackages[0];
-        if (refundPkg) {
+        // If this is the last borrow and deposit is returned, also mark all other
+        // RETURNED records (with depositCoins=0) as depositReturned
+        if (shouldReturnDeposit) {
             updates.push(
-                prisma.coinPackage.update({
-                    where: { id: refundPkg.id },
-                    data: { remainingCoins: { increment: record.depositCoins } },
+                prisma.borrowRecord.updateMany({
+                    where: {
+                        userId: record.userId,
+                        status: "RETURNED",
+                        depositReturned: false,
+                        depositForfeited: false,
+                        depositCoins: 0,
+                    },
+                    data: { depositReturned: true },
+                })
+            );
+
+            // Refund deposit coins to the earliest active package
+            const refundPkg = record.user.coinPackages[0];
+            if (refundPkg) {
+                updates.push(
+                    prisma.coinPackage.update({
+                        where: { id: refundPkg.id },
+                        data: { remainingCoins: { increment: record.depositCoins } },
+                    })
+                );
+            }
+        }
+    } else {
+        // Partial return — keep record as BORROWED, no deposit logic yet
+    }
+
+    // Mark damaged items
+    for (const itemId of damagedItems) {
+        if (itemsToReturn.some(i => i.id === itemId)) {
+            updates.push(
+                prisma.borrowItem.update({
+                    where: { id: itemId },
+                    data: { isDamaged: true, damageNote: "เสียหาย/ชำรุด" },
                 })
             );
         }
     }
 
-    // Mark damaged items
-    for (const itemId of damagedItems) {
+    // Mark returned items and release their books
+    for (const item of itemsToReturn) {
         updates.push(
             prisma.borrowItem.update({
-                where: { id: itemId },
-                data: { isDamaged: true, damageNote: "เสียหาย/ชำรุด" },
+                where: { id: item.id },
+                data: { returned: true, returnedAt: now },
             })
         );
-    }
-
-    // Mark books as available again
-    for (const item of record.items) {
         updates.push(
             prisma.book.update({
                 where: { id: item.bookId },
@@ -353,11 +428,13 @@ export async function returnBooks(formData: FormData) {
 
     return {
         success: true,
-        lateFee: feeCoins,
+        lateFee: isFullReturn ? feeCoins : 0,
         damageFee,
-        forfeitDeposit,
-        depositReturned: shouldReturnDeposit ? record.depositCoins : 0,
-        isLastBorrow,
+        forfeitDeposit: isFullReturn ? forfeitDeposit : false,
+        depositReturned: isFullReturn ? (record.depositCoins > 0 ? record.depositCoins : 0) : 0,
+        isFullReturn,
+        returnedCount: itemsToReturn.length,
+        remainingCount: record.items.length - allReturnedIds.length,
     };
 }
 
@@ -445,7 +522,7 @@ export async function reserveBook(bookId: string) {
     });
 
     const totalCoins = packages.reduce((sum, p) => sum + p.remainingCoins, 0);
-    const requiredCoins = BORROW_RENTAL_COINS; // Only rental on reserve
+    const requiredCoins = book.rentalCost; // Per-book rental cost
 
     if (totalCoins < requiredCoins) {
         return { error: `เหรียญไม่เพียงพอ (ต้องการ ${requiredCoins} เหรียญ, มี ${totalCoins})` };
@@ -479,7 +556,7 @@ export async function reserveBook(bookId: string) {
                 status: "RESERVED",
                 borrowDate: now,
                 dueDate,
-                rentalCoins: BORROW_RENTAL_COINS,
+                rentalCoins: book.rentalCost,
                 depositCoins: 0, // Deposit not charged yet
                 items: {
                     create: [{ bookId }],

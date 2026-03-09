@@ -23,8 +23,9 @@ export default async function UserHomePage() {
 
     // Effective expiry — auto-maintained by actions
     const latestExpiry = user.coinExpiryOverride ? new Date(user.coinExpiryOverride) : null;
+    const now = new Date();
     const daysLeft = latestExpiry
-        ? Math.ceil((latestExpiry.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+        ? Math.ceil((latestExpiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
         : null;
 
     const youtubeBooks = await prisma.book.findMany({

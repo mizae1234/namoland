@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { BookOpen, Calendar, ArrowRight, Clock, CheckCircle2, AlertCircle, Coins, XCircle } from "lucide-react";
+import { BookOpen, Calendar, Clock, CheckCircle2, AlertCircle, Coins, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
 import Link from "next/link";

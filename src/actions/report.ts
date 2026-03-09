@@ -88,26 +88,6 @@ export async function getOutstandingCoinReport(year: number): Promise<Outstandin
         .filter(t => t.type === "ADJUSTMENT" && t.coinsUsed > 0)
         .reduce((s, t) => s + t.coinsUsed, 0);
 
-    // Adjustment additions (from adjustment packages or negative coinsUsed transactions)
-    const bfAdjustUp = bfAdjustPackages.reduce((s, p) => s + p.totalCoins, 0)
-        + bfTransactions
-            .filter(t => t.type === "ADJUSTMENT" && t.coinsUsed < 0)
-            .reduce((s, t) => s + Math.abs(t.coinsUsed), 0)
-        // But avoid double counting — adjustUp via package totalCoins AND negative transaction
-        // Since adjustCoinsUp creates BOTH an increment on totalCoins AND a negative transaction,
-        // we should only count one. The package totalCoins increment on existing packages
-        // is already baked into bfPurchase (it modified totalCoins which we sum).
-        // For ADJUSTMENT type packages (new ones), we count the package.
-        // For existing package increments, since totalCoins was incremented on a non-ADJUSTMENT package,
-        // it's already in bfPurchase. The negative transaction would double-count.
-        // So we should NOT count negative transactions at all — they're just logs.
-        - bfTransactions
-            .filter(t => t.type === "ADJUSTMENT" && t.coinsUsed < 0)
-            .reduce((s, t) => s + Math.abs(t.coinsUsed), 0);
-
-    // Simplified: bfAdjustUp = just from ADJUSTMENT packages
-    // Negative transactions are just logs (the actual coins are in totalCoins already)
-
     const bfBalance = bfPurchase + bfAdjustPackages.reduce((s, p) => s + p.totalCoins, 0) - bfUsage - bfAdjustDown;
 
     // Build each month

@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { BookOpen, ArrowLeft, Youtube, Coins, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import ReserveButton from "./_components/ReserveButton";
-import { BORROW_RENTAL_COINS, BORROW_DEPOSIT_COINS } from "@/lib/constants";
+import { BORROW_DEPOSIT_COINS } from "@/lib/constants";
 
 export default async function UserBookDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const session = await auth();
@@ -30,6 +30,8 @@ export default async function UserBookDetailPage({ params }: { params: Promise<{
     });
 
     if (!book || !book.isActive) notFound();
+
+    const rentalCost = book.rentalCost;
 
     // Check user's coin balance
     const packages = await prisma.coinPackage.findMany({
@@ -138,7 +140,7 @@ export default async function UserBookDetailPage({ params }: { params: Promise<{
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                                 <span className="text-[#3d405b]/60">ค่ายืม (หักทันทีเมื่อจอง)</span>
-                                <span className="font-medium text-[#609279]">{BORROW_RENTAL_COINS} เหรียญ</span>
+                                <span className="font-medium text-[#609279]">{rentalCost} เหรียญ</span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-[#3d405b]/60">ค่ามัดจำ (หักเมื่อ Admin อนุมัติ)</span>
@@ -153,7 +155,7 @@ export default async function UserBookDetailPage({ params }: { params: Promise<{
                             </div>
                             <div className="border-t border-[#d1cce7]/20 pt-2 flex justify-between font-semibold">
                                 <span className="text-[#3d405b]">รวมทั้งหมด</span>
-                                <span className="text-[#3d405b]">{BORROW_RENTAL_COINS + effectiveDeposit} เหรียญ</span>
+                                <span className="text-[#3d405b]">{rentalCost + effectiveDeposit} เหรียญ</span>
                             </div>
                         </div>
                         {hasActiveDeposit && (
@@ -173,8 +175,8 @@ export default async function UserBookDetailPage({ params }: { params: Promise<{
                     <ReserveButton
                         bookId={book.id}
                         bookTitle={book.title}
-                        rentalCoins={BORROW_RENTAL_COINS}
-                        hasEnoughCoins={totalCoins >= BORROW_RENTAL_COINS}
+                        rentalCoins={rentalCost}
+                        hasEnoughCoins={totalCoins >= rentalCost}
                         hasActiveDeposit={hasActiveDeposit}
                     />
                 )}

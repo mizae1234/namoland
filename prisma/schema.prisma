@@ -153,6 +153,7 @@ model Book {
   ageRange    String?
   coverImage  String?
   youtubeUrl  String?
+  rentalCost  Int       @default(1)
   isAvailable Boolean   @default(true)
   isActive    Boolean   @default(true)
   borrowItems BorrowItem[]
@@ -201,6 +202,8 @@ model BorrowItem {
   book          Book      @relation(fields: [bookId], references: [id])
   isDamaged     Boolean   @default(false)
   damageNote    String?
+  returned      Boolean   @default(false)
+  returnedAt    DateTime?
 }
 
 model PackageConfig {

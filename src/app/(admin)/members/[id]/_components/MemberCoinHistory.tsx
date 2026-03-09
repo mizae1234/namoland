@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
-import { ArrowUpCircle, ArrowDownCircle, RefreshCw, ChevronDown, ChevronUp, Filter } from "lucide-react";
+import { ArrowUpCircle, ArrowDownCircle, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 
 type Transaction = {
     id: string;
@@ -89,10 +89,12 @@ export default function MemberCoinHistory({
     packages,
     borrowRecords,
     expiryLogs,
+    actualBalance,
 }: {
     packages: Package[];
     borrowRecords?: BorrowRecord[];
     expiryLogs?: ExpiryLogEntry[];
+    actualBalance: number;
 }) {
     const [filterType, setFilterType] = useState<FilterType>("ALL");
     const [expanded, setExpanded] = useState(true);
@@ -111,21 +113,33 @@ export default function MemberCoinHistory({
                 pkg.paymentMethod ? PAYMENT_MAP[pkg.paymentMethod] || pkg.paymentMethod : null,
                 pkg.note,
             ].filter(Boolean).join(" · "),
-            coins: pkg.totalCoins,
+            coins: parseInt(pkg.packageType) || pkg.totalCoins,
             source: "purchase",
         });
 
         // Package transactions
         for (const tx of pkg.transactions) {
-            const config = TX_TYPE_MAP[tx.type] || { label: tx.type, type: "OUT" as const };
-            events.push({
-                date: new Date(tx.createdAt),
-                type: config.type,
-                label: config.label,
-                detail: tx.className || tx.description || null,
-                coins: tx.coinsUsed,
-                source: "transaction",
-            });
+            // Special handling for ADJUSTMENT: negative coinsUsed means coins were ADDED
+            if (tx.type === "ADJUSTMENT" && tx.coinsUsed < 0) {
+                events.push({
+                    date: new Date(tx.createdAt),
+                    type: "IN",
+                    label: "ปรับเพิ่มเหรียญ",
+                    detail: tx.description?.replace("[เพิ่ม] ", "") || tx.className || null,
+                    coins: Math.abs(tx.coinsUsed),
+                    source: "transaction",
+                });
+            } else {
+                const config = TX_TYPE_MAP[tx.type] || { label: tx.type, type: "OUT" as const };
+                events.push({
+                    date: new Date(tx.createdAt),
+                    type: tx.type === "ADJUSTMENT" ? "OUT" : config.type,
+                    label: tx.type === "ADJUSTMENT" ? "ปรับลดเหรียญ" : config.label,
+                    detail: tx.className || tx.description || null,
+                    coins: tx.coinsUsed,
+                    source: "transaction",
+                });
+            }
         }
 
         // Expired package
@@ -164,13 +178,21 @@ export default function MemberCoinHistory({
         }
     }
 
-    // 3. Borrow-related events (from BorrowRecords — only events NOT already in CoinTransaction)
+    // Collect all CoinTransaction descriptions for dedup check
+    const allTxDescriptions = new Set<string>();
+    for (const pkg of packages) {
+        for (const tx of pkg.transactions) {
+            if (tx.description) allTxDescriptions.add(tx.description);
+        }
+    }
+
+    // 3. Borrow-related events (from BorrowRecords — only for reservations that don't have CoinTransaction entries)
     if (borrowRecords) {
         for (const br of borrowRecords) {
             const bookNames = br.items.map(i => i.book.title).join(", ");
 
-            // Rental coin deduction (on reservation)
-            if (br.rentalCoins > 0) {
+            // Rental coin deduction — only for active reservations (admin borrows already have CoinTransaction)
+            if (br.rentalCoins > 0 && br.status === "RESERVED") {
                 events.push({
                     date: new Date(br.createdAt),
                     type: "OUT",
@@ -181,16 +203,19 @@ export default function MemberCoinHistory({
                 });
             }
 
-            // Deposit deduction (on approval)
+            // Deposit deduction — only if NO matching CoinTransaction exists (avoids duplication)
             if (br.depositCoins > 0 && br.status !== "RESERVED") {
-                events.push({
-                    date: new Date(br.borrowDate),
-                    type: "OUT",
-                    label: "มัดจำหนังสือ",
-                    detail: bookNames,
-                    coins: br.depositCoins,
-                    source: `borrow-deposit-${br.id}`,
-                });
+                const hasDepositTx = allTxDescriptions.has(`เงินมัดจำหนังสือ (${br.code})`);
+                if (!hasDepositTx) {
+                    events.push({
+                        date: new Date(br.borrowDate),
+                        type: "OUT",
+                        label: "มัดจำหนังสือ",
+                        detail: `เงินมัดจำหนังสือ (${br.code})`,
+                        coins: br.depositCoins,
+                        source: `borrow-deposit-${br.id}`,
+                    });
+                }
             }
 
             // Deposit returned
@@ -289,8 +314,8 @@ export default function MemberCoinHistory({
                 </div>
                 <div className="bg-[#f4f1de] rounded-xl p-3 text-center">
                     <p className="text-xs text-[#3d405b]/40 mb-1">สุทธิ</p>
-                    <p className={`text-lg font-bold ${totalIn - totalOut >= 0 ? "text-[#609279]" : "text-red-500"}`}>
-                        {totalIn - totalOut}
+                    <p className={`text-lg font-bold ${actualBalance >= 0 ? "text-[#609279]" : "text-red-500"}`}>
+                        {actualBalance}
                     </p>
                 </div>
             </div>

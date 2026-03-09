@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { returnBooks } from "@/actions/borrow";
 import { useRouter } from "next/navigation";
-import { RotateCcw, Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { RotateCcw, Loader2, AlertTriangle, CheckCircle2, Check } from "lucide-react";
 import Card from "@/components/ui/Card";
 
 interface BookItem {
     id: string;
     bookId: string;
+    returned: boolean;
     book: { title: string; category: string | null };
 }
 
@@ -25,12 +26,26 @@ interface ReturnBookFormProps {
     };
 }
 
-export default function ReturnBookForm({ borrowId, items, dueDate, depositCoins, hasOtherBorrows, lateFeePreview }: ReturnBookFormProps) {
+export default function ReturnBookForm({ borrowId, items, depositCoins, hasOtherBorrows, lateFeePreview }: ReturnBookFormProps) {
     const router = useRouter();
     const [showForm, setShowForm] = useState(false);
     const [loading, setLoading] = useState(false);
     const [damagedItems, setDamagedItems] = useState<Map<string, number>>(new Map());
-    const [result, setResult] = useState<{ success?: boolean; error?: string; lateFee?: number; damageFee?: number; forfeitDeposit?: boolean; depositReturned?: number } | null>(null);
+    const [selectedItems, setSelectedItems] = useState<Set<string>>(
+        new Set(items.filter(i => !i.returned).map(i => i.id))
+    );
+    const [result, setResult] = useState<{ success?: boolean; error?: string; lateFee?: number; damageFee?: number; forfeitDeposit?: boolean; depositReturned?: number; isFullReturn?: boolean; returnedCount?: number; remainingCount?: number } | null>(null);
+
+    const unreturned = items.filter(i => !i.returned);
+
+    const toggleSelect = (itemId: string) => {
+        setSelectedItems(prev => {
+            const next = new Set(prev);
+            if (next.has(itemId)) next.delete(itemId);
+            else next.add(itemId);
+            return next;
+        });
+    };
 
     const toggleDamage = (itemId: string) => {
         setDamagedItems(prev => {
@@ -49,13 +64,17 @@ export default function ReturnBookForm({ borrowId, items, dueDate, depositCoins,
         });
     };
 
-    const totalDamageFee = Array.from(damagedItems.values()).reduce((s, v) => s + v, 0);
+    const totalDamageFee = Array.from(damagedItems.entries())
+        .filter(([id]) => selectedItems.has(id))
+        .reduce((s, [, v]) => s + v, 0);
 
     const handleReturn = async () => {
+        if (selectedItems.size === 0) return;
         setLoading(true);
         const fd = new FormData();
         fd.set("borrowId", borrowId);
-        fd.set("damagedItems", JSON.stringify(Array.from(damagedItems.keys())));
+        fd.set("returnItemIds", JSON.stringify(Array.from(selectedItems)));
+        fd.set("damagedItems", JSON.stringify(Array.from(damagedItems.keys()).filter(id => selectedItems.has(id))));
         fd.set("customDamageFee", String(totalDamageFee));
         const res = await returnBooks(fd);
         setResult(res);
@@ -70,15 +89,20 @@ export default function ReturnBookForm({ borrowId, items, dueDate, depositCoins,
             <Card className="mt-4 bg-emerald-50 border-emerald-200">
                 <div className="text-center py-4">
                     <CheckCircle2 size={32} className="mx-auto mb-2 text-emerald-600" />
-                    <p className="font-bold text-emerald-700 text-lg">คืนหนังสือสำเร็จ!</p>
+                    <p className="font-bold text-emerald-700 text-lg">
+                        คืนหนังสือสำเร็จ! ({result.returnedCount} เล่ม)
+                    </p>
                     <div className="mt-3 space-y-1 text-sm text-emerald-600">
+                        {result.remainingCount! > 0 && (
+                            <p className="text-amber-600">ยังเหลืออีก {result.remainingCount} เล่มที่ยังไม่คืน</p>
+                        )}
                         {result.lateFee! > 0 && <p>ค่าปรับช้า: {result.lateFee} เหรียญ</p>}
                         {result.damageFee! > 0 && <p>ค่าเสียหาย: {result.damageFee} เหรียญ</p>}
                         {result.forfeitDeposit ? (
                             <p className="text-red-600 font-medium">ยึดมัดจำ {depositCoins} เหรียญ</p>
                         ) : result.depositReturned! > 0 ? (
                             <p>คืนมัดจำ: {result.depositReturned} เหรียญ</p>
-                        ) : depositCoins > 0 ? (
+                        ) : depositCoins > 0 && result.isFullReturn ? (
                             <p className="text-amber-600">ยังไม่คืนมัดจำ (ยังมีหนังสือยืมค้างอยู่)</p>
                         ) : null}
                     </div>
@@ -100,6 +124,10 @@ export default function ReturnBookForm({ borrowId, items, dueDate, depositCoins,
         );
     }
 
+    if (unreturned.length === 0) {
+        return null; // All items already returned
+    }
+
     if (!showForm) {
         return (
             <button
@@ -113,6 +141,7 @@ export default function ReturnBookForm({ borrowId, items, dueDate, depositCoins,
     }
 
     const isLate = lateFeePreview.lateDays > 0;
+    const isAllSelected = selectedItems.size === unreturned.length;
 
     return (
         <Card className="mt-4">
@@ -136,7 +165,7 @@ export default function ReturnBookForm({ borrowId, items, dueDate, depositCoins,
                                 </p>
                             ) : lateFeePreview.feeCoins > 0 ? (
                                 <p className="text-xs text-amber-500 mt-0.5">
-                                    ค่าปรับ: {lateFeePreview.feeCoins} เหรียญ
+                                    ค่าปรับ: {lateFeePreview.feeCoins} เหรียญ (จะคิดเมื่อคืนครบ)
                                 </p>
                             ) : (
                                 <p className="text-xs text-emerald-500 mt-0.5">
@@ -154,69 +183,124 @@ export default function ReturnBookForm({ borrowId, items, dueDate, depositCoins,
                 </div>
             )}
 
-            {/* Book items with damage checkbox */}
+            {/* Select all / deselect all */}
+            <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-medium text-[#3d405b]/60">เลือกหนังสือที่ต้องการคืน:</p>
+                <button
+                    type="button"
+                    onClick={() => {
+                        if (isAllSelected) {
+                            setSelectedItems(new Set());
+                        } else {
+                            setSelectedItems(new Set(unreturned.map(i => i.id)));
+                        }
+                    }}
+                    className="text-xs text-[#609279] hover:underline"
+                >
+                    {isAllSelected ? "ยกเลิกทั้งหมด" : "เลือกทั้งหมด"}
+                </button>
+            </div>
+
+            {/* Book items with select + damage */}
             <div className="space-y-2 mb-4">
-                <p className="text-xs font-medium text-[#3d405b]/60 mb-2">ตรวจสอบสภาพหนังสือ:</p>
-                {items.map((item) => (
-                    <div
-                        key={item.id}
-                        className={`p-3 rounded-xl transition-colors ${damagedItems.has(item.id)
-                            ? "bg-red-50 border-2 border-red-200"
-                            : "bg-[#f4f1de]/30 border-2 border-transparent hover:border-[#d1cce7]/30"
-                            }`}
-                    >
-                        <label className="flex items-center gap-3 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={damagedItems.has(item.id)}
-                                onChange={() => toggleDamage(item.id)}
-                                className="w-4 h-4 rounded border-[#d1cce7] text-red-500 focus:ring-red-200"
-                            />
-                            <div className="flex-1">
-                                <p className="text-sm font-medium text-[#3d405b]">{item.book.title}</p>
-                                {item.book.category && (
-                                    <p className="text-xs text-[#3d405b]/40">{item.book.category}</p>
+                {unreturned.map((item) => {
+                    const isSelected = selectedItems.has(item.id);
+                    const isDamaged = damagedItems.has(item.id);
+                    return (
+                        <div
+                            key={item.id}
+                            className={`p-3 rounded-xl transition-all ${isSelected
+                                ? isDamaged
+                                    ? "bg-red-50 border-2 border-red-200"
+                                    : "bg-emerald-50 border-2 border-emerald-200"
+                                : "bg-[#f4f1de]/30 border-2 border-[#d1cce7]/15 opacity-60"
+                                }`}
+                        >
+                            <div className="flex items-center gap-3">
+                                {/* Select checkbox */}
+                                <button
+                                    type="button"
+                                    onClick={() => toggleSelect(item.id)}
+                                    className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? "bg-[#609279]" : "bg-[#d1cce7]/25 hover:bg-[#d1cce7]/40"
+                                        }`}
+                                >
+                                    {isSelected && <Check size={14} className="text-white" />}
+                                </button>
+
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-[#3d405b] truncate">{item.book.title}</p>
+                                    {item.book.category && (
+                                        <p className="text-xs text-[#3d405b]/40">{item.book.category}</p>
+                                    )}
+                                </div>
+
+                                {/* Damage toggle - only if selected */}
+                                {isSelected && (
+                                    <label className="flex items-center gap-1.5 cursor-pointer flex-shrink-0">
+                                        <input
+                                            type="checkbox"
+                                            checked={isDamaged}
+                                            onChange={() => toggleDamage(item.id)}
+                                            className="w-3.5 h-3.5 rounded border-red-300 text-red-500 focus:ring-red-200"
+                                        />
+                                        <span className="text-xs text-red-500">ชำรุด</span>
+                                    </label>
                                 )}
                             </div>
-                            {damagedItems.has(item.id) && (
-                                <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">
-                                    ชำรุด
-                                </span>
+
+                            {/* Damage fee input */}
+                            {isSelected && isDamaged && (
+                                <div className="mt-2 ml-9 flex items-center gap-2">
+                                    <label className="text-xs text-red-500">ค่าเสียหาย:</label>
+                                    <input
+                                        type="number"
+                                        value={damagedItems.get(item.id) ?? 1}
+                                        onChange={(e) => setDamageFee(item.id, parseInt(e.target.value) || 0)}
+                                        min="0"
+                                        className="w-20 px-2 py-1 border border-red-200 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400"
+                                    />
+                                    <span className="text-xs text-red-400">เหรียญ</span>
+                                </div>
                             )}
-                        </label>
-                        {damagedItems.has(item.id) && (
-                            <div className="mt-2 ml-7 flex items-center gap-2">
-                                <label className="text-xs text-red-500">ค่าเสียหาย:</label>
-                                <input
-                                    type="number"
-                                    value={damagedItems.get(item.id) ?? 1}
-                                    onChange={(e) => setDamageFee(item.id, parseInt(e.target.value) || 0)}
-                                    min="0"
-                                    className="w-20 px-2 py-1 border border-red-200 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400"
-                                />
-                                <span className="text-xs text-red-400">เหรียญ</span>
+                        </div>
+                    );
+                })}
+
+                {/* Show already returned items */}
+                {items.filter(i => i.returned).length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-[#d1cce7]/20">
+                        <p className="text-xs text-[#3d405b]/40 mb-1">คืนแล้ว:</p>
+                        {items.filter(i => i.returned).map(item => (
+                            <div key={item.id} className="flex items-center gap-2 p-2 text-sm text-[#3d405b]/40">
+                                <CheckCircle2 size={14} className="text-emerald-400" />
+                                <span className="line-through">{item.book.title}</span>
                             </div>
-                        )}
+                        ))}
                     </div>
-                ))}
+                )}
             </div>
 
             {/* Summary */}
             <div className="bg-[#f4f1de]/50 rounded-xl p-3 mb-4 space-y-2 text-sm">
-                <p className="font-medium text-[#3d405b]">สรุป:</p>
-                {lateFeePreview.feeCoins > 0 && !lateFeePreview.forfeitDeposit && (
+                <p className="font-medium text-[#3d405b]">สรุป: คืน {selectedItems.size} / {unreturned.length} เล่ม</p>
+                {!isAllSelected && (
+                    <p className="text-xs text-amber-600">
+                        ⚠ คืนเพียงบางเล่ม — ค่าปรับและมัดจำจะคิดเมื่อคืนครบทุกเล่ม
+                    </p>
+                )}
+                {isAllSelected && lateFeePreview.feeCoins > 0 && !lateFeePreview.forfeitDeposit && (
                     <div className="flex justify-between text-amber-600">
                         <span>ค่าปรับช้า ({lateFeePreview.lateDays} วัน)</span>
                         <span className="font-medium">{lateFeePreview.feeCoins} เหรียญ</span>
                     </div>
                 )}
-                {damagedItems.size > 0 && (
+                {totalDamageFee > 0 && (
                     <div className="flex justify-between text-red-600">
-                        <span>ค่าเสียหาย ({damagedItems.size} เล่ม)</span>
+                        <span>ค่าเสียหาย</span>
                         <span className="font-medium">{totalDamageFee} เหรียญ</span>
                     </div>
                 )}
-                {lateFeePreview.forfeitDeposit ? (
+                {isAllSelected && (lateFeePreview.forfeitDeposit ? (
                     <div className="flex justify-between text-red-600 font-medium">
                         <span>ยึดมัดจำ</span>
                         <span>{depositCoins} เหรียญ</span>
@@ -231,7 +315,7 @@ export default function ReturnBookForm({ borrowId, items, dueDate, depositCoins,
                         <span>คืนมัดจำ</span>
                         <span className="font-medium">{depositCoins} เหรียญ</span>
                     </div>
-                )}
+                ))}
             </div>
 
             {/* Late fee tiers reference */}
@@ -250,7 +334,7 @@ export default function ReturnBookForm({ borrowId, items, dueDate, depositCoins,
             {/* Buttons */}
             <div className="flex gap-3">
                 <button
-                    onClick={() => { setShowForm(false); setDamagedItems(new Map()); }}
+                    onClick={() => { setShowForm(false); setDamagedItems(new Map()); setSelectedItems(new Set(unreturned.map(i => i.id))); }}
                     disabled={loading}
                     className="flex-1 py-2.5 border border-[#d1cce7]/30 rounded-xl text-sm font-medium text-[#3d405b]/60 hover:bg-[#f4f1de]/50 transition-colors disabled:opacity-50"
                 >
@@ -258,7 +342,7 @@ export default function ReturnBookForm({ borrowId, items, dueDate, depositCoins,
                 </button>
                 <button
                     onClick={handleReturn}
-                    disabled={loading}
+                    disabled={loading || selectedItems.size === 0}
                     className="flex-1 py-2.5 bg-[#609279] text-white rounded-xl text-sm font-semibold shadow-md shadow-[#609279]/20 hover:bg-[#81b29a] transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
                 >
                     {loading ? (
@@ -266,7 +350,7 @@ export default function ReturnBookForm({ borrowId, items, dueDate, depositCoins,
                     ) : (
                         <>
                             <RotateCcw size={14} />
-                            ยืนยันคืนหนังสือ
+                            ยืนยันคืน {selectedItems.size} เล่ม
                         </>
                     )}
                 </button>

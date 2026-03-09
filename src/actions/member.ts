@@ -69,6 +69,31 @@ export async function getMembers(search?: string) {
     });
 }
 
+export async function searchMembers(query: string) {
+    if (!query || query.length < 1) return [];
+    const members = await prisma.user.findMany({
+        where: {
+            OR: [
+                { parentName: { contains: query, mode: "insensitive" } },
+                { phone: { contains: query } },
+            ],
+        },
+        include: {
+            coinPackages: {
+                where: { isExpired: false, remainingCoins: { gt: 0 } },
+            },
+        },
+        take: 10,
+        orderBy: { parentName: "asc" },
+    });
+    return members.map(m => ({
+        id: m.id,
+        parentName: m.parentName,
+        phone: m.phone,
+        totalCoins: m.coinPackages.reduce((s, p) => s + p.remainingCoins, 0),
+    }));
+}
+
 export async function getMemberById(id: string) {
     return prisma.user.findUnique({
         where: { id },

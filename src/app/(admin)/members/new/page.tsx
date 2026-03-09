@@ -5,6 +5,7 @@ import { createMember } from "@/actions/member";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
 import BackLink from "@/components/ui/BackLink";
+import DateInput from "@/components/ui/DateInput";
 import AlertMessage from "@/components/ui/AlertMessage";
 import Card from "@/components/ui/Card";
 
@@ -106,11 +107,10 @@ export default function NewMemberPage() {
                                 </div>
                                 <div className="flex-1">
                                     <label className="block text-xs font-medium text-[#3d405b]/50 mb-1">วันเกิด</label>
-                                    <input
-                                        type="date"
+                                    <DateInput
                                         value={child.birthDate}
-                                        onChange={(e) => updateChild(i, "birthDate", e.target.value)}
-                                        className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-lg bg-white text-sm focus:border-[#81b29a] outline-none"
+                                        onChange={(val) => updateChild(i, "birthDate", val)}
+                                        yearBack={20}
                                     />
                                 </div>
                                 {children.length > 1 && (

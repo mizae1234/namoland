@@ -377,9 +377,19 @@ export async function getPendingTopUps() {
 
 export async function getAllTopUps() {
     return prisma.topUpRequest.findMany({
-        include: { user: true, processedBy: true },
+        include: { user: { select: { parentName: true, phone: true } } },
         orderBy: { createdAt: "desc" },
-        take: 50,
+    });
+}
+
+export async function getTopUpsByUser(userId: string) {
+    return prisma.topUpRequest.findMany({
+        where: { userId },
+        include: {
+            user: { select: { parentName: true, phone: true } },
+            processedBy: { select: { name: true } },
+        },
+        orderBy: { createdAt: "desc" },
     });
 }
 
@@ -435,6 +445,7 @@ export async function processTopUp(requestId: string, action: "APPROVED" | "REJE
 
     revalidatePath("/coins");
     revalidatePath("/coins/top-ups");
+    revalidatePath("/members");
     revalidatePath("/user/coins");
     return { success: true };
 }

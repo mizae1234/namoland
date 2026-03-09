@@ -134,18 +134,25 @@ export default async function BorrowDetailPage({ params }: { params: Promise<{ i
                     </h3>
                     <div className="space-y-3">
                         {record.items.map((item) => (
-                            <div key={item.id} className="flex items-center justify-between p-3 bg-[#f4f1de]/30 rounded-xl">
+                            <div key={item.id} className={`flex items-center justify-between p-3 rounded-xl ${item.returned ? 'bg-emerald-50/50 opacity-60' : 'bg-[#f4f1de]/30'}`}>
                                 <div>
-                                    <p className="font-medium text-[#3d405b] text-sm">{item.book.title}</p>
+                                    <p className={`font-medium text-[#3d405b] text-sm ${item.returned ? 'line-through' : ''}`}>{item.book.title}</p>
                                     {item.book.category && (
                                         <p className="text-xs text-[#3d405b]/40 mt-0.5">{item.book.category}</p>
                                     )}
                                 </div>
-                                {item.isDamaged && (
-                                    <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
-                                        ชำรุด
-                                    </span>
-                                )}
+                                <div className="flex items-center gap-1.5">
+                                    {item.returned && (
+                                        <span className="text-xs bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full">
+                                            คืนแล้ว
+                                        </span>
+                                    )}
+                                    {item.isDamaged && (
+                                        <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+                                            ชำรุด
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -215,6 +222,7 @@ export default async function BorrowDetailPage({ params }: { params: Promise<{ i
                         items={record.items.map(item => ({
                             id: item.id,
                             bookId: item.bookId,
+                            returned: item.returned,
                             book: { title: item.book.title, category: item.book.category },
                         }))}
                         dueDate={record.dueDate.toISOString()}

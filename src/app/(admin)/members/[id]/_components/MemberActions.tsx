@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { purchasePackage, spendCoins, extendExpiry, deductCoins, adjustCoinsUp } from "@/actions/coin";
-import { Coins, ShoppingCart, Banknote, CreditCard, CalendarPlus, MinusCircle, PlusCircle } from "lucide-react";
+import { Coins, ShoppingCart, Banknote, CreditCard, CalendarPlus, MinusCircle, PlusCircle, BookOpen } from "lucide-react";
+import Link from "next/link";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
 import AlertMessage from "@/components/ui/AlertMessage";
 import Card from "@/components/ui/Card";
 import Modal from "@/components/ui/Modal";
+import DateInput from "@/components/ui/DateInput";
 
 interface PackageOption {
     type: string;
@@ -81,11 +83,12 @@ export default function MemberActions({ member, packages }: MemberActionsProps) 
 
     // Extend state — date picker
     const currentOverride = member.coinExpiryOverride ? new Date(member.coinExpiryOverride) : null;
-    const [extendDate, setExtendDate] = useState(
-        currentOverride
-            ? format(currentOverride, "yyyy-MM-dd")
-            : format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd")
-    );
+    const [extendDate, setExtendDate] = useState(() => {
+        if (currentOverride) return format(currentOverride, "yyyy-MM-dd");
+        const d = new Date();
+        d.setDate(d.getDate() + 30);
+        return format(d, "yyyy-MM-dd");
+    });
     const [extendNote, setExtendNote] = useState("");
 
     const activePackages = member.coinPackages.filter(
@@ -259,6 +262,13 @@ export default function MemberActions({ member, packages }: MemberActionsProps) 
                     <MinusCircle size={16} />
                     ปรับลดเหรียญ
                 </button>
+                <Link
+                    href={`/borrows/new/${member.id}`}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#4a7a5f] transition-colors shadow-md shadow-[#81b29a]/30"
+                >
+                    <BookOpen size={16} />
+                    ยืมหนังสือ
+                </Link>
             </div>
 
             {/* Buy Package */}
@@ -506,12 +516,11 @@ export default function MemberActions({ member, packages }: MemberActionsProps) 
                                 <label className="text-sm font-medium text-[#3d405b] block mb-2">
                                     เลือกวันหมดอายุใหม่
                                 </label>
-                                <input
-                                    type="date"
+                                <DateInput
                                     value={extendDate}
-                                    onChange={(e) => setExtendDate(e.target.value)}
+                                    onChange={(val) => setExtendDate(val)}
                                     min={format(new Date(), "yyyy-MM-dd")}
-                                    className="w-full px-3 py-2.5 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#a16b9f]/20 focus:border-[#a16b9f]"
+                                    yearForward={3}
                                 />
                             </div>
 
@@ -526,7 +535,8 @@ export default function MemberActions({ member, packages }: MemberActionsProps) 
                                         key={opt.days}
                                         type="button"
                                         onClick={() => {
-                                            const d = new Date();
+                                            const base = currentOverride || new Date();
+                                            const d = new Date(base);
                                             d.setDate(d.getDate() + opt.days);
                                             setExtendDate(format(d, "yyyy-MM-dd"));
                                         }}

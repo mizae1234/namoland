@@ -58,6 +58,10 @@ export default function NewBookPage() {
                     <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">YouTube URL</label>
                     <input name="youtubeUrl" type="url" className="w-full px-4 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm" placeholder="https://youtube.com/..." />
                 </div>
+                <div>
+                    <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">ค่ายืม (เหรียญ)</label>
+                    <input name="rentalCost" type="number" min="0" defaultValue={1} className="w-full px-4 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm" placeholder="1" />
+                </div>
 
                 <button
                     type="submit"

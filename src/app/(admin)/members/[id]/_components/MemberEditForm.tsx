@@ -5,6 +5,7 @@ import { updateMember, resetMemberPassword } from "@/actions/member";
 import { Pencil, X, Check, Plus, Trash2, RotateCcw } from "lucide-react";
 import { format } from "date-fns";
 import Card from "@/components/ui/Card";
+import DateInput from "@/components/ui/DateInput";
 import AlertMessage from "@/components/ui/AlertMessage";
 
 interface Child {
@@ -161,11 +162,10 @@ export default function MemberEditForm({ member }: MemberEditFormProps) {
                                 placeholder="ชื่อเด็ก"
                                 className="flex-1 px-3 py-2 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20"
                             />
-                            <input
-                                type="date"
+                            <DateInput
                                 value={child.birthDate}
-                                onChange={(e) => updateChild(idx, "birthDate", e.target.value)}
-                                className="px-3 py-2 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20"
+                                onChange={(val) => updateChild(idx, "birthDate", val)}
+                                yearBack={20}
                             />
                             <button
                                 type="button"

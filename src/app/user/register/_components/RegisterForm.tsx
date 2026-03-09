@@ -6,6 +6,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
 import AlertMessage from "@/components/ui/AlertMessage";
+import DateInput from "@/components/ui/DateInput";
 
 export default function RegisterForm() {
     const router = useRouter();
@@ -152,11 +153,10 @@ export default function RegisterForm() {
                                     placeholder="ชื่อเด็ก"
                                     className="flex-1 px-3 py-2 border border-[#d1cce7]/30 rounded-lg text-sm focus:ring-2 focus:ring-[#81b29a]/30 focus:border-[#81b29a] outline-none"
                                 />
-                                <input
-                                    type="date"
+                                <DateInput
                                     value={child.birthDate}
-                                    onChange={(e) => updateChild(i, "birthDate", e.target.value)}
-                                    className="px-3 py-2 border border-[#d1cce7]/30 rounded-lg text-sm focus:ring-2 focus:ring-[#81b29a]/30 focus:border-[#81b29a] outline-none"
+                                    onChange={(val) => updateChild(i, "birthDate", val)}
+                                    yearBack={20}
                                 />
                                 <button
                                     type="button"

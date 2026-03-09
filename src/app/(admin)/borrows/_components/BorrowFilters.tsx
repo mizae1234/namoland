@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Search, Calendar } from "lucide-react";
 import Card from "@/components/ui/Card";
+import DateInput from "@/components/ui/DateInput";
 
 export default function BorrowFilters({
     defaultSearch,
@@ -59,11 +60,9 @@ export default function BorrowFilters({
                             <Calendar size={12} className="inline mr-1" />
                             ตั้งแต่วันที่
                         </label>
-                        <input
-                            type="date"
+                        <DateInput
                             value={from}
-                            onChange={(e) => setFrom(e.target.value)}
-                            className="w-full px-3 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm"
+                            onChange={(val) => setFrom(val)}
                         />
                     </div>
 
@@ -73,11 +72,9 @@ export default function BorrowFilters({
                             <Calendar size={12} className="inline mr-1" />
                             ถึงวันที่
                         </label>
-                        <input
-                            type="date"
+                        <DateInput
                             value={to}
-                            onChange={(e) => setTo(e.target.value)}
-                            className="w-full px-3 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm"
+                            onChange={(val) => setTo(val)}
                         />
                     </div>
 
