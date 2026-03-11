@@ -18,6 +18,8 @@ import {
     Crown,
     Package,
     UserCog,
+    CalendarDays,
+    Calendar,
     Menu,
     X,
 } from "lucide-react";
@@ -37,6 +39,8 @@ const menuItems: MenuItem[] = [
     { label: "สมาชิก", href: "/members", icon: Users, roles: ["ADMIN", "SUPER_ADMIN"] },
     { label: "เหรียญ", href: "/coins", icon: Coins, roles: ["ADMIN", "SUPER_ADMIN"] },
     { label: "แพ็คเกจเหรียญ", href: "/coins/packages", icon: Package, roles: ["ADMIN", "SUPER_ADMIN"] },
+    { label: "กิจกรรม", href: "/activities", icon: CalendarDays, roles: ["ADMIN", "SUPER_ADMIN"] },
+    { label: "ตารางคลาส", href: "/classes", icon: Calendar, roles: ["ADMIN", "SUPER_ADMIN"] },
     { label: "หนังสือ", href: "/books", icon: BookOpen, roles: ["ADMIN", "SUPER_ADMIN"] },
     { label: "ยืม-คืน", href: "/borrows", icon: ArrowLeftRight, roles: ["ADMIN", "SUPER_ADMIN"] },
     { label: "สแกน QR", href: "/borrows/scan", icon: QrCode, roles: ["ADMIN", "SUPER_ADMIN"] },

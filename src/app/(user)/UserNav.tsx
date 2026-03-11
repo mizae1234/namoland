@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, Coins, User, History } from "lucide-react";
+import { Home, BookOpen, Coins, User, History, CalendarDays } from "lucide-react";
 
 const navItems = [
     { label: "หน้าหลัก", href: "/user", icon: Home },
     { label: "หนังสือ", href: "/user/books", icon: BookOpen },
+    { label: "คลาส", href: "/user/classes", icon: CalendarDays },
     { label: "ยืม-คืน", href: "/user/borrows", icon: History },
     { label: "เหรียญ", href: "/user/coins", icon: Coins },
     { label: "โปรไฟล์", href: "/user/profile", icon: User },

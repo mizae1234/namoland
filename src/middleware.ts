@@ -10,6 +10,8 @@ const adminRoutes = [
     "/coins",
     "/books",
     "/borrows",
+    "/activities",
+    "/classes",
     "/reports",
     "/settings",
     "/owner",

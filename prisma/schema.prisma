@@ -19,6 +19,7 @@ model User {
   borrowRecords BorrowRecord[]
   topUpRequests TopUpRequest[]
   expiryLogs    ExpiryLog[]
+  classBookings  ClassBooking[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -40,6 +41,7 @@ model Child {
   birthDate   DateTime
   userId      String
   user        User      @relation(fields: [userId], references: [id])
+  classBookings ClassBooking[]
   createdAt   DateTime  @default(now())
 }
 
@@ -52,6 +54,7 @@ model AdminUser {
   borrowRecords   BorrowRecord[]
   coinTransactions CoinTransaction[]
   topUpRequests    TopUpRequest[]
+  classBookings    ClassBooking[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -217,4 +220,63 @@ model PackageConfig {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ActivityConfig {
+  id        String   @id @default(cuid())
+  name      String
+  coins     Int      @default(1)
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ClassSchedule {
+  id        String       @id @default(cuid())
+  title     String?
+  theme     String?
+  startDate DateTime
+  endDate   DateTime
+  entries   ClassEntry[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model ClassEntry {
+  id         String        @id @default(cuid())
+  scheduleId String
+  schedule   ClassSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  dayOfWeek  Int
+  startTime  String
+  endTime    String
+  title      String
+  sortOrder  Int           @default(0)
+  bookings   ClassBooking[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model ClassBooking {
+  id            String        @id @default(cuid())
+  classEntryId  String
+  classEntry    ClassEntry    @relation(fields: [classEntryId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  childId       String?
+  child         Child?        @relation(fields: [childId], references: [id])
+  coinsCharged  Int           @default(0)
+  status        BookingStatus @default(BOOKED)
+  note          String?
+  bookedById    String
+  bookedBy      AdminUser     @relation(fields: [bookedById], references: [id])
+  checkedInAt   DateTime?
+  createdAt     DateTime      @default(now())
+}
+
+enum BookingStatus {
+  BOOKED
+  CHECKED_IN
+  CANCELLED
+  NO_SHOW
 }

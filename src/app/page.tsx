@@ -14,8 +14,23 @@ import {
   Phone,
   MapPin,
 } from "lucide-react";
+import { getClassSchedulesWithEntries } from "@/actions/classSchedule";
+import LandingSchedule from "./_components/LandingSchedule";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const rawSchedules = await getClassSchedulesWithEntries();
+  const schedules = rawSchedules.map((s: { id: string; theme: string | null; startDate: Date; endDate: Date; entries: { dayOfWeek: number; startTime: string; endTime: string; title: string }[] }) => ({
+    id: s.id,
+    theme: s.theme,
+    startDate: s.startDate.toISOString(),
+    endDate: s.endDate.toISOString(),
+    entries: s.entries.map((e: { dayOfWeek: number; startTime: string; endTime: string; title: string }) => ({
+      dayOfWeek: e.dayOfWeek,
+      startTime: e.startTime,
+      endTime: e.endTime,
+      title: e.title,
+    })),
+  }));
   return (
     <div className="min-h-screen bg-[#f4f1de] text-[#3d405b] overflow-x-hidden">
       {/* ─── Navigation ─────────────────────────────────── */}
@@ -230,50 +245,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Programs Highlight ─────────────────────────── */}
-      <section id="programs" className="py-20 bg-gradient-to-b from-[#f4f1de] to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-16 items-center">
-            <div className="relative flex justify-center">
-              <div className="w-80 h-80 bg-gradient-to-br from-[#d1cce7]/20 to-[#ecb4ce]/20 rounded-full absolute" />
-              <Image
-                src="/activities-circle.png"
-                alt="กิจกรรมสร้างสรรค์"
-                width={380}
-                height={380}
-                className="relative z-10 drop-shadow-lg"
-              />
-            </div>
-            <div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#a16b9f]/10 rounded-full text-sm font-medium text-[#a16b9f] mb-4">
-                <GraduationCap size={14} />
-                โปรแกรมพิเศษ
-              </div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-[#3d405b] mb-6 leading-tight">
-                เปิดโลก<span className="text-[#a16b9f]">จินตนาการ</span>
-                <br />ให้ลูกน้อยของคุณ
-              </h2>
-              <div className="space-y-4">
-                {[
-                  { emoji: "🎨", label: "Jolly English & Art & Design", desc: "เรียนภาษาอังกฤษผ่านศิลปะและการออกแบบ" },
-                  { emoji: "👥", label: "Playgroup", desc: "กิจกรรมกลุ่มสำหรับเด็กเล็ก เพื่อพัฒนาทักษะสังคม" },
-                  { emoji: "📝", label: "Grammar & Workshops", desc: "เวิร์คช็อปภาษาอังกฤษและไวยากรณ์เชิงลึก" },
-                  { emoji: "🎓", label: "Private Classes", desc: "คอร์สเรียนส่วนตัว ออกแบบตามความต้องการ" },
-                  { emoji: "✈️", label: "Summer Camp in Milan", desc: "ค่ายฤดูร้อนที่มิลาน ร่วมกับ Marangoni Institute" },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-4 p-4 bg-white rounded-2xl border border-slate-100 hover:shadow-md transition-shadow">
-                    <span className="text-2xl">{item.emoji}</span>
-                    <div>
-                      <p className="font-semibold text-[#3d405b]">{item.label}</p>
-                      <p className="text-sm text-[#3d405b]/60">{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* ─── Class Schedule ─────────────────────────────── */}
+      <LandingSchedule schedules={schedules} />
 
       {/* ─── Library / Coin System ───────────────────────── */}
       <section id="library" className="py-20 bg-white">

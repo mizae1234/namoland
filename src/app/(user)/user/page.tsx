@@ -1,7 +1,9 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
-import { BookOpen, QrCode, Coins, Youtube, Plus } from "lucide-react";
+import { BookOpen, QrCode, Coins, Youtube, Plus, CalendarDays, Clock, Check } from "lucide-react";
+
+const DAY_LABELS = ["จันทร์", "อังคาร", "พุธ", "พฤหัสฯ", "ศุกร์", "เสาร์", "อาทิตย์"];
 
 export default async function UserHomePage() {
     const session = await auth();
@@ -94,6 +96,9 @@ export default async function UserHomePage() {
                 </div>
             </div>
 
+            {/* Upcoming Bookings */}
+            <UpcomingBookings userId={userId} />
+
             {/* Current Borrows */}
             {user.borrowRecords.length > 0 && (
                 <div className="mb-6">
@@ -144,6 +149,56 @@ export default async function UserHomePage() {
                             </a>
                         ))}
                     </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+async function UpcomingBookings({ userId }: { userId: string }) {
+    const bookings = await prisma.classBooking.findMany({
+        where: { userId, status: "BOOKED" },
+        include: {
+            classEntry: true,
+            child: { select: { name: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+    });
+
+    return (
+        <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+                <h2 className="font-semibold text-[#3d405b] flex items-center gap-1.5">
+                    <CalendarDays size={16} className="text-[#a16b9f]" />
+                    คลาสที่จอง
+                </h2>
+                <Link href="/user/classes" className="text-xs text-[#609279] font-medium">ดูทั้งหมด →</Link>
+            </div>
+            {bookings.length === 0 ? (
+                <div className="bg-white rounded-xl p-4 border border-[#d1cce7]/20 text-center">
+                    <CalendarDays size={24} className="mx-auto text-[#3d405b]/10 mb-1" />
+                    <p className="text-xs text-[#3d405b]/30">ยังไม่มีคลาสที่จอง</p>
+                </div>
+            ) : (
+                <div className="space-y-2">
+                    {bookings.map((b) => (
+                        <div key={b.id} className="bg-white rounded-xl p-3 border border-[#d1cce7]/20 flex items-center gap-3">
+                            <div className="w-10 h-10 bg-[#a16b9f]/10 rounded-lg flex items-center justify-center">
+                                <CalendarDays size={18} className="text-[#a16b9f]" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-[#3d405b]/80 truncate">{b.classEntry.title}</p>
+                                <p className="text-xs text-[#3d405b]/40">
+                                    {DAY_LABELS[b.classEntry.dayOfWeek]} {b.classEntry.startTime}-{b.classEntry.endTime}
+                                    {b.child && ` • ${b.child.name}`}
+                                </p>
+                            </div>
+                            <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-medium flex items-center gap-0.5">
+                                <Clock size={9} /> รอเข้าเรียน
+                            </span>
+                        </div>
+                    ))}
                 </div>
             )}
         </div>
