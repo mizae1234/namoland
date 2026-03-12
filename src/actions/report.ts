@@ -178,3 +178,100 @@ export async function getOutstandingCoinReport(year: number): Promise<Outstandin
         availableYears,
     };
 }
+
+// ─── Class Attendance Report ─────────────────────────────────────────
+
+export type ClassAttendanceRow = {
+    id: string;
+    className: string;
+    startTime: string;
+    endTime: string;
+    dayOfWeek: number;
+    participantName: string;
+    parentName: string;
+    phone: string;
+    status: string;
+    coinsCharged: number;
+    checkedInAt: string | null;
+    createdAt: string;
+    bookedByName: string;
+};
+
+export type ClassAttendanceReport = {
+    rows: ClassAttendanceRow[];
+    summary: {
+        total: number;
+        checkedIn: number;
+        booked: number;
+        cancelled: number;
+        noShow: number;
+    };
+};
+
+export async function getClassAttendanceReport(
+    dateFrom: string,
+    dateTo: string,
+    status?: string,
+    search?: string,
+): Promise<ClassAttendanceReport> {
+    const from = new Date(dateFrom);
+    from.setHours(0, 0, 0, 0);
+    const to = new Date(dateTo);
+    to.setHours(23, 59, 59, 999);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = {
+        createdAt: { gte: from, lte: to },
+    };
+
+    if (status && status !== "ALL") {
+        where.status = status;
+    }
+
+    if (search && search.trim()) {
+        const q = search.trim();
+        where.OR = [
+            { user: { parentName: { contains: q, mode: "insensitive" } } },
+            { child: { name: { contains: q, mode: "insensitive" } } },
+            { classEntry: { title: { contains: q, mode: "insensitive" } } },
+        ];
+    }
+
+    const bookings = await prisma.classBooking.findMany({
+        where,
+        include: {
+            classEntry: true,
+            user: { select: { parentName: true, phone: true } },
+            child: { select: { name: true } },
+            bookedBy: { select: { name: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 500,
+    });
+
+    const rows: ClassAttendanceRow[] = bookings.map((b) => ({
+        id: b.id,
+        className: b.classEntry.title,
+        startTime: b.classEntry.startTime,
+        endTime: b.classEntry.endTime,
+        dayOfWeek: b.classEntry.dayOfWeek,
+        participantName: b.child?.name || b.user.parentName,
+        parentName: b.user.parentName,
+        phone: b.user.phone,
+        status: b.status,
+        coinsCharged: b.coinsCharged,
+        checkedInAt: b.checkedInAt?.toISOString() || null,
+        createdAt: b.createdAt.toISOString(),
+        bookedByName: b.bookedBy.name,
+    }));
+
+    const summary = {
+        total: rows.length,
+        checkedIn: rows.filter((r) => r.status === "CHECKED_IN").length,
+        booked: rows.filter((r) => r.status === "BOOKED").length,
+        cancelled: rows.filter((r) => r.status === "CANCELLED").length,
+        noShow: rows.filter((r) => r.status === "NO_SHOW").length,
+    };
+
+    return { rows, summary };
+}

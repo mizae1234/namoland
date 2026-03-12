@@ -16,10 +16,6 @@ import {
     LogOut,
     QrCode,
     Crown,
-    Package,
-    UserCog,
-    CalendarDays,
-    Calendar,
     Menu,
     X,
 } from "lucide-react";
@@ -38,14 +34,10 @@ const menuItems: MenuItem[] = [
     { label: "ภาพรวมธุรกิจ", href: "/owner", icon: Crown, roles: ["SUPER_ADMIN"] },
     { label: "สมาชิก", href: "/members", icon: Users, roles: ["ADMIN", "SUPER_ADMIN"] },
     { label: "เหรียญ", href: "/coins", icon: Coins, roles: ["ADMIN", "SUPER_ADMIN"] },
-    { label: "แพ็คเกจเหรียญ", href: "/coins/packages", icon: Package, roles: ["ADMIN", "SUPER_ADMIN"] },
-    { label: "กิจกรรม", href: "/activities", icon: CalendarDays, roles: ["ADMIN", "SUPER_ADMIN"] },
-    { label: "ตารางคลาส", href: "/classes", icon: Calendar, roles: ["ADMIN", "SUPER_ADMIN"] },
     { label: "หนังสือ", href: "/books", icon: BookOpen, roles: ["ADMIN", "SUPER_ADMIN"] },
     { label: "ยืม-คืน", href: "/borrows", icon: ArrowLeftRight, roles: ["ADMIN", "SUPER_ADMIN"] },
     { label: "สแกน QR", href: "/borrows/scan", icon: QrCode, roles: ["ADMIN", "SUPER_ADMIN"] },
     { label: "รายงาน", href: "/reports", icon: BarChart3, roles: ["SUPER_ADMIN"] },
-    { label: "จัดการผู้ใช้", href: "/settings/users", icon: UserCog, roles: ["SUPER_ADMIN"] },
     { label: "ตั้งค่า", href: "/settings", icon: Settings, roles: ["SUPER_ADMIN"] },
 ];
 

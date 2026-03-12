@@ -1,24 +1,23 @@
-import { getOutstandingCoinReport } from "@/actions/report";
-import { Coins } from "lucide-react";
-import OutstandingCoinTable from "./_components/OutstandingCoinTable";
+import { getOutstandingCoinReport, getClassAttendanceReport } from "@/actions/report";
+import ReportTabs from "./_components/ReportTabs";
 
 export default async function ReportsPage() {
     const currentYear = new Date().getFullYear();
-    const data = await getOutstandingCoinReport(currentYear);
+    const now = new Date();
+    const dateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+    const dateTo = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
+
+    const [coinData, attendanceData] = await Promise.all([
+        getOutstandingCoinReport(currentYear),
+        getClassAttendanceReport(dateFrom, dateTo),
+    ]);
 
     return (
         <div className="max-w-[1200px] mx-auto">
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-[#3d405b] flex items-center gap-3">
-                    <Coins size={24} className="text-amber-500" />
-                    Outstanding Coin
-                </h1>
-                <p className="text-[#3d405b]/50 mt-1">
-                    สรุปยอดเหรียญคงเหลือในระบบ แยกตามเดือน
-                </p>
-            </div>
-
-            <OutstandingCoinTable initialData={data} />
+            <ReportTabs
+                coinData={coinData}
+                attendanceData={attendanceData}
+            />
         </div>
     );
 }
