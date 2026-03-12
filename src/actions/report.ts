@@ -367,11 +367,15 @@ export async function getMemberReport(userId: string): Promise<MemberReportData>
             : 0;
         const coinRate = origCoins > 0 ? Number(pkg.pricePaid) / origCoins : 0;
 
-        // Transactions
+        // Track remaining paid (original) coins within this package for FIFO costing
+        // Paid coins are consumed first, then free (adjusted) coins at 0 cost
+        let paidCoinsRemaining = origCoins;
+
+        // Transactions (already sorted by createdAt ascending)
         for (const tx of pkg.transactions) {
             if (tx.type === "ADJUSTMENT") {
                 if (tx.coinsUsed < 0) {
-                    // Coins added (adjust up)
+                    // Coins added (adjust up) — free coins, no cost
                     events.push({
                         date: new Date(tx.createdAt),
                         type: "Adjust+",
@@ -383,41 +387,66 @@ export async function getMemberReport(userId: string): Promise<MemberReportData>
                         validUntil,
                     });
                 } else {
-                    // Coins deducted (adjust down)
+                    // Coins deducted (adjust down) — calculate cost from paid coins first
+                    const fromPaid = Math.min(tx.coinsUsed, paidCoinsRemaining);
+                    paidCoinsRemaining -= fromPaid;
+                    const cost = fromPaid * coinRate;
                     events.push({
                         date: new Date(tx.createdAt),
                         type: "Adjust-",
                         className: tx.description?.replace("[หัก] ", "") || "ปรับลดเหรียญ",
                         dateTime: "",
-                        amount: coinRate > 0 ? -(tx.coinsUsed * coinRate) : 0,
+                        amount: cost > 0 ? -cost : 0,
                         coinPurchase: 0,
                         coinUsage: tx.coinsUsed,
                         validUntil,
                     });
                 }
             } else if (tx.type === "CLASS_FEE") {
+                // Calculate how many coins come from paid vs free (adjusted)
+                const fromPaid = Math.min(tx.coinsUsed, paidCoinsRemaining);
+                paidCoinsRemaining -= fromPaid;
+                // fromFree = tx.coinsUsed - fromPaid (at 0 cost)
+                const cost = fromPaid * coinRate;
                 events.push({
                     date: new Date(tx.createdAt),
                     type: "Class",
                     className: tx.className || "",
                     dateTime: tx.description?.match(/\((.+)\)/)?.[1] || "",
-                    amount: coinRate > 0 ? -(tx.coinsUsed * coinRate) : 0,
+                    amount: cost > 0 ? -cost : 0,
                     coinPurchase: 0,
                     coinUsage: tx.coinsUsed,
                     validUntil,
                 });
             } else {
                 // BOOK_RENTAL, BOOK_DEPOSIT, etc
-                events.push({
-                    date: new Date(tx.createdAt),
-                    type: tx.type.replace(/_/g, " "),
-                    className: tx.className || tx.description || "",
-                    dateTime: "",
-                    amount: tx.coinsUsed > 0 ? -(tx.coinsUsed * coinRate) : 0,
-                    coinPurchase: tx.coinsUsed < 0 ? Math.abs(tx.coinsUsed) : 0,
-                    coinUsage: tx.coinsUsed > 0 ? tx.coinsUsed : 0,
-                    validUntil,
-                });
+                if (tx.coinsUsed > 0) {
+                    const fromPaid = Math.min(tx.coinsUsed, paidCoinsRemaining);
+                    paidCoinsRemaining -= fromPaid;
+                    const cost = fromPaid * coinRate;
+                    events.push({
+                        date: new Date(tx.createdAt),
+                        type: tx.type.replace(/_/g, " "),
+                        className: tx.className || tx.description || "",
+                        dateTime: "",
+                        amount: cost > 0 ? -cost : 0,
+                        coinPurchase: 0,
+                        coinUsage: tx.coinsUsed,
+                        validUntil,
+                    });
+                } else {
+                    // Refund (negative coinsUsed)
+                    events.push({
+                        date: new Date(tx.createdAt),
+                        type: tx.type.replace(/_/g, " "),
+                        className: tx.className || tx.description || "",
+                        dateTime: "",
+                        amount: 0,
+                        coinPurchase: Math.abs(tx.coinsUsed),
+                        coinUsage: 0,
+                        validUntil,
+                    });
+                }
             }
         }
 
