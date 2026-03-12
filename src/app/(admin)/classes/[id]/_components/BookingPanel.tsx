@@ -90,7 +90,10 @@ export default function BookingPanel({
 
     const showMsg = (msg: string) => {
         setMessage(msg);
-        setTimeout(() => setMessage(""), 3000);
+        // Only auto-dismiss success messages; errors stay visible
+        if (msg.includes("สำเร็จ")) {
+            setTimeout(() => setMessage(""), 3000);
+        }
     };
 
     const loadBookings = async () => {

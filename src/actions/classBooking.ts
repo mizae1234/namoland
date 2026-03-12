@@ -59,6 +59,8 @@ export async function bookClassForMember(formData: FormData) {
         return { error: "กรุณาเลือกบุตรที่จะเข้าเรียน" };
     }
 
+    // Note: ไม่เช็คเหรียญตอนจอง เพราะยังไม่ตัดเหรียญ (ตัดตอน check-in เท่านั้น)
+
     // Check for duplicate booking
     const existing = await prisma.classBooking.findFirst({
         where: {
@@ -100,12 +102,32 @@ export async function checkInBooking(bookingId: string) {
     if (!booking) return { error: "ไม่พบการจอง" };
     if (booking.status !== "BOOKED") return { error: "สถานะไม่ใช่ BOOKED" };
 
-    // Find activity config to get coin cost
-    const activity = await prisma.activityConfig.findFirst({
+    // Find activity config to get coin cost — try multiple matching strategies
+    let activity = await prisma.activityConfig.findFirst({
         where: { name: booking.classEntry.title },
     });
-    const coinCost = activity?.coins || 0;
+    if (!activity) {
+        // Try: activity name contains class title
+        activity = await prisma.activityConfig.findFirst({
+            where: { name: { contains: booking.classEntry.title, mode: "insensitive" } },
+        });
+    }
+    if (!activity) {
+        // Try: class title contains activity name
+        const allActivities = await prisma.activityConfig.findMany();
+        activity = allActivities.find(
+            (a) => booking.classEntry.title.toLowerCase().includes(a.name.toLowerCase())
+        ) || null;
+    }
 
+    // If no activity config found, block check-in — admin must set up activity first
+    if (!activity) {
+        return { error: `ไม่พบกิจกรรม "${booking.classEntry.title}" ในระบบ กรุณาตั้งค่ากิจกรรมก่อน` };
+    }
+
+    const coinCost = activity.coins;
+
+    // Check coin balance for paid activities
     if (coinCost > 0) {
         // FIFO: get oldest non-expired package with coins
         const packages = await prisma.coinPackage.findMany({
@@ -118,7 +140,9 @@ export async function checkInBooking(bookingId: string) {
         });
 
         const totalAvailable = packages.reduce((s, p) => s + p.remainingCoins, 0);
-        if (totalAvailable < coinCost) return { error: `เหรียญไม่เพียงพอ (ต้องการ ${coinCost}, มี ${totalAvailable})` };
+        if (totalAvailable < coinCost) {
+            return { error: `เหรียญไม่เพียงพอ (ต้องการ ${coinCost}, มี ${totalAvailable})` };
+        }
 
         // Deduct from oldest package first (FIFO)
         let remaining = coinCost;

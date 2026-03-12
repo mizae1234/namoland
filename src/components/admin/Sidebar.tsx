@@ -18,6 +18,7 @@ import {
     Crown,
     Menu,
     X,
+    Calendar,
 } from "lucide-react";
 
 type MenuRole = "ADMIN" | "SUPER_ADMIN";
@@ -37,6 +38,7 @@ const menuItems: MenuItem[] = [
     { label: "หนังสือ", href: "/books", icon: BookOpen, roles: ["ADMIN", "SUPER_ADMIN"] },
     { label: "ยืม-คืน", href: "/borrows", icon: ArrowLeftRight, roles: ["ADMIN", "SUPER_ADMIN"] },
     { label: "สแกน QR", href: "/borrows/scan", icon: QrCode, roles: ["ADMIN", "SUPER_ADMIN"] },
+    { label: "ตารางคลาส", href: "/classes", icon: Calendar, roles: ["ADMIN", "SUPER_ADMIN"] },
     { label: "รายงาน", href: "/reports", icon: BarChart3, roles: ["SUPER_ADMIN"] },
     { label: "ตั้งค่า", href: "/settings", icon: Settings, roles: ["SUPER_ADMIN"] },
 ];

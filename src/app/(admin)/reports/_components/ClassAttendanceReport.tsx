@@ -12,8 +12,10 @@ import {
     CalendarDays,
     Filter,
     Users,
+    Download,
 } from "lucide-react";
 import Card from "@/components/ui/Card";
+import * as XLSX from "xlsx";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: React.ReactNode }> = {
     CHECKED_IN: { label: "เข้าเรียนแล้ว", color: "text-emerald-700", bgColor: "bg-emerald-100", icon: <Check size={12} /> },
@@ -64,6 +66,33 @@ export default function ClassAttendanceReport({ initialData }: { initialData: Re
             );
             setData(result);
         });
+    }
+
+    function exportToExcel() {
+        if (data.rows.length === 0) return;
+        const STATUS_LABEL: Record<string, string> = {
+            CHECKED_IN: "เข้าเรียนแล้ว",
+            BOOKED: "จองแล้ว",
+            CANCELLED: "ยกเลิก",
+            NO_SHOW: "ไม่มาเรียน",
+        };
+        const exportData = data.rows.map((row) => ({
+            "วันที่จอง": formatDate(row.createdAt),
+            "คลาส": row.className,
+            "ผู้เข้าเรียน": row.participantName,
+            "ผู้ปกครอง": row.parentName,
+            "เบอร์โทร": row.phone,
+            "วัน": DAY_LABELS[row.dayOfWeek],
+            "เวลา": `${row.startTime}-${row.endTime}`,
+            "สถานะ": STATUS_LABEL[row.status] || row.status,
+            "เหรียญ": row.coinsCharged,
+            "Check-in": row.checkedInAt ? formatTime(row.checkedInAt) : "-",
+            "จองโดย": row.bookedByName,
+        }));
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "รายงานเข้าคลาส");
+        XLSX.writeFile(wb, `class_attendance_${dateFrom}_${dateTo}.xlsx`);
     }
 
     const { summary } = data;
@@ -169,6 +198,14 @@ export default function ClassAttendanceReport({ initialData }: { initialData: Re
                             <Search size={14} />
                         )}
                         ค้นหา
+                    </button>
+                    <button
+                        onClick={exportToExcel}
+                        disabled={data.rows.length === 0}
+                        className="px-5 py-2 bg-[#3d405b] text-white rounded-xl text-sm font-medium hover:bg-[#2d2f45] disabled:opacity-30 transition-colors flex items-center gap-1.5 justify-center"
+                    >
+                        <Download size={14} />
+                        Export
                     </button>
                 </div>
             </Card>

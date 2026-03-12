@@ -275,3 +275,210 @@ export async function getClassAttendanceReport(
 
     return { rows, summary };
 }
+
+// ─── Member Coin Report (per member — Excel-friendly format) ─────────
+
+export type MemberReportRow = {
+    date: string;       // ISO date
+    month: string;      // "Jan", "Feb", etc.
+    type: string;       // "B/F", "Purchase", "Class", "Adjust+", "Adjust-", "Expired"
+    className: string;  // class or package name
+    dateTime: string;   // e.g. "Sat 10:00-11:00"
+    amount: number;     // price paid (negative for usage, positive for purchase)
+    coinPurchase: number;
+    coinUsage: number;
+    balance: number;    // running balance
+    validUntil: string; // expiry date
+};
+
+export type MemberReportData = {
+    memberName: string;
+    rows: MemberReportRow[];
+    monthlyBalance: Record<string, number>; // "Jan" -> balance at end of month
+};
+
+const REPORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+export async function getMemberReport(userId: string): Promise<MemberReportData> {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { parentName: true },
+    });
+
+    const packages = await prisma.coinPackage.findMany({
+        where: { userId },
+        include: {
+            transactions: {
+                orderBy: { createdAt: "asc" },
+            },
+        },
+        orderBy: { createdAt: "asc" },
+    });
+
+    // Build timeline events sorted by date
+    type RawEvent = {
+        date: Date;
+        type: string;
+        className: string;
+        dateTime: string;
+        amount: number;
+        coinPurchase: number;
+        coinUsage: number;
+        validUntil: string;
+    };
+
+    const events: RawEvent[] = [];
+
+    for (const pkg of packages) {
+        const validUntil = pkg.expiresAt
+            ? formatReportDate(new Date(pkg.expiresAt))
+            : "";
+
+        // For non-ADJUSTMENT packages: calculate original purchase coins
+        // adjustCoinsUp increments totalCoins, so we need to subtract those increments
+        if (pkg.packageType !== "ADJUSTMENT") {
+            // Sum of coins added via adjustCoinsUp (negative coinsUsed ADJUSTMENT transactions)
+            const adjustUpOnThisPackage = pkg.transactions
+                .filter(t => t.type === "ADJUSTMENT" && t.coinsUsed < 0)
+                .reduce((s, t) => s + Math.abs(t.coinsUsed), 0);
+
+            const originalCoins = pkg.totalCoins - adjustUpOnThisPackage;
+
+            events.push({
+                date: new Date(pkg.createdAt),
+                type: "Purchase",
+                className: "",
+                dateTime: "",
+                amount: Number(pkg.pricePaid),
+                coinPurchase: originalCoins,
+                coinUsage: 0,
+                validUntil,
+            });
+        }
+        // ADJUSTMENT packages: skip the package event — the transaction handles it
+        // (avoids double counting)
+
+        // Calculate per-coin rate for this package (baht per coin)
+        const adjustUpOnPkg = pkg.transactions
+            .filter(t => t.type === "ADJUSTMENT" && t.coinsUsed < 0)
+            .reduce((s, t) => s + Math.abs(t.coinsUsed), 0);
+        const origCoins = pkg.packageType !== "ADJUSTMENT"
+            ? pkg.totalCoins - adjustUpOnPkg
+            : 0;
+        const coinRate = origCoins > 0 ? Number(pkg.pricePaid) / origCoins : 0;
+
+        // Transactions
+        for (const tx of pkg.transactions) {
+            if (tx.type === "ADJUSTMENT") {
+                if (tx.coinsUsed < 0) {
+                    // Coins added (adjust up)
+                    events.push({
+                        date: new Date(tx.createdAt),
+                        type: "Adjust+",
+                        className: tx.description?.replace("[เพิ่ม] ", "") || "ปรับเพิ่มเหรียญ",
+                        dateTime: "",
+                        amount: 0,
+                        coinPurchase: Math.abs(tx.coinsUsed),
+                        coinUsage: 0,
+                        validUntil,
+                    });
+                } else {
+                    // Coins deducted (adjust down)
+                    events.push({
+                        date: new Date(tx.createdAt),
+                        type: "Adjust-",
+                        className: tx.description?.replace("[หัก] ", "") || "ปรับลดเหรียญ",
+                        dateTime: "",
+                        amount: coinRate > 0 ? -(tx.coinsUsed * coinRate) : 0,
+                        coinPurchase: 0,
+                        coinUsage: tx.coinsUsed,
+                        validUntil,
+                    });
+                }
+            } else if (tx.type === "CLASS_FEE") {
+                events.push({
+                    date: new Date(tx.createdAt),
+                    type: "Class",
+                    className: tx.className || "",
+                    dateTime: tx.description?.match(/\((.+)\)/)?.[1] || "",
+                    amount: coinRate > 0 ? -(tx.coinsUsed * coinRate) : 0,
+                    coinPurchase: 0,
+                    coinUsage: tx.coinsUsed,
+                    validUntil,
+                });
+            } else {
+                // BOOK_RENTAL, BOOK_DEPOSIT, etc
+                events.push({
+                    date: new Date(tx.createdAt),
+                    type: tx.type.replace(/_/g, " "),
+                    className: tx.className || tx.description || "",
+                    dateTime: "",
+                    amount: tx.coinsUsed > 0 ? -(tx.coinsUsed * coinRate) : 0,
+                    coinPurchase: tx.coinsUsed < 0 ? Math.abs(tx.coinsUsed) : 0,
+                    coinUsage: tx.coinsUsed > 0 ? tx.coinsUsed : 0,
+                    validUntil,
+                });
+            }
+        }
+
+        // Expired event
+        if (pkg.isExpired && pkg.expiresAt) {
+            const hasExpiredTx = pkg.transactions.some(t => t.type === "EXPIRED");
+            if (!hasExpiredTx) {
+                events.push({
+                    date: new Date(pkg.expiresAt),
+                    type: "Expired",
+                    className: "Coin expired",
+                    dateTime: "",
+                    amount: 0,
+                    coinPurchase: 0,
+                    coinUsage: pkg.remainingCoins > 0 ? pkg.remainingCoins : 0,
+                    validUntil,
+                });
+            }
+        }
+    }
+
+    // Sort by date ascending
+    events.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    // Build rows with running balance
+    let balance = 0;
+    const rows: MemberReportRow[] = [];
+
+    for (const evt of events) {
+        balance = balance + evt.coinPurchase - evt.coinUsage;
+        rows.push({
+            date: formatReportDate(evt.date),
+            month: REPORT_MONTHS[evt.date.getMonth()],
+            type: evt.type,
+            className: evt.className,
+            dateTime: evt.dateTime,
+            amount: evt.amount,
+            coinPurchase: evt.coinPurchase,
+            coinUsage: evt.coinUsage,
+            balance,
+            validUntil: evt.validUntil,
+        });
+    }
+
+    // Monthly balance summary
+    const monthlyBalance: Record<string, number> = {};
+    for (const row of rows) {
+        monthlyBalance[row.month] = row.balance;
+    }
+
+    return {
+        memberName: user?.parentName || "Unknown",
+        rows,
+        monthlyBalance,
+    };
+}
+
+function formatReportDate(d: Date): string {
+    const day = d.getDate().toString().padStart(2, "0");
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const month = months[d.getMonth()];
+    const year = d.getFullYear().toString().slice(-2);
+    return `${day}-${month}-${year}`;
+}

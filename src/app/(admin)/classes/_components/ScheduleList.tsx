@@ -57,7 +57,8 @@ function dateToString(d: Date) {
     return d.toISOString().split("T")[0];
 }
 
-export default function ScheduleList({ schedules }: { schedules: ScheduleData[] }) {
+export default function ScheduleList({ schedules, mode = "manage" }: { schedules: ScheduleData[]; mode?: "manage" | "booking" }) {
+    const isManage = mode === "manage";
     const now = new Date();
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
@@ -157,19 +158,21 @@ export default function ScheduleList({ schedules }: { schedules: ScheduleData[] 
                 message={message}
             />
 
-            {/* Create button */}
-            <div className="mb-4 flex justify-end">
-                <button
-                    onClick={() => setShowCreate(!showCreate)}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#4e7a64] transition-colors shadow-md shadow-[#81b29a]/30"
-                >
-                    <Plus size={16} />
-                    สร้างตารางใหม่
-                </button>
-            </div>
+            {/* Create button (manage mode only) */}
+            {isManage && (
+                <div className="mb-4 flex justify-end">
+                    <button
+                        onClick={() => setShowCreate(!showCreate)}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#4e7a64] transition-colors shadow-md shadow-[#81b29a]/30"
+                    >
+                        <Plus size={16} />
+                        สร้างตารางใหม่
+                    </button>
+                </div>
+            )}
 
-            {/* Create Form */}
-            {showCreate && (
+            {/* Create Form (manage mode only) */}
+            {isManage && showCreate && (
                 <Card className="mb-6">
                     <h3 className="font-semibold text-[#3d405b] mb-4 flex items-center gap-2">
                         <Sparkles size={18} className="text-amber-500" />
@@ -321,43 +324,45 @@ export default function ScheduleList({ schedules }: { schedules: ScheduleData[] 
                                         </p>
                                     )}
                                 </Link>
-                                <div className="flex items-center gap-1 mt-3 pt-3 border-t border-[#d1cce7]/15">
-                                    <button
-                                        onClick={() => handleDuplicate(s.id)}
-                                        disabled={loading}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#609279] hover:bg-[#81b29a]/10 rounded-lg transition-colors disabled:opacity-50"
-                                        title="คัดลอกไปสัปดาห์ถัดไป"
-                                    >
-                                        <Copy size={13} />
-                                        คัดลอก
-                                    </button>
-                                    {deleteConfirmId === s.id ? (
-                                        <div className="flex items-center gap-1 ml-auto">
-                                            <button
-                                                onClick={() => handleDelete(s.id)}
-                                                disabled={loading}
-                                                className="px-2.5 py-1.5 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
-                                            >
-                                                ยืนยันลบ
-                                            </button>
-                                            <button
-                                                onClick={() => setDeleteConfirmId(null)}
-                                                className="px-2.5 py-1.5 text-xs text-[#3d405b]/50 hover:bg-[#d1cce7]/15 rounded-lg transition-colors"
-                                            >
-                                                ยกเลิก
-                                            </button>
-                                        </div>
-                                    ) : (
+                                {isManage && (
+                                    <div className="flex items-center gap-1 mt-3 pt-3 border-t border-[#d1cce7]/15">
                                         <button
-                                            onClick={() => setDeleteConfirmId(s.id)}
+                                            onClick={() => handleDuplicate(s.id)}
                                             disabled={loading}
-                                            className="ml-auto p-1.5 text-[#3d405b]/30 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                                            title="ลบตาราง"
+                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#609279] hover:bg-[#81b29a]/10 rounded-lg transition-colors disabled:opacity-50"
+                                            title="คัดลอกไปสัปดาห์ถัดไป"
                                         >
-                                            <Trash2 size={14} />
+                                            <Copy size={13} />
+                                            คัดลอก
                                         </button>
-                                    )}
-                                </div>
+                                        {deleteConfirmId === s.id ? (
+                                            <div className="flex items-center gap-1 ml-auto">
+                                                <button
+                                                    onClick={() => handleDelete(s.id)}
+                                                    disabled={loading}
+                                                    className="px-2.5 py-1.5 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
+                                                >
+                                                    ยืนยันลบ
+                                                </button>
+                                                <button
+                                                    onClick={() => setDeleteConfirmId(null)}
+                                                    className="px-2.5 py-1.5 text-xs text-[#3d405b]/50 hover:bg-[#d1cce7]/15 rounded-lg transition-colors"
+                                                >
+                                                    ยกเลิก
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => setDeleteConfirmId(s.id)}
+                                                disabled={loading}
+                                                className="ml-auto p-1.5 text-[#3d405b]/30 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                                title="ลบตาราง"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
                             </Card>
                         );
                     })}

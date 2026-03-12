@@ -139,7 +139,7 @@ export default function SettingsTabs({
                 {activeTab === "shop" && <ShopInfoForm shopInfo={shopInfo} />}
                 {activeTab === "packages" && <PackageManager packages={packages} />}
                 {activeTab === "activities" && <ActivityManager activities={activities} />}
-                {activeTab === "classes" && <ScheduleList schedules={schedules} />}
+                {activeTab === "classes" && <ScheduleList schedules={schedules} mode="manage" />}
                 {activeTab === "schedule" && (
                     <ScheduleImageUploader currentImageUrl={shopInfo.scheduleImageUrl} />
                 )}

@@ -11,6 +11,8 @@ import MemberActions from "./_components/MemberActions";
 import MemberEditForm from "./_components/MemberEditForm";
 import MemberCoinHistory from "./_components/MemberCoinHistory";
 import ConfirmReserveButton from "../../borrows/_components/ConfirmReserveButton";
+import MemberReport from "./_components/MemberReport";
+import MemberBookingHistory from "./_components/MemberBookingHistory";
 import TopUpActions from "../../coins/top-ups/_components/TopUpActions";
 import BackLink from "@/components/ui/BackLink";
 import Card from "@/components/ui/Card";
@@ -109,6 +111,12 @@ export default async function MemberDetailPage({
             </Card>
 
             <MemberActions member={member} packages={packageOptions} activities={dbActivities.map(a => ({ name: a.name, coins: a.coins }))} />
+
+            {/* Member Report (Excel Format) */}
+            <MemberReport userId={member.id} memberName={member.parentName} />
+
+            {/* Class Booking History */}
+            <MemberBookingHistory userId={member.id} />
 
             {/* Coin Movement History */}
             <Card padding={false} className="mb-6">
