@@ -1,5 +1,6 @@
 import { getMemberById } from "@/actions/member";
 import { getActivePackages } from "@/actions/packageConfig";
+import { getActiveActivities } from "@/actions/activityConfig";
 import { getTopUpsByUser } from "@/actions/coin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -21,9 +22,10 @@ export default async function MemberDetailPage({
     params: Promise<{ id: string }>;
 }) {
     const { id } = await params;
-    const [member, dbPackages, topUpRequests] = await Promise.all([
+    const [member, dbPackages, dbActivities, topUpRequests] = await Promise.all([
         getMemberById(id),
         getActivePackages(),
+        getActiveActivities(),
         getTopUpsByUser(id),
     ]);
 
@@ -106,7 +108,7 @@ export default async function MemberDetailPage({
                 )}
             </Card>
 
-            <MemberActions member={member} packages={packageOptions} />
+            <MemberActions member={member} packages={packageOptions} activities={dbActivities.map(a => ({ name: a.name, coins: a.coins }))} />
 
             {/* Coin Movement History */}
             <Card padding={false} className="mb-6">

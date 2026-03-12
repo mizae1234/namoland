@@ -65,13 +65,14 @@ enum AdminRole {
 }
 
 model ShopInfo {
-  id            String   @id @default(cuid())
-  shopName      String   @default("Namoland")
-  bankName      String?
-  accountNumber String?
-  accountName   String?
-  note          String?
-  updatedAt     DateTime @updatedAt
+  id               String   @id @default(cuid())
+  shopName         String   @default("Namoland")
+  bankName         String?
+  accountNumber    String?
+  accountName      String?
+  note             String?
+  scheduleImageUrl String?
+  updatedAt        DateTime @updatedAt
 }
 
 model TopUpRequest {

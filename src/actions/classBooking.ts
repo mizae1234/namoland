@@ -55,6 +55,10 @@ export async function bookClassForMember(formData: FormData) {
         return { error: "กรุณาเลือกคลาสและสมาชิก" };
     }
 
+    if (!childId) {
+        return { error: "กรุณาเลือกบุตรที่จะเข้าเรียน" };
+    }
+
     // Check for duplicate booking
     const existing = await prisma.classBooking.findFirst({
         where: {

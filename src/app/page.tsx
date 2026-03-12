@@ -15,10 +15,15 @@ import {
   MapPin,
 } from "lucide-react";
 import { getClassSchedulesWithEntries } from "@/actions/classSchedule";
+import { getShopInfo } from "@/actions/shop";
 import LandingSchedule from "./_components/LandingSchedule";
 
 export default async function LandingPage() {
-  const rawSchedules = await getClassSchedulesWithEntries();
+  const [rawSchedules, shopInfo] = await Promise.all([
+    getClassSchedulesWithEntries(),
+    getShopInfo(),
+  ]);
+  const scheduleImageUrl = shopInfo.scheduleImageUrl;
   const schedules = rawSchedules.map((s: { id: string; theme: string | null; startDate: Date; endDate: Date; entries: { dayOfWeek: number; startTime: string; endTime: string; title: string }[] }) => ({
     id: s.id,
     theme: s.theme,
@@ -246,7 +251,35 @@ export default async function LandingPage() {
       </section>
 
       {/* ─── Class Schedule ─────────────────────────────── */}
-      <LandingSchedule schedules={schedules} />
+      {scheduleImageUrl ? (
+        <section id="programs" className="py-20 bg-gradient-to-b from-[#f4f1de] to-white">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#a16b9f]/10 rounded-full text-sm font-medium text-[#a16b9f] mb-4">
+                📅 ตารางกิจกรรม
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-bold text-[#3d405b] mb-4">
+                ตารางกิจกรรม<span className="text-[#a16b9f]">ประจำเดือน</span>
+              </h2>
+              <p className="text-[#3d405b]/60 max-w-2xl mx-auto">
+                ดูตารางกิจกรรมทั้งเดือน สมัครสมาชิกเพื่อจองคลาสที่สนใจ
+              </p>
+            </div>
+            <div className="rounded-3xl overflow-hidden shadow-xl border border-[#d1cce7]/20">
+              <Image
+                src={scheduleImageUrl}
+                alt="ตารางกิจกรรมประจำเดือน Namoland"
+                width={1200}
+                height={800}
+                className="w-full h-auto object-contain"
+                unoptimized
+              />
+            </div>
+          </div>
+        </section>
+      ) : (
+        <LandingSchedule schedules={schedules} />
+      )}
 
       {/* ─── Library / Coin System ───────────────────────── */}
       <section id="library" className="py-20 bg-white">

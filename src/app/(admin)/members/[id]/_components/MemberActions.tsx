@@ -19,6 +19,11 @@ interface PackageOption {
     bonus: string;
 }
 
+interface ActivityOption {
+    name: string;
+    coins: number;
+}
+
 interface MemberActionsProps {
     member: {
         id: string;
@@ -33,22 +38,10 @@ interface MemberActionsProps {
         }>;
     };
     packages: PackageOption[];
+    activities: ActivityOption[];
 }
 
-const CLASS_OPTIONS = [
-    { label: "Free Play (1 ชม.)", coins: 1, hours: 1 },
-    { label: "Little Explorers (1.5 ชม.)", coins: 1, hours: 1.5 },
-    { label: "Private Grow to Glow (2 ชม.)", coins: 3, hours: 2 },
-    { label: "Jolly Designer (2 ชม.)", coins: 5, hours: 2 },
-    { label: "Summer Camp – Full day", coins: 6, hours: 8 },
-    { label: "Little Artist", coins: 13, hours: 8 },
-    { label: "Summer/Camp – Half day", coins: 6, hours: 4 },
-    { label: "Inspire Hour – Fashion/Product Design", coins: 1, hours: 1 },
-    { label: "Sensory Play", coins: 1, hours: 1 },
-    { label: "Book Rental", coins: 1, hours: 0 },
-];
-
-export default function MemberActions({ member, packages }: MemberActionsProps) {
+export default function MemberActions({ member, packages, activities }: MemberActionsProps) {
     const [showBuy, setShowBuy] = useState(false);
     const [showUse, setShowUse] = useState(false);
     const [showExtend, setShowExtend] = useState(false);
@@ -429,15 +422,15 @@ export default function MemberActions({ member, packages }: MemberActionsProps) 
                         </div>
                     ) : (
                         <div className="space-y-2">
-                            {CLASS_OPTIONS.map((cls) => (
+                            {activities.map((act) => (
                                 <button
-                                    key={cls.label}
-                                    onClick={() => handleSelectActivity(cls)}
-                                    disabled={loading || activePackages.reduce((s, p) => s + p.remainingCoins, 0) < cls.coins}
+                                    key={act.name}
+                                    onClick={() => handleSelectActivity({ label: act.name, coins: act.coins, hours: 0 })}
+                                    disabled={loading || activePackages.reduce((s, p) => s + p.remainingCoins, 0) < act.coins}
                                     className="w-full flex items-center justify-between p-3 border border-[#d1cce7]/30 rounded-xl hover:border-[#81b29a] hover:bg-[#81b29a]/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                                 >
-                                    <span className="text-sm text-[#3d405b]/80">{cls.label}</span>
-                                    <span className="text-sm font-semibold text-amber-600">{cls.coins} เหรียญ</span>
+                                    <span className="text-sm text-[#3d405b]/80">{act.name}</span>
+                                    <span className="text-sm font-semibold text-amber-600">{act.coins} เหรียญ</span>
                                 </button>
                             ))}
 

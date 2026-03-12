@@ -47,3 +47,45 @@ export async function updateShopInfo(formData: FormData) {
     revalidatePath("/settings");
     return { success: true };
 }
+
+export async function updateScheduleImage(url: string) {
+    const session = await auth();
+    if (!session?.user || session.user.type !== "ADMIN") {
+        return { error: "Unauthorized" };
+    }
+
+    let shop = await prisma.shopInfo.findFirst();
+    if (!shop) {
+        shop = await prisma.shopInfo.create({
+            data: { shopName: "Namoland" },
+        });
+    }
+
+    await prisma.shopInfo.update({
+        where: { id: shop.id },
+        data: { scheduleImageUrl: url },
+    });
+
+    revalidatePath("/settings");
+    revalidatePath("/");
+    return { success: true };
+}
+
+export async function removeScheduleImage() {
+    const session = await auth();
+    if (!session?.user || session.user.type !== "ADMIN") {
+        return { error: "Unauthorized" };
+    }
+
+    let shop = await prisma.shopInfo.findFirst();
+    if (!shop) return { success: true };
+
+    await prisma.shopInfo.update({
+        where: { id: shop.id },
+        data: { scheduleImageUrl: null },
+    });
+
+    revalidatePath("/settings");
+    revalidatePath("/");
+    return { success: true };
+}

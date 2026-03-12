@@ -311,27 +311,37 @@ export default function BookingPanel({
                                         </p>
                                     </div>
 
-                                    {selectedMember.children.length > 0 && (
+                                    {selectedMember.children.length > 0 ? (
                                         <div>
                                             <label className="text-xs font-medium text-[#3d405b]/60 mb-1 block">
-                                                เลือกบุตร
+                                                เลือกบุตร <span className="text-red-400">*</span>
                                             </label>
                                             <select
                                                 value={selectedChildId}
                                                 onChange={(e) => setSelectedChildId(e.target.value)}
-                                                className="w-full px-3 py-2.5 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20 bg-white"
+                                                className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20 bg-white ${
+                                                    !selectedChildId ? "border-red-300" : "border-[#d1cce7]/30"
+                                                }`}
                                             >
-                                                <option value="">-- ไม่ระบุ --</option>
+                                                <option value="">-- กรุณาเลือกบุตร --</option>
                                                 {selectedMember.children.map((c) => (
                                                     <option key={c.id} value={c.id}>{c.name}</option>
                                                 ))}
                                             </select>
+                                            {!selectedChildId && (
+                                                <p className="text-xs text-red-400 mt-1">กรุณาเลือกบุตรที่จะเข้าเรียน</p>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="bg-amber-50 rounded-xl p-3">
+                                            <p className="text-xs text-amber-600 font-medium">⚠️ สมาชิกนี้ยังไม่มีข้อมูลเด็ก</p>
+                                            <p className="text-xs text-amber-500 mt-0.5">กรุณาเพิ่มข้อมูลเด็กในหน้าสมาชิกก่อนจอง</p>
                                         </div>
                                     )}
 
                                     <button
                                         onClick={handleBook}
-                                        disabled={loading}
+                                        disabled={loading || !selectedChildId}
                                         className="w-full py-3 bg-[#609279] text-white rounded-xl font-medium text-sm hover:bg-[#4e7a64] disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
                                     >
                                         <UserPlus size={16} />

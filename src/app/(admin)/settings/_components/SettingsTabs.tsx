@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Store, Package, CalendarDays, Calendar, UserCog } from "lucide-react";
+import { Store, Package, CalendarDays, Calendar, UserCog, ImageIcon } from "lucide-react";
 
 import ShopInfoForm from "./ShopInfoForm";
 import PackageManager from "../../coins/packages/_components/PackageManager";
 import ActivityManager from "../../activities/_components/ActivityManager";
 import ScheduleList from "../../classes/_components/ScheduleList";
 import AdminUsersManager from "./AdminUsersManager";
+import ScheduleImageUploader from "./ScheduleImageUploader";
 
 interface TabConfig {
     key: string;
@@ -21,6 +22,7 @@ const TABS: TabConfig[] = [
     { key: "packages", label: "แพ็คเกจเหรียญ", icon: Package },
     { key: "activities", label: "กิจกรรม", icon: CalendarDays },
     { key: "classes", label: "ตารางคลาส", icon: Calendar },
+    { key: "schedule", label: "ตารางกิจกรรม", icon: ImageIcon },
     { key: "users", label: "จัดการผู้ใช้", icon: UserCog },
 ];
 
@@ -32,6 +34,7 @@ interface SettingsTabsProps {
         accountNumber: string | null;
         accountName: string | null;
         note: string | null;
+        scheduleImageUrl: string | null;
     };
     packages: {
         id: string;
@@ -137,6 +140,9 @@ export default function SettingsTabs({
                 {activeTab === "packages" && <PackageManager packages={packages} />}
                 {activeTab === "activities" && <ActivityManager activities={activities} />}
                 {activeTab === "classes" && <ScheduleList schedules={schedules} />}
+                {activeTab === "schedule" && (
+                    <ScheduleImageUploader currentImageUrl={shopInfo.scheduleImageUrl} />
+                )}
                 {activeTab === "users" && (
                     <AdminUsersManager users={adminUsers} currentUserId={currentUserId} />
                 )}
