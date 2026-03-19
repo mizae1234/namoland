@@ -13,6 +13,10 @@ export async function getOwnerDashboardData() {
 
     // ─── KPI Cards ───────────────────────────────────
     const [
+        todayTransactions,
+        yesterdayTransactions,
+        thisMonthTransactions,
+        lastMonthTransactions,
         todayPackages,
         yesterdayPackages,
         thisMonthPackages,
@@ -20,27 +24,43 @@ export async function getOwnerDashboardData() {
         borrowedCount,
         overdueRecords,
         totalRemainingCoins,
-        todayCashTopUps,
-        yesterdayCashTopUps,
-        thisMonthCashTopUps,
-        lastMonthCashTopUps,
     ] = await Promise.all([
-        // Today revenue
+        // Today revenue (Transactions)
+        prisma.coinTransaction.findMany({
+            where: { createdAt: { gte: todayStart }, type: { notIn: ["BOOK_DEPOSIT", "BOOK_DEPOSIT_RETURN"] } },
+            include: { package: { select: { pricePaid: true, bonusAmount: true, totalCoins: true } } },
+        }),
+        // Yesterday revenue (Transactions)
+        prisma.coinTransaction.findMany({
+            where: { createdAt: { gte: yesterdayStart, lt: todayStart }, type: { notIn: ["BOOK_DEPOSIT", "BOOK_DEPOSIT_RETURN"] } },
+            include: { package: { select: { pricePaid: true, bonusAmount: true, totalCoins: true } } },
+        }),
+        // This month revenue (Transactions)
+        prisma.coinTransaction.findMany({
+            where: { createdAt: { gte: monthStart }, type: { notIn: ["BOOK_DEPOSIT", "BOOK_DEPOSIT_RETURN"] } },
+            include: { package: { select: { pricePaid: true, bonusAmount: true, totalCoins: true } } },
+        }),
+        // Last month revenue (Transactions)
+        prisma.coinTransaction.findMany({
+            where: { createdAt: { gte: lastMonthStart, lte: lastMonthEnd }, type: { notIn: ["BOOK_DEPOSIT", "BOOK_DEPOSIT_RETURN"] } },
+            include: { package: { select: { pricePaid: true, bonusAmount: true, totalCoins: true } } },
+        }),
+        // Today cash (Packages)
         prisma.coinPackage.findMany({
             where: { createdAt: { gte: todayStart } },
             select: { pricePaid: true },
         }),
-        // Yesterday revenue
+        // Yesterday cash
         prisma.coinPackage.findMany({
             where: { createdAt: { gte: yesterdayStart, lt: todayStart } },
             select: { pricePaid: true },
         }),
-        // This month revenue
+        // This month cash
         prisma.coinPackage.findMany({
             where: { createdAt: { gte: monthStart } },
             select: { pricePaid: true },
         }),
-        // Last month revenue
+        // Last month cash
         prisma.coinPackage.findMany({
             where: { createdAt: { gte: lastMonthStart, lte: lastMonthEnd } },
             select: { pricePaid: true },
@@ -62,51 +82,43 @@ export async function getOwnerDashboardData() {
             _sum: { remainingCoins: true },
             where: { isExpired: false },
         }),
-        // ─── Cash Received (approved top-ups) ───────────
-        prisma.topUpRequest.findMany({
-            where: { status: "APPROVED", processedAt: { gte: todayStart } },
-            select: { amount: true },
-        }),
-        prisma.topUpRequest.findMany({
-            where: { status: "APPROVED", processedAt: { gte: yesterdayStart, lt: todayStart } },
-            select: { amount: true },
-        }),
-        prisma.topUpRequest.findMany({
-            where: { status: "APPROVED", processedAt: { gte: monthStart } },
-            select: { amount: true },
-        }),
-        prisma.topUpRequest.findMany({
-            where: { status: "APPROVED", processedAt: { gte: lastMonthStart, lte: lastMonthEnd } },
-            select: { amount: true },
-        }),
     ]);
 
-    const todayRevenue = todayPackages.reduce((s, p) => s + Number(p.pricePaid), 0);
-    const yesterdayRevenue = yesterdayPackages.reduce((s, p) => s + Number(p.pricePaid), 0);
-    const thisMonthRevenue = thisMonthPackages.reduce((s, p) => s + Number(p.pricePaid), 0);
-    const lastMonthRevenue = lastMonthPackages.reduce((s, p) => s + Number(p.pricePaid), 0);
+    const calculateRevenue = (transactions: any[]) => {
+        return Math.round(transactions.reduce((s, tx) => {
+            if (tx.package.totalCoins <= 0) return s;
+            const val = (Number(tx.package.pricePaid) + Number(tx.package.bonusAmount)) / tx.package.totalCoins;
+            return s + (tx.coinsUsed * val);
+        }, 0));
+    };
+
+    const todayRevenue = calculateRevenue(todayTransactions);
+    const yesterdayRevenue = calculateRevenue(yesterdayTransactions);
+    const thisMonthRevenue = calculateRevenue(thisMonthTransactions);
+    const lastMonthRevenue = calculateRevenue(lastMonthTransactions);
+
     const revenueChangePercent = yesterdayRevenue > 0
         ? Math.round(((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100)
         : todayRevenue > 0 ? 100 : 0;
 
-    // Cash received from approved top-ups
-    const todayCash = todayCashTopUps.reduce((s, t) => s + Number(t.amount), 0);
-    const yesterdayCash = yesterdayCashTopUps.reduce((s, t) => s + Number(t.amount), 0);
-    const thisMonthCash = thisMonthCashTopUps.reduce((s, t) => s + Number(t.amount), 0);
-    const lastMonthCash = lastMonthCashTopUps.reduce((s, t) => s + Number(t.amount), 0);
+    // Cash received from actual packages
+    const todayCash = todayPackages.reduce((s, p) => s + Number(p.pricePaid), 0);
+    const yesterdayCash = yesterdayPackages.reduce((s, p) => s + Number(p.pricePaid), 0);
+    const thisMonthCash = thisMonthPackages.reduce((s, p) => s + Number(p.pricePaid), 0);
+    const lastMonthCash = lastMonthPackages.reduce((s, p) => s + Number(p.pricePaid), 0);
 
     // ─── Revenue Trend (last 30 days) ──────────────
     const thirtyDaysAgo = new Date(todayStart);
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const [allPackagesLast30d, allCashTopUpsLast30d] = await Promise.all([
+    const [allTransactionsLast30d, allPackagesLast30d] = await Promise.all([
+        prisma.coinTransaction.findMany({
+            where: { createdAt: { gte: thirtyDaysAgo }, type: { notIn: ["BOOK_DEPOSIT", "BOOK_DEPOSIT_RETURN"] } },
+            select: { coinsUsed: true, createdAt: true, package: { select: { pricePaid: true, bonusAmount: true, totalCoins: true } } },
+        }),
         prisma.coinPackage.findMany({
             where: { createdAt: { gte: thirtyDaysAgo } },
             select: { pricePaid: true, createdAt: true },
-        }),
-        prisma.topUpRequest.findMany({
-            where: { status: "APPROVED", processedAt: { gte: thirtyDaysAgo } },
-            select: { amount: true, processedAt: true },
         }),
     ]);
 
@@ -117,12 +129,10 @@ export async function getOwnerDashboardData() {
         const nextD = new Date(d);
         nextD.setDate(nextD.getDate() + 1);
         const label = `${d.getDate()}/${d.getMonth() + 1}`;
-        const dayRevenue = allPackagesLast30d
+        const dayRevenue = calculateRevenue(allTransactionsLast30d.filter((tx) => tx.createdAt >= d && tx.createdAt < nextD));
+        const dayCash = allPackagesLast30d
             .filter((p) => p.createdAt >= d && p.createdAt < nextD)
             .reduce((s, p) => s + Number(p.pricePaid), 0);
-        const dayCash = allCashTopUpsLast30d
-            .filter((t) => t.processedAt && t.processedAt >= d && t.processedAt < nextD)
-            .reduce((s, t) => s + Number(t.amount), 0);
         revenueTrend.push({ date: label, revenue: dayRevenue, cash: dayCash });
     }
 
