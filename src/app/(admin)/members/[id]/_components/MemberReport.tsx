@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { getMemberReport, MemberReportData } from "@/actions/report";
 import { Download, FileSpreadsheet, RefreshCw } from "lucide-react";
 import Card from "@/components/ui/Card";
@@ -11,6 +11,14 @@ export default function MemberReport({ userId, memberName }: { userId: string; m
     const [data, setData] = useState<MemberReportData | null>(null);
     const [isPending, startTransition] = useTransition();
     const [loaded, setLoaded] = useState(false);
+
+    // Auto-load on mount
+    useEffect(() => {
+        if (!loaded && !isPending) {
+            loadReport();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     function loadReport() {
         startTransition(async () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
 import { CalendarCheck, Check, Clock, XCircle, Ban, RefreshCw, Coins } from "lucide-react";
@@ -44,6 +44,14 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
     const [isPending, startTransition] = useTransition();
     const [loaded, setLoaded] = useState(false);
     const [filter, setFilter] = useState<string>("ALL");
+
+    // Auto-load on mount
+    useEffect(() => {
+        if (!loaded && !isPending) {
+            loadBookings();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     function loadBookings() {
         startTransition(async () => {
