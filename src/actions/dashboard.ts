@@ -87,7 +87,7 @@ export async function getOwnerDashboardData() {
     const calculateRevenue = (transactions: any[]) => {
         return Math.round(transactions.reduce((s, tx) => {
             if (tx.package.totalCoins <= 0) return s;
-            const val = (Number(tx.package.pricePaid) + Number(tx.package.bonusAmount)) / tx.package.totalCoins;
+            const val = Number(tx.package.pricePaid) / tx.package.totalCoins;
             return s + (tx.coinsUsed * val);
         }, 0));
     };
