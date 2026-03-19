@@ -130,9 +130,8 @@ export default function ScheduleList({ schedules, mode = "manage" }: { schedules
     const dateScheduleMap: Record<string, ScheduleData> = {};
 
     schedules.forEach((s) => {
-        // Parse startDate as local date (avoid UTC shift)
-        const parts = s.startDate.split("T")[0].split("-");
-        const start = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        // Parse startDate
+        const start = new Date(s.startDate);
         for (let d = 0; d < 7; d++) {
             const day = new Date(start);
             day.setDate(day.getDate() + d);
@@ -152,10 +151,8 @@ export default function ScheduleList({ schedules, mode = "manage" }: { schedules
     const monthStart = new Date(viewYear, viewMonth, 1);
     const monthEnd = new Date(viewYear, viewMonth + 1, 0);
     const monthSchedules = schedules.filter((s) => {
-        const sp = s.startDate.split("T")[0].split("-");
-        const ep = s.endDate.split("T")[0].split("-");
-        const sStart = new Date(Number(sp[0]), Number(sp[1]) - 1, Number(sp[2]));
-        const sEnd = new Date(Number(ep[0]), Number(ep[1]) - 1, Number(ep[2]));
+        const sStart = new Date(s.startDate);
+        const sEnd = new Date(s.endDate);
         return sStart <= monthEnd && sEnd >= monthStart;
     });
 
@@ -308,10 +305,8 @@ export default function ScheduleList({ schedules, mode = "manage" }: { schedules
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {monthSchedules.map((s) => {
-                        const sp = s.startDate.split("T")[0].split("-");
-                        const ep = s.endDate.split("T")[0].split("-");
-                        const sStart = new Date(Number(sp[0]), Number(sp[1]) - 1, Number(sp[2]));
-                        const sEnd = new Date(Number(ep[0]), Number(ep[1]) - 1, Number(ep[2]));
+                        const sStart = new Date(s.startDate);
+                        const sEnd = new Date(s.endDate);
                         const range = `${sStart.getDate()} - ${sEnd.getDate()} ${sStart.toLocaleDateString("en-US", { month: "short" })} ${sStart.getFullYear()}`;
 
                         return (

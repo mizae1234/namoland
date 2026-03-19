@@ -49,8 +49,7 @@ interface ScheduleData {
 }
 
 function parseLocalDate(isoStr: string) {
-    const [y, m, d] = isoStr.split("T")[0].split("-").map(Number);
-    return new Date(y, m - 1, d);
+    return new Date(isoStr);
 }
 
 function formatDateRange(startStr: string, endStr: string) {
