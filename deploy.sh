@@ -22,6 +22,11 @@ echo "📥 Pulling latest code..."
 git pull origin main
 
 echo ""
+echo "📂 Setting up uploads directory permissions..."
+mkdir -p /home/web/namoland/uploads
+chown -R 1001:1001 /home/web/namoland/uploads
+
+echo ""
 echo "🐳 Rebuilding Docker image..."
 docker compose down
 docker compose build --no-cache

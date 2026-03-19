@@ -16,12 +16,15 @@ import {
 } from "lucide-react";
 import { getClassSchedulesWithEntries } from "@/actions/classSchedule";
 import { getShopInfo } from "@/actions/shop";
+import { getAllActivityConfigs } from "@/actions/activityConfig";
 import LandingSchedule from "./_components/LandingSchedule";
+import LandingActivities from "./_components/LandingActivities";
 
 export default async function LandingPage() {
-  const [rawSchedules, shopInfo] = await Promise.all([
+  const [rawSchedules, shopInfo, activities] = await Promise.all([
     getClassSchedulesWithEntries(),
     getShopInfo(),
+    getAllActivityConfigs()
   ]);
   const scheduleImageUrl = shopInfo.scheduleImageUrl;
   const schedules = rawSchedules.map((s: { id: string; theme: string | null; startDate: Date; endDate: Date; entries: { dayOfWeek: number; startTime: string; endTime: string; title: string }[] }) => ({
@@ -177,76 +180,7 @@ export default async function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              {
-                icon: <Palette size={28} />,
-                title: "Namo Little Artist",
-                desc: "ศิลปะสร้างสรรค์สำหรับเด็กเล็ก เรียนรู้เทคนิคต่างๆ ผ่านการทดลองสื่อหลากหลาย",
-                color: "#e07a5f",
-                bg: "#e07a5f",
-                time: "14.00-15.00",
-              },
-              {
-                icon: <GraduationCap size={28} />,
-                title: "Jolly Grammar",
-                desc: "เรียนภาษาอังกฤษแบบ Jolly Phonics สนุก เข้าใจง่าย สำหรับเด็กทุกวัย",
-                color: "#81b29a",
-                bg: "#81b29a",
-                time: "10.00-11.00",
-              },
-              {
-                icon: <FlaskConical size={28} />,
-                title: "Namo Little Explorers",
-                desc: "สำรวจโลกวิทยาศาสตร์ ทดลอง ค้นพบ และเข้าใจธรรมชาติรอบตัว",
-                color: "#a16b9f",
-                bg: "#a16b9f",
-                time: "10.00-11.30",
-              },
-              {
-                icon: <BookOpen size={28} />,
-                title: "Namo SenStory Play",
-                desc: "เรียนรู้ผ่านเรื่องเล่าและละครสร้างสรรค์ พัฒนาจินตนาการและการสื่อสาร",
-                color: "#f9b61a",
-                bg: "#f9b61a",
-                time: "14.00-15.00",
-              },
-              {
-                icon: <Music size={28} />,
-                title: "Namo Inspire Hour",
-                desc: "ชั่วโมงสร้างแรงบันดาลใจ เปิดโลกให้เด็กๆ ผ่านกิจกรรมพิเศษหลากหลาย",
-                color: "#ecb4ce",
-                bg: "#ecb4ce",
-                time: "15.30-16.30",
-              },
-              {
-                icon: <Heart size={28} />,
-                title: "Namo Grow to Glow",
-                desc: "Playgroup สำหรับเด็กเล็ก เรียนรู้การเข้าสังคมและพัฒนาทักษะพื้นฐาน",
-                color: "#fab885",
-                bg: "#fab885",
-                time: "10.00-12.00",
-              },
-            ].map((item, i) => (
-              <div
-                key={i}
-                className="group relative bg-white rounded-3xl p-6 border border-slate-100 hover:border-transparent hover:shadow-xl transition-all duration-300 overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity duration-300" style={{ background: `linear-gradient(135deg, ${item.bg}22, ${item.bg}11)` }} />
-                <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 text-white shadow-lg"
-                  style={{ backgroundColor: item.color, boxShadow: `0 8px 24px ${item.color}33` }}
-                >
-                  {item.icon}
-                </div>
-                <h3 className="text-lg font-bold text-[#3d405b] mb-2">{item.title}</h3>
-                <p className="text-sm text-[#3d405b]/60 leading-relaxed mb-3">{item.desc}</p>
-                <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ backgroundColor: `${item.color}15`, color: item.color }}>
-                  🕐 {item.time}
-                </span>
-              </div>
-            ))}
-          </div>
+          <LandingActivities activities={activities} />
         </div>
       </section>
 

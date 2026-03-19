@@ -38,8 +38,8 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Ensure upload directory exists
-        const uploadDir = path.join(process.cwd(), "public", "uploads");
+        // Ensure upload directory exists (in persistent storage area)
+        const uploadDir = path.join(process.cwd(), "uploads");
         await mkdir(uploadDir, { recursive: true });
 
         // Generate unique filename

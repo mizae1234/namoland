@@ -12,3 +12,5 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - AUTH_SECRET=${AUTH_SECRET}
       - TZ=Asia/Bangkok
+    volumes:
+      - ./uploads:/app/uploads
