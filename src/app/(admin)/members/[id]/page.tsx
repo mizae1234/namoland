@@ -116,7 +116,7 @@ export default async function MemberDetailPage({
             <MemberReport userId={member.id} memberName={member.parentName} />
 
             {/* Class Booking History */}
-            <MemberBookingHistory userId={member.id} />
+            <MemberBookingHistory userId={member.id} memberName={member.parentName} />
 
             {/* Coin Movement History */}
             <Card padding={false} className="mb-6">

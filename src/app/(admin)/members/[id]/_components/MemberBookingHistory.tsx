@@ -39,7 +39,7 @@ async function fetchBookings(userId: string): Promise<BookingRecord[]> {
     return res.json();
 }
 
-export default function MemberBookingHistory({ userId }: { userId: string }) {
+export default function MemberBookingHistory({ userId, memberName }: { userId: string; memberName?: string }) {
     const [bookings, setBookings] = useState<BookingRecord[]>([]);
     const [isPending, startTransition] = useTransition();
     const [loaded, setLoaded] = useState(false);
@@ -51,6 +51,65 @@ export default function MemberBookingHistory({ userId }: { userId: string }) {
             setBookings(data);
             setLoaded(true);
         });
+    }
+
+    function exportToExcel() {
+        if (!bookings || bookings.length === 0) return;
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const XLSX = require("xlsx-js-style");
+
+        const wb = XLSX.utils.book_new();
+        const ws: Record<string, unknown> = {};
+
+        // Styles
+        const borderThin = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
+        const headerStyle = { font: { bold: true, sz: 10 }, fill: { fgColor: { rgb: "D9D9D9" } }, border: borderThin, alignment: { horizontal: "center", vertical: "center" } };
+        const normalStyle = { font: { sz: 10 }, border: borderThin };
+        const normalCenter = { ...normalStyle, alignment: { horizontal: "center" } };
+        
+        const statusColors: Record<string, { fgColor: { rgb: string } }> = {
+            CHECKED_IN: { fgColor: { rgb: "C6EFCE" } },
+            BOOKED: { fgColor: { rgb: "FFEB9C" } },
+            CANCELLED: { fgColor: { rgb: "FFC7CE" } },
+            NO_SHOW: { fgColor: { rgb: "E0E0E0" } },
+        };
+
+        // Title
+        ws["A1"] = { v: `ประวัติการจองคลาส - ${memberName || "สมาชิก"}`, s: { font: { bold: true, sz: 12 } } };
+
+        // Headers
+        const headers = ["วันที่บันทึก", "คลาส", "ผู้เข้าเรียน", "วัน/เวลา", "สถานะ", "เหรียญ", "Check-in", "ผู้ทำรายการ"];
+        const cols = ["A", "B", "C", "D", "E", "F", "G", "H"];
+        headers.forEach((h, i) => {
+            ws[`${cols[i]}3`] = { v: h, s: headerStyle };
+        });
+
+        // Current filtered data
+        const dataToExport = filter === "ALL" ? bookings : bookings.filter(b => b.status === filter);
+
+        dataToExport.forEach((b, i) => {
+            const r = i + 4;
+            const st = STATUS_CONFIG[b.status] || STATUS_CONFIG.BOOKED;
+            const statusStyle = { ...normalCenter, fill: statusColors[b.status] || { fgColor: { rgb: "FFFFFF" } } };
+
+            ws[`A${r}`] = { v: format(new Date(b.createdAt), "dd/MM/yyyy", { locale: th }), s: normalCenter };
+            ws[`B${r}`] = { v: b.className, s: normalStyle };
+            ws[`C${r}`] = { v: b.childName || "-", s: normalStyle };
+            ws[`D${r}`] = { v: `${DAY_LABELS[b.dayOfWeek]} ${b.startTime}-${b.endTime}`, s: normalStyle };
+            ws[`E${r}`] = { v: st.label, s: statusStyle };
+            ws[`F${r}`] = { v: b.coinsCharged > 0 ? b.coinsCharged : "-", s: normalCenter };
+            ws[`G${r}`] = { v: b.checkedInAt ? format(new Date(b.checkedInAt), "HH:mm", { locale: th }) : "-", s: normalCenter };
+            ws[`H${r}`] = { v: b.bookedByName, s: normalStyle };
+        });
+
+        ws["!ref"] = `A1:H${dataToExport.length + 3}`;
+        ws["!cols"] = [
+            { wch: 15 }, { wch: 30 }, { wch: 20 }, { wch: 25 }, 
+            { wch: 15 }, { wch: 10 }, { wch: 12 }, { wch: 20 }
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, "Booking History");
+        XLSX.writeFile(wb, `bookings_${(memberName || "member").replace(/\s/g, "_")}.xlsx`);
     }
 
     const filtered = filter === "ALL" ? bookings : bookings.filter(b => b.status === filter);
@@ -69,18 +128,30 @@ export default function MemberBookingHistory({ userId }: { userId: string }) {
                     <CalendarCheck size={18} className="text-blue-500" />
                     ประวัติการจองและเข้าคลาส
                 </h2>
-                <button
-                    onClick={loadBookings}
-                    disabled={isPending}
-                    className="px-4 py-2 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#4e7a64] disabled:opacity-50 transition-colors flex items-center gap-1.5"
-                >
-                    {isPending ? (
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : (
-                        <RefreshCw size={14} />
+                <div className="flex gap-2">
+                    <button
+                        onClick={loadBookings}
+                        disabled={isPending}
+                        className="px-4 py-2 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#4e7a64] disabled:opacity-50 transition-colors flex items-center gap-1.5"
+                    >
+                        {isPending ? (
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                            <RefreshCw size={14} />
+                        )}
+                        {loaded ? "รีเฟรช" : "โหลดข้อมูล"}
+                    </button>
+                    
+                    {loaded && bookings.length > 0 && (
+                        <button
+                            onClick={exportToExcel}
+                            className="px-4 py-2 bg-[#3d405b] text-white rounded-xl text-sm font-medium hover:bg-[#2d2f45] transition-colors flex items-center gap-1.5"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Export Excel
+                        </button>
                     )}
-                    {loaded ? "รีเฟรช" : "โหลดข้อมูล"}
-                </button>
+                </div>
             </div>
 
             {!loaded && (
