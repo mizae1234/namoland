@@ -1,5 +1,4 @@
-import { getBorrows } from "@/actions/borrow";
-import prisma from "@/lib/prisma";
+import { getBorrows, getUsersWithActiveDeposit } from "@/actions/borrow";
 import Link from "next/link";
 import { ArrowLeftRight, QrCode, ChevronLeft, ChevronRight } from "lucide-react";
 import { format, subMonths } from "date-fns";
@@ -11,6 +10,19 @@ import Card from "@/components/ui/Card";
 import StatusBadge from "@/components/ui/StatusBadge";
 
 const PAGE_SIZE = 15;
+
+/** Build visible page numbers with ellipsis for large page counts */
+function getVisiblePages(current: number, total: number): (number | null)[] {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const pages: (number | null)[] = [1];
+    if (current > 3) pages.push(null); // ellipsis
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+        pages.push(i);
+    }
+    if (current < total - 2) pages.push(null); // ellipsis
+    pages.push(total);
+    return pages;
+}
 
 export default async function BorrowsPage({
     searchParams,
@@ -34,22 +46,9 @@ export default async function BorrowsPage({
         to,
     });
 
-    // Pre-compute which RESERVED users already have active deposit
+    // Pre-compute which RESERVED users already have active deposit (shared service)
     const reservedUserIds = [...new Set(allBorrows.filter(b => b.status === "RESERVED").map(b => b.userId))];
-    const usersWithDeposit = new Set<string>();
-    if (reservedUserIds.length > 0) {
-        const activeDeposits = await prisma.borrowRecord.findMany({
-            where: {
-                userId: { in: reservedUserIds },
-                status: "BORROWED",
-                depositReturned: false,
-                depositForfeited: false,
-            },
-            select: { userId: true },
-            distinct: ["userId"],
-        });
-        activeDeposits.forEach(d => usersWithDeposit.add(d.userId));
-    }
+    const usersWithDeposit = await getUsersWithActiveDeposit(reservedUserIds);
 
     // Pagination
     const totalRecords = allBorrows.length;
@@ -186,17 +185,21 @@ export default async function BorrowsPage({
                     )}
 
                     <div className="flex items-center gap-1">
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                            <Link
-                                key={page}
-                                href={buildPageUrl(page)}
-                                className={`w-9 h-9 flex items-center justify-center text-sm rounded-xl transition-colors ${page === safePage
-                                        ? "bg-[#609279] text-white font-semibold shadow-md shadow-[#609279]/20"
-                                        : "text-[#3d405b]/50 hover:bg-[#f4f1de]/50"
-                                    }`}
-                            >
-                                {page}
-                            </Link>
+                        {getVisiblePages(safePage, totalPages).map((page, idx) => (
+                            page === null ? (
+                                <span key={`ellipsis-${idx}`} className="w-9 h-9 flex items-center justify-center text-sm text-[#3d405b]/30">…</span>
+                            ) : (
+                                <Link
+                                    key={page}
+                                    href={buildPageUrl(page)}
+                                    className={`w-9 h-9 flex items-center justify-center text-sm rounded-xl transition-colors ${page === safePage
+                                            ? "bg-[#609279] text-white font-semibold shadow-md shadow-[#609279]/20"
+                                            : "text-[#3d405b]/50 hover:bg-[#f4f1de]/50"
+                                        }`}
+                                >
+                                    {page}
+                                </Link>
+                            )
                         ))}
                     </div>
 

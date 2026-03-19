@@ -224,13 +224,15 @@ model PackageConfig {
 }
 
 model ActivityConfig {
-  id        String   @id @default(cuid())
-  name      String
-  coins     Int      @default(1)
-  sortOrder Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  icon        String?
+  coins       Int      @default(1)
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model ClassSchedule {

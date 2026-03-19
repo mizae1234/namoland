@@ -49,6 +49,8 @@ interface SettingsTabsProps {
     activities: {
         id: string;
         name: string;
+        description: string | null;
+        icon: string | null;
         coins: number;
         sortOrder: number;
         isActive: boolean;

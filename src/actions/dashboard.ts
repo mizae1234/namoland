@@ -20,6 +20,10 @@ export async function getOwnerDashboardData() {
         borrowedCount,
         overdueRecords,
         totalRemainingCoins,
+        todayCashTopUps,
+        yesterdayCashTopUps,
+        thisMonthCashTopUps,
+        lastMonthCashTopUps,
     ] = await Promise.all([
         // Today revenue
         prisma.coinPackage.findMany({
@@ -58,6 +62,23 @@ export async function getOwnerDashboardData() {
             _sum: { remainingCoins: true },
             where: { isExpired: false },
         }),
+        // ─── Cash Received (approved top-ups) ───────────
+        prisma.topUpRequest.findMany({
+            where: { status: "APPROVED", processedAt: { gte: todayStart } },
+            select: { amount: true },
+        }),
+        prisma.topUpRequest.findMany({
+            where: { status: "APPROVED", processedAt: { gte: yesterdayStart, lt: todayStart } },
+            select: { amount: true },
+        }),
+        prisma.topUpRequest.findMany({
+            where: { status: "APPROVED", processedAt: { gte: monthStart } },
+            select: { amount: true },
+        }),
+        prisma.topUpRequest.findMany({
+            where: { status: "APPROVED", processedAt: { gte: lastMonthStart, lte: lastMonthEnd } },
+            select: { amount: true },
+        }),
     ]);
 
     const todayRevenue = todayPackages.reduce((s, p) => s + Number(p.pricePaid), 0);
@@ -68,16 +89,28 @@ export async function getOwnerDashboardData() {
         ? Math.round(((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100)
         : todayRevenue > 0 ? 100 : 0;
 
+    // Cash received from approved top-ups
+    const todayCash = todayCashTopUps.reduce((s, t) => s + Number(t.amount), 0);
+    const yesterdayCash = yesterdayCashTopUps.reduce((s, t) => s + Number(t.amount), 0);
+    const thisMonthCash = thisMonthCashTopUps.reduce((s, t) => s + Number(t.amount), 0);
+    const lastMonthCash = lastMonthCashTopUps.reduce((s, t) => s + Number(t.amount), 0);
+
     // ─── Revenue Trend (last 30 days) ──────────────
     const thirtyDaysAgo = new Date(todayStart);
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const allPackagesLast30d = await prisma.coinPackage.findMany({
-        where: { createdAt: { gte: thirtyDaysAgo } },
-        select: { pricePaid: true, createdAt: true },
-    });
+    const [allPackagesLast30d, allCashTopUpsLast30d] = await Promise.all([
+        prisma.coinPackage.findMany({
+            where: { createdAt: { gte: thirtyDaysAgo } },
+            select: { pricePaid: true, createdAt: true },
+        }),
+        prisma.topUpRequest.findMany({
+            where: { status: "APPROVED", processedAt: { gte: thirtyDaysAgo } },
+            select: { amount: true, processedAt: true },
+        }),
+    ]);
 
-    const revenueTrend: { date: string; revenue: number }[] = [];
+    const revenueTrend: { date: string; revenue: number; cash: number }[] = [];
     for (let i = 29; i >= 0; i--) {
         const d = new Date(todayStart);
         d.setDate(d.getDate() - i);
@@ -87,7 +120,10 @@ export async function getOwnerDashboardData() {
         const dayRevenue = allPackagesLast30d
             .filter((p) => p.createdAt >= d && p.createdAt < nextD)
             .reduce((s, p) => s + Number(p.pricePaid), 0);
-        revenueTrend.push({ date: label, revenue: dayRevenue });
+        const dayCash = allCashTopUpsLast30d
+            .filter((t) => t.processedAt && t.processedAt >= d && t.processedAt < nextD)
+            .reduce((s, t) => s + Number(t.amount), 0);
+        revenueTrend.push({ date: label, revenue: dayRevenue, cash: dayCash });
     }
 
     // ─── Business Alerts ────────────────────────────
@@ -128,10 +164,16 @@ export async function getOwnerDashboardData() {
         include: { user: true },
     });
 
-    // ─── Top Performance ────────────────────────────
+    // ─── Top Performance (last 12 months only) ───────
+    const oneYearAgo = new Date(now);
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
     const allBorrowItems = await prisma.borrowItem.findMany({
+        where: {
+            borrowRecord: { borrowDate: { gte: oneYearAgo } },
+        },
         include: {
-            book: true,
+            book: { select: { title: true } },
             borrowRecord: { select: { rentalCoins: true } },
         },
     });
@@ -219,6 +261,10 @@ export async function getOwnerDashboardData() {
             thisMonthRevenue,
             lastMonthRevenue,
             revenueChangePercent,
+            todayCash,
+            yesterdayCash,
+            thisMonthCash,
+            lastMonthCash,
             borrowedCount,
             overdueCount: overdueRecords.length,
             totalRemainingCoins: totalRemainingCoins._sum.remainingCoins || 0,

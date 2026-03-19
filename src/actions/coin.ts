@@ -4,6 +4,12 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { getPackageByKey } from "@/actions/packageConfig";
+import {
+    prepareFIFODeduction,
+    buildPackageDeductOps,
+    buildTransactionOps,
+    syncCoinExpiryOverride,
+} from "@/lib/coin-service";
 
 export async function purchasePackage(formData: FormData) {
     const session = await auth();
@@ -70,14 +76,16 @@ export async function spendCoins(formData: FormData) {
     if (!pkg) return { error: "ไม่พบแพ็คเกจเหรียญ" };
     if (pkg.remainingCoins < coinsUsed) return { error: "เหรียญไม่เพียงพอ" };
 
-    // Start coin expiry clock on first use
-    const updateData: Record<string, unknown> = {
+    const now = new Date();
+
+    // Build update data — start expiry clock on first use
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: Record<string, any> = {
         remainingCoins: pkg.remainingCoins - coinsUsed,
     };
 
     let newExpiresAt: Date | null = null;
     if (!pkg.firstUsedAt) {
-        const now = new Date();
         newExpiresAt = new Date(now);
         newExpiresAt.setMonth(newExpiresAt.getMonth() + 1);
         updateData.firstUsedAt = now;
@@ -102,18 +110,13 @@ export async function spendCoins(formData: FormData) {
         }),
     ]);
 
-    // Auto-update coinExpiryOverride if new expiresAt is further
+    // Sync expiry override if clock just started
     if (newExpiresAt) {
-        const user = await prisma.user.findUnique({
-            where: { id: pkg.userId },
-            select: { coinExpiryOverride: true },
-        });
-        if (!user?.coinExpiryOverride || newExpiresAt > new Date(user.coinExpiryOverride)) {
-            await prisma.user.update({
-                where: { id: pkg.userId },
-                data: { coinExpiryOverride: newExpiresAt },
-            });
-        }
+        await syncCoinExpiryOverride(
+            pkg.userId,
+            [{ packageId: pkg.id, amount: coinsUsed, pkg: { ...pkg, firstUsedAt: null } as never }],
+            now,
+        );
     }
 
     revalidatePath("/members");
@@ -205,43 +208,28 @@ export async function deductCoins(formData: FormData) {
             return { error: "ข้อมูลไม่ถูกต้อง" };
         }
 
-        // Get active packages ordered by oldest first (FIFO)
-        const activePackages = await prisma.coinPackage.findMany({
-            where: { userId, isExpired: false, remainingCoins: { gt: 0 } },
-            orderBy: { createdAt: "asc" },
-        });
+        // Use shared FIFO deduction
+        const { deductions, totalAvailable } = await prepareFIFODeduction(userId, coinsToDeduct);
 
-        const totalAvailable = activePackages.reduce((s, p) => s + p.remainingCoins, 0);
         if (totalAvailable < coinsToDeduct) {
             return { error: `เหรียญไม่เพียงพอ (คงเหลือ ${totalAvailable} เหรียญ)` };
         }
 
-        // Distribute deduction across packages (FIFO)
-        let remaining = coinsToDeduct;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const ops: any[] = [];
-
-        for (const pkg of activePackages) {
-            if (remaining <= 0) break;
-            const deduct = Math.min(remaining, pkg.remainingCoins);
-            remaining -= deduct;
-
-            ops.push(
-                prisma.coinPackage.update({
-                    where: { id: pkg.id },
-                    data: { remainingCoins: pkg.remainingCoins - deduct },
-                }),
+        const now = new Date();
+        const ops = [
+            ...buildPackageDeductOps(deductions, now),
+            ...deductions.map((d) =>
                 prisma.coinTransaction.create({
                     data: {
-                        packageId: pkg.id,
+                        packageId: d.packageId,
                         type: "ADJUSTMENT",
-                        coinsUsed: deduct,
+                        coinsUsed: d.amount,
                         description: reason,
                         processedById: session.user.id,
                     },
                 }),
-            );
-        }
+            ),
+        ];
 
         await prisma.$transaction(ops);
 
@@ -449,4 +437,3 @@ export async function processTopUp(requestId: string, action: "APPROVED" | "REJE
     revalidatePath("/user/coins");
     return { success: true };
 }
-

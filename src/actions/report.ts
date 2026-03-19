@@ -90,7 +90,19 @@ export async function getOutstandingCoinReport(year: number): Promise<Outstandin
 
     const bfBalance = bfPurchase + bfAdjustPackages.reduce((s, p) => s + p.totalCoins, 0) - bfUsage - bfAdjustDown;
 
-    // Build each month
+    // Build each month — BATCHED: fetch all data for the year in 2 queries
+    const yearEnd = new Date(year + 1, 0, 1);
+    const [yearPackages, yearTransactions] = await Promise.all([
+        prisma.coinPackage.findMany({
+            where: { createdAt: { gte: yearStart, lt: yearEnd } },
+            select: { totalCoins: true, pricePaid: true, bonusAmount: true, packageType: true, createdAt: true },
+        }),
+        prisma.coinTransaction.findMany({
+            where: { createdAt: { gte: yearStart, lt: yearEnd } },
+            select: { coinsUsed: true, type: true, createdAt: true },
+        }),
+    ]);
+
     const months: MonthRow[] = [];
     let runningBalance = bfBalance;
 
@@ -98,15 +110,13 @@ export async function getOutstandingCoinReport(year: number): Promise<Outstandin
         const monthStart = new Date(year, m, 1);
         const monthEnd = new Date(year, m + 1, 1);
 
-        const monthPackages = await prisma.coinPackage.findMany({
-            where: { createdAt: { gte: monthStart, lt: monthEnd } },
-            select: { totalCoins: true, pricePaid: true, bonusAmount: true, packageType: true },
-        });
-
-        const monthTransactions = await prisma.coinTransaction.findMany({
-            where: { createdAt: { gte: monthStart, lt: monthEnd } },
-            select: { coinsUsed: true, type: true },
-        });
+        // Filter from pre-fetched data
+        const monthPackages = yearPackages.filter(
+            (p) => p.createdAt >= monthStart && p.createdAt < monthEnd,
+        );
+        const monthTransactions = yearTransactions.filter(
+            (t) => t.createdAt >= monthStart && t.createdAt < monthEnd,
+        );
 
         // Regular purchases (non-ADJUSTMENT packages)
         const purchasePackages = monthPackages.filter(p => p.packageType !== "ADJUSTMENT");

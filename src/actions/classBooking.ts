@@ -3,6 +3,12 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import {
+    prepareFIFODeduction,
+    buildPackageDeductOps,
+    buildTransactionOps,
+    syncCoinExpiryOverride,
+} from "@/lib/coin-service";
 
 // Search members with children for booking
 export async function searchMembersForBooking(query: string) {
@@ -12,6 +18,7 @@ export async function searchMembersForBooking(query: string) {
             OR: [
                 { parentName: { contains: query, mode: "insensitive" } },
                 { phone: { contains: query } },
+                { children: { some: { name: { contains: query, mode: "insensitive" } } } },
             ],
         },
         include: {
@@ -102,119 +109,44 @@ export async function checkInBooking(bookingId: string) {
     if (!booking) return { error: "ไม่พบการจอง" };
     if (booking.status !== "BOOKED") return { error: "สถานะไม่ใช่ BOOKED" };
 
-    // Find activity config to get coin cost — try multiple matching strategies
-    let activity = await prisma.activityConfig.findFirst({
-        where: { name: booking.classEntry.title },
-    });
-    if (!activity) {
-        // Try: activity name contains class title
-        activity = await prisma.activityConfig.findFirst({
-            where: { name: { contains: booking.classEntry.title, mode: "insensitive" } },
-        });
-    }
-    if (!activity) {
-        // Try: class title contains activity name
-        const allActivities = await prisma.activityConfig.findMany();
-        activity = allActivities.find(
-            (a) => booking.classEntry.title.toLowerCase().includes(a.name.toLowerCase())
-        ) || null;
-    }
+    // Find activity config to get coin cost
+    const activity = await findActivityConfig(booking.classEntry.title);
 
-    // If no activity config found, block check-in — admin must set up activity first
     if (!activity) {
         return { error: `ไม่พบกิจกรรม "${booking.classEntry.title}" ในระบบ กรุณาตั้งค่ากิจกรรมก่อน` };
     }
 
     const coinCost = activity.coins;
+    const now = new Date();
 
-    // Check coin balance for paid activities
     if (coinCost > 0) {
-        // FIFO: get oldest non-expired package with coins
-        const packages = await prisma.coinPackage.findMany({
-            where: {
-                userId: booking.userId,
-                isExpired: false,
-                remainingCoins: { gt: 0 },
-            },
-            orderBy: { createdAt: "asc" },
-        });
+        // FIFO coin deduction (shared service)
+        const { deductions, totalAvailable } = await prepareFIFODeduction(booking.userId, coinCost);
 
-        const totalAvailable = packages.reduce((s, p) => s + p.remainingCoins, 0);
         if (totalAvailable < coinCost) {
             return { error: `เหรียญไม่เพียงพอ (ต้องการ ${coinCost}, มี ${totalAvailable})` };
         }
 
-        // Deduct from oldest package first (FIFO)
-        let remaining = coinCost;
-        const txOps = [];
-        for (const pkg of packages) {
-            if (remaining <= 0) break;
-            const deduct = Math.min(remaining, pkg.remainingCoins);
-            remaining -= deduct;
-
-            const updateData: Record<string, unknown> = {
-                remainingCoins: pkg.remainingCoins - deduct,
-            };
-
-            // Start expiry clock on first use
-            if (!pkg.firstUsedAt) {
-                const now = new Date();
-                const expiresAt = new Date(now);
-                expiresAt.setMonth(expiresAt.getMonth() + 1);
-                updateData.firstUsedAt = now;
-                updateData.expiresAt = expiresAt;
-            }
-
-            txOps.push(
-                prisma.coinPackage.update({
-                    where: { id: pkg.id },
-                    data: updateData,
-                })
-            );
-            txOps.push(
-                prisma.coinTransaction.create({
-                    data: {
-                        packageId: pkg.id,
-                        type: "CLASS_FEE",
-                        coinsUsed: deduct,
-                        className: booking.classEntry.title,
-                        description: `Check-in: ${booking.classEntry.title} (${booking.classEntry.startTime}-${booking.classEntry.endTime})`,
-                        processedById: session.user.id,
-                    },
-                })
-            );
-        }
-
-        txOps.push(
+        const txOps = [
+            ...buildPackageDeductOps(deductions, now),
+            ...buildTransactionOps(deductions, "CLASS_FEE", session.user.id, {
+                className: booking.classEntry.title,
+                description: `Check-in: ${booking.classEntry.title} (${booking.classEntry.startTime}-${booking.classEntry.endTime})`,
+            }),
             prisma.classBooking.update({
                 where: { id: bookingId },
                 data: {
                     status: "CHECKED_IN",
                     coinsCharged: coinCost,
-                    checkedInAt: new Date(),
+                    checkedInAt: now,
                 },
-            })
-        );
+            }),
+        ];
 
         await prisma.$transaction(txOps);
 
-        // Auto-update coinExpiryOverride
-        const firstPkg = packages[0];
-        if (firstPkg && !firstPkg.firstUsedAt) {
-            const now = new Date();
-            const newExpiresAt = new Date(now);
-            newExpiresAt.setMonth(newExpiresAt.getMonth() + 1);
-            const user = await prisma.user.findUnique({
-                where: { id: booking.userId },
-                select: { coinExpiryOverride: true },
-            });
-            if (!user?.coinExpiryOverride || newExpiresAt > new Date(user.coinExpiryOverride)) {
-                await prisma.user.update({
-                    where: { id: booking.userId },
-                    data: { coinExpiryOverride: newExpiresAt },
-                });
-            }
-        }
+        // Sync expiry override (shared service)
+        await syncCoinExpiryOverride(booking.userId, deductions, now);
     } else {
         // Free activity — just mark checked in
         await prisma.classBooking.update({
@@ -222,7 +154,7 @@ export async function checkInBooking(bookingId: string) {
             data: {
                 status: "CHECKED_IN",
                 coinsCharged: 0,
-                checkedInAt: new Date(),
+                checkedInAt: now,
             },
         });
     }
@@ -303,3 +235,28 @@ export async function getBookingsForUser(userId: string) {
     });
 }
 
+// ─── Helper: Activity Config Lookup ──────────────────────────────────
+
+/**
+ * Find activity config by class title.
+ * Tries: exact match → contains → reverse-contains.
+ */
+async function findActivityConfig(classTitle: string) {
+    // Exact match
+    let activity = await prisma.activityConfig.findFirst({
+        where: { name: classTitle },
+    });
+    if (activity) return activity;
+
+    // Activity name contains class title
+    activity = await prisma.activityConfig.findFirst({
+        where: { name: { contains: classTitle, mode: "insensitive" } },
+    });
+    if (activity) return activity;
+
+    // Class title contains activity name
+    const allActivities = await prisma.activityConfig.findMany();
+    return allActivities.find(
+        (a) => classTitle.toLowerCase().includes(a.name.toLowerCase())
+    ) || null;
+}

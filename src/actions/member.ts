@@ -55,6 +55,7 @@ export async function getMembers(search?: string) {
                 OR: [
                     { parentName: { contains: search, mode: "insensitive" } },
                     { phone: { contains: search } },
+                    { children: { some: { name: { contains: search, mode: "insensitive" } } } },
                 ],
             }
             : undefined,
@@ -76,12 +77,14 @@ export async function searchMembers(query: string) {
             OR: [
                 { parentName: { contains: query, mode: "insensitive" } },
                 { phone: { contains: query } },
+                { children: { some: { name: { contains: query, mode: "insensitive" } } } },
             ],
         },
         include: {
             coinPackages: {
                 where: { isExpired: false, remainingCoins: { gt: 0 } },
             },
+            children: { select: { id: true, name: true } },
         },
         take: 10,
         orderBy: { parentName: "asc" },
@@ -91,6 +94,7 @@ export async function searchMembers(query: string) {
         parentName: m.parentName,
         phone: m.phone,
         totalCoins: m.coinPackages.reduce((s, p) => s + p.remainingCoins, 0),
+        children: m.children,
     }));
 }
 

@@ -60,15 +60,6 @@ export default function TopUpActions({ requestId }: TopUpActionsProps) {
                 >
                     ยกเลิก
                 </button>
-
-                {/* Error Alert */}
-                <Modal
-                    open={!!errorModal}
-                    onClose={() => setErrorModal(null)}
-                    title="เกิดข้อผิดพลาด"
-                    message={errorModal || ""}
-                    variant="error"
-                />
             </div>
         );
     }

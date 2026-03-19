@@ -48,9 +48,14 @@ interface ScheduleData {
     entries: EntryData[];
 }
 
+function parseLocalDate(isoStr: string) {
+    const [y, m, d] = isoStr.split("T")[0].split("-").map(Number);
+    return new Date(y, m - 1, d);
+}
+
 function formatDateRange(startStr: string, endStr: string) {
-    const s = new Date(startStr);
-    const e = new Date(endStr);
+    const s = parseLocalDate(startStr);
+    const e = parseLocalDate(endStr);
     const sDay = s.getDate();
     const eDay = e.getDate();
     const month = s.toLocaleDateString("en-US", { month: "short" });
@@ -59,7 +64,7 @@ function formatDateRange(startStr: string, endStr: string) {
 }
 
 function getDayDate(startStr: string, dayOfWeek: number) {
-    const d = new Date(startStr);
+    const d = parseLocalDate(startStr);
     d.setDate(d.getDate() + dayOfWeek);
     return d.getDate();
 }

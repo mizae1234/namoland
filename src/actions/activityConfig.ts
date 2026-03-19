@@ -22,6 +22,8 @@ export async function createActivityConfig(formData: FormData) {
     if (!session?.user || session.user.type !== "ADMIN") return { error: "Unauthorized" };
 
     const name = (formData.get("name") as string)?.trim();
+    const description = (formData.get("description") as string)?.trim() || null;
+    const icon = (formData.get("icon") as string)?.trim() || null;
     const coins = parseInt(formData.get("coins") as string);
     const sortOrder = parseInt(formData.get("sortOrder") as string) || 0;
 
@@ -30,7 +32,7 @@ export async function createActivityConfig(formData: FormData) {
     }
 
     await prisma.activityConfig.create({
-        data: { name, coins, sortOrder },
+        data: { name, description, icon, coins, sortOrder },
     });
 
     revalidatePath("/activities");
@@ -43,6 +45,8 @@ export async function updateActivityConfig(formData: FormData) {
 
     const id = formData.get("id") as string;
     const name = (formData.get("name") as string)?.trim();
+    const description = (formData.get("description") as string)?.trim() || null;
+    const icon = (formData.get("icon") as string)?.trim() || null;
     const coins = parseInt(formData.get("coins") as string);
     const sortOrder = parseInt(formData.get("sortOrder") as string) || 0;
 
@@ -52,7 +56,7 @@ export async function updateActivityConfig(formData: FormData) {
 
     await prisma.activityConfig.update({
         where: { id },
-        data: { name, coins, sortOrder },
+        data: { name, description, icon, coins, sortOrder },
     });
 
     revalidatePath("/activities");

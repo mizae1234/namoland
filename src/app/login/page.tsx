@@ -30,7 +30,7 @@ export default function LoginPage() {
             if (result?.error) {
                 setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
             } else {
-                router.push("/dashboard");
+                router.push("/classes");
             }
         } catch {
             setError("เกิดข้อผิดพลาด กรุณาลองใหม่");

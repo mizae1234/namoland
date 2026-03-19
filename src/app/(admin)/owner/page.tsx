@@ -14,6 +14,7 @@ import {
     Flame,
     BarChart3,
     Wallet,
+    Banknote,
 } from "lucide-react";
 import RevenueChart from "./_components/RevenueChart";
 import Card from "@/components/ui/Card";
@@ -60,7 +61,7 @@ export default async function DashboardPage() {
 
             {/* ─── 1. KPI Cards ───────────────────────────── */}
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
-                {/* Today Revenue */}
+                {/* Today Revenue + Cash */}
                 <div className="bg-white rounded-2xl p-5 border border-[#d1cce7]/20 shadow-sm">
                     <div className="flex items-center gap-2 mb-3">
                         <div className="bg-emerald-50 p-2 rounded-lg">
@@ -74,9 +75,21 @@ export default async function DashboardPage() {
                     <p className="text-xs text-[#3d405b]/40 mt-1">
                         เมื่อวาน ฿{formatMoney(kpi.yesterdayRevenue)}
                     </p>
+                    <div className="mt-3 pt-3 border-t border-[#d1cce7]/15">
+                        <div className="flex items-center gap-1.5 mb-1">
+                            <Banknote size={12} className="text-blue-500" />
+                            <span className="text-xs text-[#3d405b]/40 font-medium">เงินรับวันนี้</span>
+                        </div>
+                        <p className="text-lg font-bold text-blue-600">
+                            ฿{formatMoney(kpi.todayCash)}
+                        </p>
+                        <p className="text-xs text-[#3d405b]/40">
+                            เมื่อวาน ฿{formatMoney(kpi.yesterdayCash)}
+                        </p>
+                    </div>
                 </div>
 
-                {/* Month Revenue */}
+                {/* Month Revenue + Cash */}
                 <div className="bg-white rounded-2xl p-5 border border-[#d1cce7]/20 shadow-sm">
                     <div className="flex items-center gap-2 mb-3">
                         <div className="bg-[#81b29a]/10 p-2 rounded-lg">
@@ -90,6 +103,18 @@ export default async function DashboardPage() {
                     <p className="text-xs text-[#3d405b]/40 mt-1">
                         เดือนก่อน ฿{formatMoney(kpi.lastMonthRevenue)}
                     </p>
+                    <div className="mt-3 pt-3 border-t border-[#d1cce7]/15">
+                        <div className="flex items-center gap-1.5 mb-1">
+                            <Banknote size={12} className="text-blue-500" />
+                            <span className="text-xs text-[#3d405b]/40 font-medium">เงินรับเดือนนี้</span>
+                        </div>
+                        <p className="text-lg font-bold text-blue-600">
+                            ฿{formatMoney(kpi.thisMonthCash)}
+                        </p>
+                        <p className="text-xs text-[#3d405b]/40">
+                            เดือนก่อน ฿{formatMoney(kpi.lastMonthCash)}
+                        </p>
+                    </div>
                 </div>
 
                 {/* Revenue Change */}

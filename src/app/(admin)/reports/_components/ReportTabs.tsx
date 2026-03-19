@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { OutstandingCoinReport } from "@/actions/report";
 import { ClassAttendanceReport as AttendanceReportData } from "@/actions/report";
-import { Coins, CalendarDays } from "lucide-react";
+import { Coins, CalendarDays, User } from "lucide-react";
 import OutstandingCoinTable from "./OutstandingCoinTable";
 import ClassAttendanceReport from "./ClassAttendanceReport";
+import MemberCoinReport from "./MemberCoinReport";
 
-type Tab = "coin" | "attendance";
+type Tab = "coin" | "attendance" | "member";
 
 export default function ReportTabs({
     coinData,
@@ -21,6 +22,7 @@ export default function ReportTabs({
     const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
         { key: "coin", label: "Outstanding Coin", icon: <Coins size={16} /> },
         { key: "attendance", label: "สรุปเข้าคลาส", icon: <CalendarDays size={16} /> },
+        { key: "member", label: "รายงานรายบุคคล", icon: <User size={16} /> },
     ];
 
     return (
@@ -73,6 +75,22 @@ export default function ReportTabs({
                     <ClassAttendanceReport initialData={attendanceData} />
                 </div>
             )}
+
+            {activeTab === "member" && (
+                <div>
+                    <div className="mb-6">
+                        <h1 className="text-2xl font-bold text-[#3d405b] flex items-center gap-3">
+                            <User size={24} className="text-violet-500" />
+                            รายงานรายบุคคล
+                        </h1>
+                        <p className="text-[#3d405b]/50 mt-1">
+                            ดูรายการเหรียญเข้า (ซื้อ) และออก (ใช้) ของสมาชิกแต่ละคน
+                        </p>
+                    </div>
+                    <MemberCoinReport />
+                </div>
+            )}
         </div>
     );
 }
+

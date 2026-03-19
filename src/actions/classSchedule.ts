@@ -47,7 +47,9 @@ export async function createClassSchedule(formData: FormData) {
         return { error: "กรุณาเลือกวันที่เริ่มต้น (วันจันทร์)" };
     }
 
-    const startDate = new Date(startDateStr);
+    // Parse as local date (avoid UTC midnight shift)
+    const [y, m, d] = startDateStr.split("-").map(Number);
+    const startDate = new Date(y, m - 1, d);
     // Ensure startDate is a Monday
     const day = startDate.getDay();
     if (day !== 1) {

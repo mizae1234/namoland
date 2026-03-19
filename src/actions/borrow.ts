@@ -6,6 +6,20 @@ import { auth } from "@/lib/auth";
 import crypto from "crypto";
 import { calculateLateFee } from "@/lib/utils";
 import { BORROW_DEPOSIT_COINS, BORROW_DURATION_DAYS, DAMAGE_FEE_PER_BOOK } from "@/lib/constants";
+import {
+    prepareFIFODeduction,
+    buildPackageDeductOps,
+    buildTransactionOps,
+    syncCoinExpiryOverride,
+    type CoinDeduction,
+} from "@/lib/coin-service";
+import { generateBorrowCode, hasActiveDeposit } from "@/lib/borrow-service";
+import { getUsersWithActiveDeposit as _getUsersWithActiveDeposit } from "@/lib/borrow-service";
+
+// Async wrapper — "use server" files can only export async functions
+export async function getUsersWithActiveDeposit(userIds: string[]): Promise<Set<string>> {
+    return _getUsersWithActiveDeposit(userIds);
+}
 
 export async function createBook(formData: FormData) {
     const title = formData.get("title") as string;
@@ -142,7 +156,7 @@ export async function getBookByQrCode(qrCode: string) {
 
 export async function createBorrow(formData: FormData) {
     const session = await auth();
-    if (!session?.user) return { error: "Unauthorized" };
+    if (!session?.user || session.user.type !== "ADMIN") return { error: "Unauthorized" };
 
     const userId = formData.get("userId") as string;
     const bookIdsJson = formData.get("bookIds") as string;
@@ -163,50 +177,24 @@ export async function createBorrow(formData: FormData) {
 
     const totalRentalCoins = books.reduce((sum, b) => sum + b.rentalCost, 0);
 
-    // Check if user already has an active deposit (BORROWED with deposit not returned/forfeited)
-    const activeDepositCount = await prisma.borrowRecord.count({
-        where: {
-            userId,
-            status: "BORROWED",
-            depositReturned: false,
-            depositForfeited: false,
-        },
-    });
-    const hasActiveDeposit = activeDepositCount > 0;
-    const depositCoins = hasActiveDeposit ? 0 : BORROW_DEPOSIT_COINS;
-
-    // Get user's active coin packages
-    const packages = await prisma.coinPackage.findMany({
-        where: { userId, isExpired: false, remainingCoins: { gt: 0 } },
-        orderBy: { createdAt: "asc" },
-    });
-
-    const totalCoins = packages.reduce((sum, p) => sum + p.remainingCoins, 0);
+    // Check if user already has an active deposit (shared service)
+    const userHasDeposit = await hasActiveDeposit(userId);
+    const depositCoins = userHasDeposit ? 0 : BORROW_DEPOSIT_COINS;
     const requiredCoins = depositCoins + totalRentalCoins;
 
-    if (totalCoins < requiredCoins) {
-        return { error: `เหรียญไม่เพียงพอ (ต้องการ ${requiredCoins} เหรียญ, มี ${totalCoins})` };
+    // FIFO coin deduction (shared service)
+    const { deductions, totalAvailable } = await prepareFIFODeduction(userId, requiredCoins);
+
+    if (totalAvailable < requiredCoins) {
+        return { error: `เหรียญไม่เพียงพอ (ต้องการ ${requiredCoins} เหรียญ, มี ${totalAvailable})` };
     }
 
-    // Generate borrow code
+    // Generate borrow code (shared service — race-condition safe)
     const now = new Date();
-    const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
-    const count = await prisma.borrowRecord.count();
-    const code = `BOR-${yearMonth}-${String(count + 1).padStart(4, "0")}`;
+    const code = await generateBorrowCode();
 
     const dueDate = new Date(now);
     dueDate.setDate(dueDate.getDate() + BORROW_DURATION_DAYS);
-
-    // Deduct coins from packages (oldest first)
-    let remaining = requiredCoins;
-    const deductions: { packageId: string; amount: number }[] = [];
-
-    for (const pkg of packages) {
-        if (remaining <= 0) break;
-        const deduct = Math.min(pkg.remainingCoins, remaining);
-        deductions.push({ packageId: pkg.id, amount: deduct });
-        remaining -= deduct;
-    }
 
     const txOps = [
         // Create borrow record
@@ -224,35 +212,14 @@ export async function createBorrow(formData: FormData) {
                 },
             },
         }),
-        // Deduct coins
-        ...deductions.map((d) =>
-            prisma.coinPackage.update({
-                where: { id: d.packageId },
-                data: {
-                    remainingCoins: { decrement: d.amount },
-                    ...(
-                        // Start expiry clock if first use
-                        !packages.find(p => p.id === d.packageId)?.firstUsedAt
-                            ? {
-                                firstUsedAt: now,
-                                expiresAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
-                            }
-                            : {}
-                    ),
-                },
-            })
-        ),
-        // Record per-book rental transactions
-        ...books.map((book) =>
-            prisma.coinTransaction.create({
-                data: {
-                    packageId: deductions[0].packageId,
-                    type: "BOOK_RENTAL",
-                    coinsUsed: book.rentalCost,
-                    description: `${book.title} (${code})`,
-                    processedById: session.user.id,
-                },
-            })
+        // Deduct coins from packages (with expiry clock)
+        ...buildPackageDeductOps(deductions, now),
+        // Record per-book rental transactions — properly attributed to source packages
+        ...buildTransactionOps(
+            // Distribute rental across packages proportionally to actual deductions
+            distributeRentalToDeductions(books, deductions, depositCoins),
+            "BOOK_RENTAL",
+            session.user.id,
         ),
         // Mark books as unavailable
         ...bookIds.map((bookId) =>
@@ -263,22 +230,29 @@ export async function createBorrow(formData: FormData) {
         ),
     ];
 
-    // Only record deposit transaction if actually charging deposit
+    // Record deposit transaction if actually charging deposit
     if (depositCoins > 0) {
+        // Find which package(s) the deposit comes from
+        const depositDeductions = allocateFromDeductions(deductions, totalRentalCoins, depositCoins);
         txOps.push(
-            prisma.coinTransaction.create({
-                data: {
-                    packageId: deductions[0].packageId,
-                    type: "BOOK_DEPOSIT",
-                    coinsUsed: depositCoins,
-                    description: `เงินมัดจำหนังสือ (${code})`,
-                    processedById: session.user.id,
-                },
-            })
+            ...depositDeductions.map((d) =>
+                prisma.coinTransaction.create({
+                    data: {
+                        packageId: d.packageId,
+                        type: "BOOK_DEPOSIT",
+                        coinsUsed: d.amount,
+                        description: `เงินมัดจำหนังสือ (${code})`,
+                        processedById: session.user.id,
+                    },
+                }),
+            ),
         );
     }
 
     await prisma.$transaction(txOps);
+
+    // Sync expiry override after transaction
+    await syncCoinExpiryOverride(userId, deductions, now);
 
     revalidatePath("/borrows");
     revalidatePath("/members");
@@ -327,7 +301,6 @@ export async function returnBooks(formData: FormData) {
 
     if (isFullReturn) {
         // All books returned — finalize the record
-        // Check if user has OTHER active borrowed records (excluding this one)
         const otherActiveBorrows = await prisma.borrowRecord.count({
             where: {
                 userId: record.userId,
@@ -339,9 +312,7 @@ export async function returnBooks(formData: FormData) {
         });
         const isLastBorrow = otherActiveBorrows === 0;
 
-        // Only return deposit if this is the last active borrow AND not forfeited
         const shouldReturnDeposit = isLastBorrow && !forfeitDeposit && record.depositCoins > 0;
-        // For records with depositCoins=0 (shared deposit), just mark as returned
         const shouldMarkReturned = record.depositCoins === 0 ? true : shouldReturnDeposit;
 
         // Update borrow record
@@ -360,8 +331,6 @@ export async function returnBooks(formData: FormData) {
             })
         );
 
-        // If this is the last borrow and deposit is returned, also mark all other
-        // RETURNED records (with depositCoins=0) as depositReturned
         if (shouldReturnDeposit) {
             updates.push(
                 prisma.borrowRecord.updateMany({
@@ -383,12 +352,20 @@ export async function returnBooks(formData: FormData) {
                     prisma.coinPackage.update({
                         where: { id: refundPkg.id },
                         data: { remainingCoins: { increment: record.depositCoins } },
-                    })
+                    }),
+                    // FIX: Log the deposit refund as a transaction
+                    prisma.coinTransaction.create({
+                        data: {
+                            packageId: refundPkg.id,
+                            type: "BOOK_DEPOSIT_RETURN",
+                            coinsUsed: -record.depositCoins, // negative = refund
+                            description: `คืนมัดจำหนังสือ (${record.code})`,
+                            processedById: session.user.id,
+                        },
+                    }),
                 );
             }
         }
-    } else {
-        // Partial return — keep record as BORROWED, no deposit logic yet
     }
 
     // Mark damaged items
@@ -450,6 +427,7 @@ export async function getBorrows(params?: {
             OR: [
                 { code: { contains: params.search, mode: "insensitive" } },
                 { user: { parentName: { contains: params.search, mode: "insensitive" } } },
+                { user: { children: { some: { name: { contains: params.search, mode: "insensitive" } } } } },
                 { items: { some: { book: { title: { contains: params.search, mode: "insensitive" } } } } },
             ],
         });
@@ -515,38 +493,21 @@ export async function reserveBook(bookId: string) {
     });
     if (existingReserve) return { error: "คุณจองหนังสือเล่มนี้อยู่แล้ว" };
 
-    // Get user's coin packages — only hold RENTAL coins (not deposit yet)
-    const packages = await prisma.coinPackage.findMany({
-        where: { userId, isExpired: false, remainingCoins: { gt: 0 } },
-        orderBy: { createdAt: "asc" },
-    });
+    const requiredCoins = book.rentalCost;
 
-    const totalCoins = packages.reduce((sum, p) => sum + p.remainingCoins, 0);
-    const requiredCoins = book.rentalCost; // Per-book rental cost
+    // FIFO coin deduction (shared service)
+    const { deductions, totalAvailable } = await prepareFIFODeduction(userId, requiredCoins);
 
-    if (totalCoins < requiredCoins) {
-        return { error: `เหรียญไม่เพียงพอ (ต้องการ ${requiredCoins} เหรียญ, มี ${totalCoins})` };
+    if (totalAvailable < requiredCoins) {
+        return { error: `เหรียญไม่เพียงพอ (ต้องการ ${requiredCoins} เหรียญ, มี ${totalAvailable})` };
     }
 
-    // Generate borrow code
+    // Generate borrow code (shared service — race-condition safe)
     const now = new Date();
-    const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
-    const count = await prisma.borrowRecord.count();
-    const code = `BOR-${yearMonth}-${String(count + 1).padStart(4, "0")}`;
+    const code = await generateBorrowCode();
 
     const dueDate = new Date(now);
     dueDate.setDate(dueDate.getDate() + BORROW_DURATION_DAYS);
-
-    // Deduct ONLY rental coins
-    let remaining = requiredCoins;
-    const deductions: { packageId: string; amount: number }[] = [];
-
-    for (const pkg of packages) {
-        if (remaining <= 0) break;
-        const deduct = Math.min(pkg.remainingCoins, remaining);
-        deductions.push({ packageId: pkg.id, amount: deduct });
-        remaining -= deduct;
-    }
 
     await prisma.$transaction([
         prisma.borrowRecord.create({
@@ -563,42 +524,19 @@ export async function reserveBook(bookId: string) {
                 },
             },
         }),
-        ...deductions.map((d) =>
-            prisma.coinPackage.update({
-                where: { id: d.packageId },
-                data: {
-                    remainingCoins: { decrement: d.amount },
-                    ...(!packages.find(p => p.id === d.packageId)?.firstUsedAt
-                        ? {
-                            firstUsedAt: now,
-                            expiresAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
-                        }
-                        : {}
-                    ),
-                },
-            })
-        ),
+        ...buildPackageDeductOps(deductions, now),
+        // FIX: Add transaction logs for rental deduction during reservation
+        ...buildTransactionOps(deductions, "BOOK_RENTAL", session.user.id, {
+            description: `จองหนังสือ: ${book.title} (${code})`,
+        }),
         prisma.book.update({
             where: { id: bookId },
             data: { isAvailable: false },
         }),
     ]);
 
-    // Auto-update coinExpiryOverride if any package got a new expiresAt
-    const hasNewExpiry = deductions.some(d => !packages.find(p => p.id === d.packageId)?.firstUsedAt);
-    if (hasNewExpiry) {
-        const newExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { coinExpiryOverride: true },
-        });
-        if (!user?.coinExpiryOverride || newExpiresAt > new Date(user.coinExpiryOverride)) {
-            await prisma.user.update({
-                where: { id: userId },
-                data: { coinExpiryOverride: newExpiresAt },
-            });
-        }
-    }
+    // Sync expiry override after transaction (shared service)
+    await syncCoinExpiryOverride(userId, deductions, now);
 
     revalidatePath("/borrows");
     revalidatePath("/user");
@@ -620,42 +558,18 @@ export async function confirmReservation(borrowId: string) {
     if (!record) return { error: "ไม่พบรายการ" };
     if (record.status !== "RESERVED") return { error: "รายการนี้ไม่ได้อยู่ในสถานะรอรับ" };
 
-    // Check how many active BORROWED books user has (with deposit already paid)
-    const activeBorrowedCount = await prisma.borrowRecord.count({
-        where: {
-            userId: record.userId,
-            status: "BORROWED",
-            depositReturned: false,
-            depositForfeited: false,
-        },
-    });
-
-    // Deposit covers up to 5 books. If user already has active deposit, skip deposit charge.
-    const hasActiveDeposit = activeBorrowedCount > 0;
-    const depositToCharge = hasActiveDeposit ? 0 : BORROW_DEPOSIT_COINS;
+    // Check active deposit (shared service)
+    const userHasDeposit = await hasActiveDeposit(record.userId);
+    const depositToCharge = userHasDeposit ? 0 : BORROW_DEPOSIT_COINS;
 
     const now = new Date();
 
     if (depositToCharge > 0) {
-        // Need to deduct deposit coins
-        const packages = await prisma.coinPackage.findMany({
-            where: { userId: record.userId, isExpired: false, remainingCoins: { gt: 0 } },
-            orderBy: { createdAt: "asc" },
-        });
+        // FIFO coin deduction for deposit (shared service)
+        const { deductions, totalAvailable } = await prepareFIFODeduction(record.userId, depositToCharge);
 
-        const totalCoins = packages.reduce((sum, p) => sum + p.remainingCoins, 0);
-
-        if (totalCoins < depositToCharge) {
-            return { error: `สมาชิกมีเหรียญไม่พอสำหรับมัดจำ (ต้องการ ${depositToCharge}, มี ${totalCoins})` };
-        }
-
-        let remaining = depositToCharge;
-        const deductions: { packageId: string; amount: number }[] = [];
-        for (const pkg of packages) {
-            if (remaining <= 0) break;
-            const deduct = Math.min(pkg.remainingCoins, remaining);
-            deductions.push({ packageId: pkg.id, amount: deduct });
-            remaining -= deduct;
+        if (totalAvailable < depositToCharge) {
+            return { error: `สมาชิกมีเหรียญไม่พอสำหรับมัดจำ (ต้องการ ${depositToCharge}, มี ${totalAvailable})` };
         }
 
         await prisma.$transaction([
@@ -669,12 +583,11 @@ export async function confirmReservation(borrowId: string) {
                     processedById: session.user.id,
                 },
             }),
-            ...deductions.map((d) =>
-                prisma.coinPackage.update({
-                    where: { id: d.packageId },
-                    data: { remainingCoins: { decrement: d.amount } },
-                })
-            ),
+            ...buildPackageDeductOps(deductions, now),
+            // FIX: Log deposit transaction
+            ...buildTransactionOps(deductions, "BOOK_DEPOSIT", session.user.id, {
+                description: `เงินมัดจำหนังสือ (${record.code})`,
+            }),
         ]);
     } else {
         // No deposit needed — already covered by existing deposit
@@ -763,4 +676,79 @@ export async function rejectReservation(borrowId: string) {
 
     // Reuse cancel logic — same coin refund
     return cancelReservation(borrowId);
+}
+
+// ─── Helper: Distribute rental costs across FIFO deductions ──────────
+
+/**
+ * Maps per-book rental costs to the actual deduction packages.
+ * Ensures each CoinTransaction is attributed to the correct package.
+ */
+function distributeRentalToDeductions(
+    books: { id: string; title: string; rentalCost: number }[],
+    deductions: CoinDeduction[],
+    depositCoins: number,
+): CoinDeduction[] {
+    // Total rental coins (without deposit)
+    const totalRental = books.reduce((s, b) => s + b.rentalCost, 0);
+
+    // The deductions cover depositCoins + totalRental.
+    // We need to allocate just the rental portion to the correct packages.
+    // Skip first `depositCoins` from deductions, then allocate rental.
+    let skipped = 0;
+    const rentalDeductions: CoinDeduction[] = [];
+
+    for (const d of deductions) {
+        if (skipped < depositCoins) {
+            const skipFromThis = Math.min(depositCoins - skipped, d.amount);
+            skipped += skipFromThis;
+            const rentalFromThis = d.amount - skipFromThis;
+            if (rentalFromThis > 0) {
+                rentalDeductions.push({ packageId: d.packageId, amount: rentalFromThis, pkg: d.pkg });
+            }
+        } else {
+            rentalDeductions.push(d);
+        }
+    }
+
+    // If we don't have enough rental to worry about per-book attribution,
+    // or totalRental is small, just return the rental deductions directly
+    if (totalRental <= 0) return [];
+    return rentalDeductions;
+}
+
+/**
+ * Allocate a sub-portion (offset + amount) from deduction list.
+ * Used to extract the deposit portion from combined deductions.
+ */
+function allocateFromDeductions(
+    deductions: CoinDeduction[],
+    skipCoins: number,
+    takeCoins: number,
+): { packageId: string; amount: number }[] {
+    let skipped = 0;
+    let taken = 0;
+    const result: { packageId: string; amount: number }[] = [];
+
+    for (const d of deductions) {
+        if (taken >= takeCoins) break;
+
+        // How much of this deduction to use
+        let availableInDeduction = d.amount;
+
+        // First, skip rental portion
+        if (skipped < skipCoins) {
+            const toSkip = Math.min(skipCoins - skipped, availableInDeduction);
+            skipped += toSkip;
+            availableInDeduction -= toSkip;
+        }
+
+        if (availableInDeduction > 0 && taken < takeCoins) {
+            const toTake = Math.min(takeCoins - taken, availableInDeduction);
+            result.push({ packageId: d.packageId, amount: toTake });
+            taken += toTake;
+        }
+    }
+
+    return result;
 }
