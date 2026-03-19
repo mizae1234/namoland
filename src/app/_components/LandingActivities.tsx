@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { X, Sparkles, Clock, Coins } from "lucide-react";
-import Modal from "@/components/ui/Modal";
 
 interface Activity {
     id: string;
@@ -68,13 +67,16 @@ export default function LandingActivities({ activities }: { activities: Activity
                 })}
             </div>
 
-            <Modal
-                open={!!selectedActivity}
-                onClose={() => setSelectedActivity(null)}
-                title={selectedActivity?.name || ""}
-            >
-                {selectedActivity && (
-                    <div className="p-1 pb-4">
+            {/* Custom Modal Overlay */}
+            {selectedActivity && (
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transition-opacity"
+                    onClick={() => setSelectedActivity(null)}
+                >
+                    <div 
+                        className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl relative overflow-hidden animate-in fade-in zoom-in duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="flex justify-between items-start mb-6">
                             <div 
                                 className="w-16 h-16 rounded-3xl flex items-center justify-center text-3xl shadow-lg"
@@ -121,14 +123,14 @@ export default function LandingActivities({ activities }: { activities: Activity
                         <div className="mt-8 pt-6 border-t border-[#d1cce7]/20 text-center">
                             <button 
                                 onClick={() => setSelectedActivity(null)}
-                                className="px-6 py-2.5 bg-[#f4f1de] text-[#3d405b] font-medium rounded-xl hover:bg-[#d1cce7] transition-colors"
+                                className="px-8 py-3 bg-[#f4f1de] text-[#3d405b] font-semibold rounded-xl hover:bg-[#d1cce7] transition-colors w-full sm:w-auto"
                             >
                                 ปิดหน้าต่าง
                             </button>
                         </div>
                     </div>
-                )}
-            </Modal>
+                </div>
+            )}
         </>
     );
 }
