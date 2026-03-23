@@ -16,6 +16,8 @@ export async function POST(req: NextRequest) {
 
         const formData = await req.formData();
         const file = formData.get("file") as File | null;
+        const type = (formData.get("type") as string) || "monthly";
+        const activityId = (formData.get("activityId") as string) || null;
 
         if (!file) {
             return NextResponse.json({ error: "ไม่พบไฟล์" }, { status: 400 });
@@ -38,13 +40,15 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Ensure upload directory exists (in persistent storage area)
+        // Ensure upload directory exists
         const uploadDir = path.join(process.cwd(), "uploads");
         await mkdir(uploadDir, { recursive: true });
 
         // Generate unique filename
         const ext = file.name.split(".").pop() || "jpg";
-        const filename = `schedule_${Date.now()}.${ext}`;
+        let prefix = type === "weekly" ? "weekly_schedule" : "schedule";
+        if (type === "activityIcon") prefix = "activity_icon";
+        const filename = `${prefix}_${Date.now()}.${ext}`;
         const filepath = path.join(uploadDir, filename);
 
         // Write file
@@ -53,21 +57,32 @@ export async function POST(req: NextRequest) {
 
         const url = `/uploads/${filename}`;
 
-        // Save to DB
-        let shop = await prisma.shopInfo.findFirst();
-        if (!shop) {
-            shop = await prisma.shopInfo.create({
-                data: { shopName: "Namoland" },
+        if (type === "activityIcon" && activityId) {
+            // Save to ActivityConfig
+            await prisma.activityConfig.update({
+                where: { id: activityId },
+                data: { iconImageUrl: url },
             });
-        }
-        await prisma.shopInfo.update({
-            where: { id: shop.id },
-            data: { scheduleImageUrl: url },
-        });
+            revalidatePath("/activities");
+            revalidatePath("/");
+        } else {
+            // Save to ShopInfo (schedule images)
+            let shop = await prisma.shopInfo.findFirst();
+            if (!shop) {
+                shop = await prisma.shopInfo.create({
+                    data: { shopName: "Namoland" },
+                });
+            }
 
-        // Revalidate cached pages
-        revalidatePath("/settings");
-        revalidatePath("/");
+            const dbField = type === "weekly" ? "weeklyScheduleImageUrl" : "scheduleImageUrl";
+            await prisma.shopInfo.update({
+                where: { id: shop.id },
+                data: { [dbField]: url },
+            });
+
+            revalidatePath("/settings");
+            revalidatePath("/");
+        }
 
         return NextResponse.json({ url });
     } catch (err) {
@@ -80,23 +95,36 @@ export async function POST(req: NextRequest) {
 }
 
 // DELETE handler to remove schedule image
-export async function DELETE() {
+export async function DELETE(req: NextRequest) {
     try {
         const session = await auth();
         if (!session?.user || session.user.type !== "ADMIN") {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const shop = await prisma.shopInfo.findFirst();
-        if (shop) {
-            await prisma.shopInfo.update({
-                where: { id: shop.id },
-                data: { scheduleImageUrl: null },
-            });
-        }
+        const { searchParams } = new URL(req.url);
+        const type = searchParams.get("type") || "monthly";
+        const activityId = searchParams.get("activityId");
 
-        revalidatePath("/settings");
-        revalidatePath("/");
+        if (type === "activityIcon" && activityId) {
+            await prisma.activityConfig.update({
+                where: { id: activityId },
+                data: { iconImageUrl: null },
+            });
+            revalidatePath("/activities");
+            revalidatePath("/");
+        } else {
+            const shop = await prisma.shopInfo.findFirst();
+            if (shop) {
+                const dbField = type === "weekly" ? "weeklyScheduleImageUrl" : "scheduleImageUrl";
+                await prisma.shopInfo.update({
+                    where: { id: shop.id },
+                    data: { [dbField]: null },
+                });
+            }
+            revalidatePath("/settings");
+            revalidatePath("/");
+        }
 
         return NextResponse.json({ success: true });
     } catch (err) {

@@ -19,6 +19,7 @@ export async function getClassSchedulesWithEntries() {
         include: {
             entries: {
                 orderBy: [{ dayOfWeek: "asc" }, { sortOrder: "asc" }, { startTime: "asc" }],
+                include: { teacher: { select: { id: true, name: true, nickname: true, color: true } } },
             },
             _count: { select: { entries: true } },
         },
@@ -31,6 +32,7 @@ export async function getClassScheduleById(id: string) {
         include: {
             entries: {
                 orderBy: [{ dayOfWeek: "asc" }, { sortOrder: "asc" }, { startTime: "asc" }],
+                include: { teacher: { select: { id: true, name: true, nickname: true, color: true } } },
             },
         },
     });
@@ -112,13 +114,14 @@ export async function addClassEntry(formData: FormData) {
     const endTime = (formData.get("endTime") as string)?.trim();
     const title = (formData.get("title") as string)?.trim();
     const sortOrder = parseInt(formData.get("sortOrder") as string) || 0;
+    const teacherId = (formData.get("teacherId") as string)?.trim() || null;
 
     if (!scheduleId || isNaN(dayOfWeek) || !startTime || !endTime || !title) {
         return { error: "กรุณากรอกข้อมูลให้ครบ" };
     }
 
     await prisma.classEntry.create({
-        data: { scheduleId, dayOfWeek, startTime, endTime, title, sortOrder },
+        data: { scheduleId, dayOfWeek, startTime, endTime, title, sortOrder, teacherId },
     });
 
     revalidatePath(`/classes/${scheduleId}`);
@@ -134,6 +137,7 @@ export async function updateClassEntry(formData: FormData) {
     const endTime = (formData.get("endTime") as string)?.trim();
     const title = (formData.get("title") as string)?.trim();
     const sortOrder = parseInt(formData.get("sortOrder") as string) || 0;
+    const teacherId = (formData.get("teacherId") as string)?.trim() || null;
 
     if (!id || !startTime || !endTime || !title) {
         return { error: "กรุณากรอกข้อมูลให้ครบ" };
@@ -141,7 +145,7 @@ export async function updateClassEntry(formData: FormData) {
 
     const entry = await prisma.classEntry.update({
         where: { id },
-        data: { startTime, endTime, title, sortOrder },
+        data: { startTime, endTime, title, sortOrder, teacherId },
     });
 
     revalidatePath(`/classes/${entry.scheduleId}`);
@@ -190,6 +194,7 @@ export async function duplicateSchedule(id: string) {
                     endTime: e.endTime,
                     title: e.title,
                     sortOrder: e.sortOrder,
+                    teacherId: e.teacherId,
                 })),
             },
         },

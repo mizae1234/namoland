@@ -1,16 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { X, Sparkles, Clock, Coins } from "lucide-react";
+import { X, Sparkles, Coins } from "lucide-react";
+import Image from "next/image";
 
 interface Activity {
     id: string;
     name: string;
     description: string | null;
     icon: string | null;
+    iconImageUrl: string | null;
     coins: number;
     sortOrder: number;
     isActive: boolean;
+    showOnLanding: boolean;
 }
 
 export default function LandingActivities({ activities }: { activities: Activity[] }) {
@@ -45,10 +48,19 @@ export default function LandingActivities({ activities }: { activities: Activity
                             <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity duration-300" style={{ background: `linear-gradient(135deg, ${color}22, ${color}11)` }} />
                             
                             <div
-                                className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 text-white shadow-lg text-2xl"
+                                className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 text-white shadow-lg text-2xl overflow-hidden relative"
                                 style={{ backgroundColor: color, boxShadow: `0 8px 24px ${color}33` }}
                             >
-                                {activity.icon || "🌟"}
+                                {activity.iconImageUrl ? (
+                                    <Image
+                                        src={activity.iconImageUrl}
+                                        alt={activity.name}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                ) : (
+                                    activity.icon || "🌟"
+                                )}
                             </div>
                             
                             <h3 className="text-lg font-bold text-[#3d405b] mb-2">{activity.name}</h3>
@@ -79,13 +91,22 @@ export default function LandingActivities({ activities }: { activities: Activity
                     >
                         <div className="flex justify-between items-start mb-6">
                             <div 
-                                className="w-16 h-16 rounded-3xl flex items-center justify-center text-3xl shadow-lg"
+                                className="w-16 h-16 rounded-3xl flex items-center justify-center text-3xl shadow-lg overflow-hidden relative"
                                 style={{ 
                                     backgroundColor: colors[activeActivities.indexOf(selectedActivity) % colors.length], 
                                     color: "white" 
                                 }}
                             >
-                                {selectedActivity.icon || "🌟"}
+                                {selectedActivity.iconImageUrl ? (
+                                    <Image
+                                        src={selectedActivity.iconImageUrl}
+                                        alt={selectedActivity.name}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                ) : (
+                                    selectedActivity.icon || "🌟"
+                                )}
                             </div>
                             <button
                                 onClick={() => setSelectedActivity(null)}

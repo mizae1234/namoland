@@ -75,7 +75,7 @@ export default function MemberCoinReport() {
     const summary = reportData ? {
         totalIn: reportData.rows.reduce((s, r) => s + r.coinPurchase, 0),
         totalOut: reportData.rows.reduce((s, r) => s + r.coinUsage, 0),
-        totalAmount: reportData.rows.reduce((s, r) => s + (r.amount > 0 ? r.amount : 0), 0),
+        totalAmount: reportData.rows.reduce((s, r) => s + (Number(r.amount) || 0), 0),
         currentBalance: reportData.rows.length > 0 ? reportData.rows[reportData.rows.length - 1].balance : 0,
     } : null;
 

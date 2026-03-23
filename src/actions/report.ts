@@ -36,16 +36,16 @@ const MONTH_NAMES = [
 export async function getOutstandingCoinReport(year: number): Promise<OutstandingCoinReport> {
     // Get available years from data
     const earliestPackage = await prisma.coinPackage.findFirst({
-        orderBy: { createdAt: "asc" },
-        select: { createdAt: true },
+        orderBy: { purchaseDate: "asc" },
+        select: { purchaseDate: true },
     });
     const latestPackage = await prisma.coinPackage.findFirst({
-        orderBy: { createdAt: "desc" },
-        select: { createdAt: true },
+        orderBy: { purchaseDate: "desc" },
+        select: { purchaseDate: true },
     });
 
-    const startYear = earliestPackage ? earliestPackage.createdAt.getFullYear() : year;
-    const endYear = latestPackage ? latestPackage.createdAt.getFullYear() : year;
+    const startYear = earliestPackage ? earliestPackage.purchaseDate.getFullYear() : year;
+    const endYear = latestPackage ? latestPackage.purchaseDate.getFullYear() : year;
     const availableYears: number[] = [];
     for (let y = startYear; y <= endYear; y++) {
         availableYears.push(y);
@@ -60,7 +60,7 @@ export async function getOutstandingCoinReport(year: number): Promise<Outstandin
 
     // Purchases (exclude ADJUSTMENT type packages for clean purchase numbers)
     const bfPackages = await prisma.coinPackage.findMany({
-        where: { createdAt: { lt: yearStart } },
+        where: { purchaseDate: { lt: yearStart } },
         select: { totalCoins: true, remainingCoins: true, pricePaid: true, bonusAmount: true, packageType: true },
     });
 
@@ -94,8 +94,8 @@ export async function getOutstandingCoinReport(year: number): Promise<Outstandin
     const yearEnd = new Date(year + 1, 0, 1);
     const [yearPackages, yearTransactions] = await Promise.all([
         prisma.coinPackage.findMany({
-            where: { createdAt: { gte: yearStart, lt: yearEnd } },
-            select: { totalCoins: true, pricePaid: true, bonusAmount: true, packageType: true, createdAt: true },
+            where: { purchaseDate: { gte: yearStart, lt: yearEnd } },
+            select: { totalCoins: true, pricePaid: true, bonusAmount: true, packageType: true, purchaseDate: true },
         }),
         prisma.coinTransaction.findMany({
             where: { createdAt: { gte: yearStart, lt: yearEnd } },
@@ -105,6 +105,10 @@ export async function getOutstandingCoinReport(year: number): Promise<Outstandin
 
     const months: MonthRow[] = [];
     let runningBalance = bfBalance;
+    // Running cumulative monetary values (outstanding)
+    let runningAmount = bfAmount;
+    let runningGross = bfGrossAmount;
+    let runningDiscount = bfDiscount;
 
     for (let m = 0; m < 12; m++) {
         const monthStart = new Date(year, m, 1);
@@ -112,7 +116,7 @@ export async function getOutstandingCoinReport(year: number): Promise<Outstandin
 
         // Filter from pre-fetched data
         const monthPackages = yearPackages.filter(
-            (p) => p.createdAt >= monthStart && p.createdAt < monthEnd,
+            (p) => p.purchaseDate >= monthStart && p.purchaseDate < monthEnd,
         );
         const monthTransactions = yearTransactions.filter(
             (t) => t.createdAt >= monthStart && t.createdAt < monthEnd,
@@ -125,16 +129,10 @@ export async function getOutstandingCoinReport(year: number): Promise<Outstandin
         const purchase = purchasePackages.reduce((s, p) => s + p.totalCoins, 0);
         const adjustUpFromPackages = adjustPackages.reduce((s, p) => s + p.totalCoins, 0);
 
-        // For existing packages that got totalCoins incremented — that increment appears
-        // in the original package's totalCoins (not a new package), so we can't easily
-        // separate it. But the negative transaction log tells us it happened.
-        // We need to count: additions via existing package increments
         const adjustUpFromExisting = monthTransactions
             .filter(t => t.type === "ADJUSTMENT" && t.coinsUsed < 0)
             .reduce((s, t) => s + Math.abs(t.coinsUsed), 0);
 
-        // Total coins actually added to existing packages (not new ADJUSTMENT packages)
-        // are in the negative transactions. New ADJUSTMENT packages are separate.
         const adjustUp = adjustUpFromPackages + adjustUpFromExisting;
 
         // Usage = non-ADJUSTMENT transactions (normal spending)
@@ -147,19 +145,32 @@ export async function getOutstandingCoinReport(year: number): Promise<Outstandin
             .filter(t => t.type === "ADJUSTMENT" && t.coinsUsed > 0)
             .reduce((s, t) => s + t.coinsUsed, 0);
 
-        // For the purchase column in the report, we need to account for totalCoins increases
-        // on existing packages. Those show up as negative ADJUSTMENT transactions but
-        // we already counted them in adjustUp. So purchase = only real purchased packages.
-        // But wait — when adjustCoinsUp increments totalCoins on an existing package,
-        // that existing package's totalCoins is ALREADY counted in its original month's purchase.
-        // So we must NOT double-count. The adjustUp column handles it.
-
-        const amount = purchasePackages.reduce((s, p) => s + Number(p.pricePaid), 0);
-        const grossAmount = purchasePackages.reduce((s, p) => s + Number(p.pricePaid) + Number(p.bonusAmount), 0);
-        const discount = purchasePackages.reduce((s, p) => s + Number(p.bonusAmount), 0);
+        // Monthly purchase monetary values
+        const monthAmount = purchasePackages.reduce((s, p) => s + Number(p.pricePaid), 0);
+        const monthGross = purchasePackages.reduce((s, p) => s + Number(p.pricePaid) + Number(p.bonusAmount), 0);
+        const monthDiscount = purchasePackages.reduce((s, p) => s + Number(p.bonusAmount), 0);
 
         // Net change = purchase + adjustUp - usage - adjustDown
+        const prevBalance = runningBalance;
         runningBalance = runningBalance + purchase + adjustUp - usage - adjustDown;
+
+        // Add purchase values to running totals
+        runningAmount += monthAmount;
+        runningGross += monthGross;
+        runningDiscount += monthDiscount;
+
+        // Deduct proportional monetary value for coins consumed (usage + adjustDown)
+        const totalConsumed = usage + adjustDown;
+        if (totalConsumed > 0 && prevBalance + purchase + adjustUp > 0) {
+            const balanceBeforeConsumption = prevBalance + purchase + adjustUp;
+            const ratio = totalConsumed / balanceBeforeConsumption;
+            const amountDeducted = runningAmount * ratio;
+            const grossDeducted = runningGross * ratio;
+            const discountDeducted = runningDiscount * ratio;
+            runningAmount -= amountDeducted;
+            runningGross -= grossDeducted;
+            runningDiscount -= discountDeducted;
+        }
 
         months.push({
             month: MONTH_NAMES[m],
@@ -170,10 +181,10 @@ export async function getOutstandingCoinReport(year: number): Promise<Outstandin
             adjustUp,
             adjustDown,
             balance: runningBalance,
-            amount,
-            grossAmount,
-            discount,
-            discountPercent: grossAmount > 0 ? Math.round((discount / grossAmount) * 100) / 100 : 0,
+            amount: Math.round(runningAmount * 100) / 100,
+            grossAmount: Math.round(runningGross * 100) / 100,
+            discount: Math.round(runningDiscount * 100) / 100,
+            discountPercent: runningGross > 0 ? Math.round((runningDiscount / runningGross) * 100) / 100 : 0,
         });
     }
 
@@ -322,7 +333,7 @@ export async function getMemberReport(userId: string): Promise<MemberReportData>
                 orderBy: { createdAt: "asc" },
             },
         },
-        orderBy: { createdAt: "asc" },
+        orderBy: { purchaseDate: "asc" },
     });
 
     // Build timeline events sorted by date
@@ -355,7 +366,7 @@ export async function getMemberReport(userId: string): Promise<MemberReportData>
             const originalCoins = pkg.totalCoins - adjustUpOnThisPackage;
 
             events.push({
-                date: new Date(pkg.createdAt),
+                date: new Date(pkg.purchaseDate),
                 type: "Purchase",
                 className: "",
                 dateTime: "",

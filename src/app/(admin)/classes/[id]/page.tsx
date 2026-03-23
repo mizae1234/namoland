@@ -1,5 +1,6 @@
 import { getClassScheduleById } from "@/actions/classSchedule";
 import { getActiveActivities } from "@/actions/activityConfig";
+import { getActiveTeachers } from "@/actions/teacher";
 import { notFound } from "next/navigation";
 import WeeklyCalendar from "./_components/WeeklyCalendar";
 import Link from "next/link";
@@ -7,9 +8,10 @@ import { ArrowLeft } from "lucide-react";
 
 export default async function ClassDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const [schedule, activities] = await Promise.all([
+    const [schedule, activities, teachers] = await Promise.all([
         getClassScheduleById(id),
         getActiveActivities(),
+        getActiveTeachers(),
     ]);
 
     if (!schedule) return notFound();
@@ -27,6 +29,7 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
             <WeeklyCalendar
                 schedule={JSON.parse(JSON.stringify(schedule))}
                 activities={JSON.parse(JSON.stringify(activities))}
+                teachers={JSON.parse(JSON.stringify(teachers))}
             />
         </div>
     );

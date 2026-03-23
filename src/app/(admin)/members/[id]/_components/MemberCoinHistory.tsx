@@ -26,6 +26,7 @@ type Package = {
     expiresAt: string | Date | null;
     note: string | null;
     paymentMethod: string | null;
+    purchaseDate: string | Date;
     createdAt: string | Date;
     transactions: Transaction[];
 };
@@ -105,7 +106,7 @@ export default function MemberCoinHistory({
     // 1. Package purchases (coins IN)
     for (const pkg of packages) {
         events.push({
-            date: new Date(pkg.createdAt),
+            date: new Date(pkg.purchaseDate),
             type: "IN",
             label: `ซื้อแพ็คเกจ ${pkg.packageType.replace(/_/g, " ")}`,
             detail: [
@@ -144,7 +145,7 @@ export default function MemberCoinHistory({
 
         // Expired package
         if (pkg.isExpired && pkg.remainingCoins === 0) {
-            const expiryDate = pkg.expiresAt ? new Date(pkg.expiresAt) : new Date(pkg.createdAt);
+            const expiryDate = pkg.expiresAt ? new Date(pkg.expiresAt) : new Date(pkg.purchaseDate);
             // Only add if no EXPIRED transaction already exists
             const hasExpiredTx = pkg.transactions.some(t => t.type === "EXPIRED");
             if (!hasExpiredTx && pkg.expiresAt) {

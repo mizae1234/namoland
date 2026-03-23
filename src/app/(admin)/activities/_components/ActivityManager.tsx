@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
     createActivityConfig,
     updateActivityConfig,
     toggleActivityActive,
+    toggleShowOnLanding,
     deleteActivityConfig,
     seedActivityConfigs,
 } from "@/actions/activityConfig";
-import { Plus, Pencil, Trash2, Check, X, Download, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Pencil, Trash2, Check, X, Download, ToggleLeft, ToggleRight, Globe, Upload, ImageIcon } from "lucide-react";
 import Card from "@/components/ui/Card";
 import AlertMessage from "@/components/ui/AlertMessage";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const ICON_OPTIONS = [
     "🎨", "🎭", "🎪", "🧩", "🎯", "🎲", "🎵", "🎶",
@@ -24,17 +27,22 @@ interface ActivityData {
     name: string;
     description: string | null;
     icon: string | null;
+    iconImageUrl: string | null;
     coins: number;
     sortOrder: number;
     isActive: boolean;
+    showOnLanding: boolean;
 }
 
 export default function ActivityManager({ activities }: { activities: ActivityData[] }) {
+    const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
     const [editId, setEditId] = useState<string | null>(null);
     const [showAdd, setShowAdd] = useState(false);
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+    const [uploadingId, setUploadingId] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Edit state
     const [editName, setEditName] = useState("");
@@ -119,6 +127,14 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
         else showMsg("อัปเดตสถานะสำเร็จ!");
     };
 
+    const handleToggleLanding = async (id: string) => {
+        setLoading(true);
+        const result = await toggleShowOnLanding(id);
+        setLoading(false);
+        if (result.error) showMsg(result.error);
+        else showMsg("อัปเดตการแสดงผลสำเร็จ!");
+    };
+
     const handleDelete = async (id: string) => {
         setLoading(true);
         const result = await deleteActivityConfig(id);
@@ -134,6 +150,44 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
         setLoading(false);
         if (result.error) showMsg(result.error);
         else showMsg("สร้างกิจกรรมเริ่มต้นสำเร็จ!");
+    };
+
+    const handleIconUpload = async (activityId: string, file: File) => {
+        setUploadingId(activityId);
+        try {
+            const fd = new FormData();
+            fd.set("file", file);
+            fd.set("type", "activityIcon");
+            fd.set("activityId", activityId);
+            const res = await fetch("/api/upload", { method: "POST", body: fd });
+            const data = await res.json();
+            if (data.error) {
+                showMsg(data.error);
+            } else {
+                showMsg("อัพโหลดไอคอนสำเร็จ!");
+                router.refresh();
+            }
+        } catch {
+            showMsg("อัพโหลดไม่สำเร็จ");
+        }
+        setUploadingId(null);
+    };
+
+    const handleRemoveIcon = async (activityId: string) => {
+        setUploadingId(activityId);
+        try {
+            const res = await fetch(`/api/upload?type=activityIcon&activityId=${activityId}`, { method: "DELETE" });
+            const data = await res.json();
+            if (data.error) {
+                showMsg(data.error);
+            } else {
+                showMsg("ลบไอคอนสำเร็จ!");
+                router.refresh();
+            }
+        } catch {
+            showMsg("ลบไม่สำเร็จ");
+        }
+        setUploadingId(null);
     };
 
     const IconPicker = ({
@@ -153,7 +207,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                 onClick={() => setShow(!show)}
                 className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20 focus:border-[#81b29a] bg-white text-center"
             >
-                {selected || "เลือกไอคอน"}
+                {selected || "เลือก Emoji"}
             </button>
             {show && (
                 <div className="absolute z-20 top-full mt-1 bg-white border border-[#d1cce7]/30 rounded-xl shadow-lg p-2 grid grid-cols-8 gap-1 w-[280px]">
@@ -173,7 +227,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                         onClick={() => { onSelect(""); setShow(false); }}
                         className="col-span-8 mt-1 text-xs text-[#3d405b]/40 hover:text-red-500 transition-colors"
                     >
-                        ล้างไอคอน
+                        ล้าง Emoji
                     </button>
                 </div>
             )}
@@ -185,6 +239,21 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
             <AlertMessage
                 type={message.includes("สำเร็จ") ? "success" : "error"}
                 message={message}
+            />
+
+            {/* Hidden file input for icon upload */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file && uploadingId) {
+                        handleIconUpload(uploadingId, file);
+                    }
+                    e.target.value = "";
+                }}
             />
 
             {/* Seed button — only if no activities */}
@@ -230,7 +299,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">ไอคอน</label>
+                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">Emoji ไอคอน</label>
                             <IconPicker
                                 selected={addIcon}
                                 onSelect={setAddIcon}
@@ -316,7 +385,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">ไอคอน</label>
+                                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">Emoji ไอคอน</label>
                                             <IconPicker
                                                 selected={editIcon}
                                                 onSelect={setEditIcon}
@@ -372,19 +441,33 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                             ) : (
                                 /* ─── Display Mode ─── */
                                 <div className="flex items-start gap-3">
-                                    {/* Icon */}
-                                    <div className="w-10 h-10 bg-[#81b29a]/10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl">
-                                        {activity.icon || "📋"}
+                                    {/* Icon — show uploaded image or emoji */}
+                                    <div className="w-10 h-10 bg-[#81b29a]/10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl overflow-hidden relative">
+                                        {activity.iconImageUrl ? (
+                                            <Image
+                                                src={activity.iconImageUrl}
+                                                alt={activity.name}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                        ) : (
+                                            activity.icon || "📋"
+                                        )}
                                     </div>
 
                                     {/* Info */}
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-0.5">
+                                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                                             <p className="font-medium text-[#3d405b]">{activity.name}</p>
                                             <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
                                                 {activity.coins > 0 ? `${activity.coins} เหรียญ` : "กำหนดเอง"}
                                             </span>
                                             <span className="text-xs text-[#3d405b]/30">#{activity.sortOrder}</span>
+                                            {activity.showOnLanding && (
+                                                <span className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full font-medium">
+                                                    🌐 Landing
+                                                </span>
+                                            )}
                                         </div>
                                         {activity.description && (
                                             <p className="text-xs text-[#3d405b]/50 line-clamp-2">{activity.description}</p>
@@ -392,7 +475,49 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                                     </div>
 
                                     {/* Actions */}
-                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                    <div className="flex items-center gap-1 flex-shrink-0 flex-wrap justify-end">
+                                        {/* Upload icon image */}
+                                        <button
+                                            onClick={() => {
+                                                setUploadingId(activity.id);
+                                                fileInputRef.current?.click();
+                                            }}
+                                            disabled={loading || uploadingId === activity.id}
+                                            className="p-1.5 text-[#3d405b]/40 hover:text-violet-500 hover:bg-violet-50 rounded-lg transition-colors disabled:opacity-50"
+                                            title={activity.iconImageUrl ? "เปลี่ยนรูปไอคอน" : "อัพโหลดรูปไอคอน"}
+                                        >
+                                            {uploadingId === activity.id ? (
+                                                <div className="w-3.5 h-3.5 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
+                                            ) : activity.iconImageUrl ? (
+                                                <ImageIcon size={14} />
+                                            ) : (
+                                                <Upload size={14} />
+                                            )}
+                                        </button>
+                                        {/* Remove icon image */}
+                                        {activity.iconImageUrl && (
+                                            <button
+                                                onClick={() => handleRemoveIcon(activity.id)}
+                                                disabled={loading || uploadingId === activity.id}
+                                                className="p-1.5 text-[#3d405b]/40 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                                title="ลบรูปไอคอน"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        )}
+                                        {/* Toggle landing */}
+                                        <button
+                                            onClick={() => handleToggleLanding(activity.id)}
+                                            disabled={loading}
+                                            className={`p-1.5 rounded-lg transition-colors disabled:opacity-50 ${activity.showOnLanding
+                                                ? "text-blue-500 hover:bg-blue-50"
+                                                : "text-[#3d405b]/30 hover:text-blue-400 hover:bg-blue-50"
+                                                }`}
+                                            title={activity.showOnLanding ? "ซ่อนจาก Landing" : "แสดงบน Landing"}
+                                        >
+                                            <Globe size={14} />
+                                        </button>
+                                        {/* Toggle active */}
                                         <button
                                             onClick={() => handleToggle(activity.id)}
                                             disabled={loading}

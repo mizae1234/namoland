@@ -47,22 +47,22 @@ export async function getOwnerDashboardData() {
         }),
         // Today cash (Packages)
         prisma.coinPackage.findMany({
-            where: { createdAt: { gte: todayStart } },
+            where: { purchaseDate: { gte: todayStart } },
             select: { pricePaid: true },
         }),
         // Yesterday cash
         prisma.coinPackage.findMany({
-            where: { createdAt: { gte: yesterdayStart, lt: todayStart } },
+            where: { purchaseDate: { gte: yesterdayStart, lt: todayStart } },
             select: { pricePaid: true },
         }),
         // This month cash
         prisma.coinPackage.findMany({
-            where: { createdAt: { gte: monthStart } },
+            where: { purchaseDate: { gte: monthStart } },
             select: { pricePaid: true },
         }),
         // Last month cash
         prisma.coinPackage.findMany({
-            where: { createdAt: { gte: lastMonthStart, lte: lastMonthEnd } },
+            where: { purchaseDate: { gte: lastMonthStart, lte: lastMonthEnd } },
             select: { pricePaid: true },
         }),
         // Currently rented
@@ -117,8 +117,8 @@ export async function getOwnerDashboardData() {
             select: { coinsUsed: true, createdAt: true, package: { select: { pricePaid: true, bonusAmount: true, totalCoins: true } } },
         }),
         prisma.coinPackage.findMany({
-            where: { createdAt: { gte: thirtyDaysAgo } },
-            select: { pricePaid: true, createdAt: true },
+            where: { purchaseDate: { gte: thirtyDaysAgo } },
+            select: { pricePaid: true, purchaseDate: true },
         }),
     ]);
 
@@ -131,7 +131,7 @@ export async function getOwnerDashboardData() {
         const label = `${d.getDate()}/${d.getMonth() + 1}`;
         const dayRevenue = calculateRevenue(allTransactionsLast30d.filter((tx) => tx.createdAt >= d && tx.createdAt < nextD));
         const dayCash = allPackagesLast30d
-            .filter((p) => p.createdAt >= d && p.createdAt < nextD)
+            .filter((p) => p.purchaseDate >= d && p.purchaseDate < nextD)
             .reduce((s, p) => s + Number(p.pricePaid), 0);
         revenueTrend.push({ date: label, revenue: dayRevenue, cash: dayCash });
     }
@@ -256,7 +256,7 @@ export async function getOwnerDashboardData() {
     // ─── Financial Summary ──────────────────────────
     const totalCoinsPurchased = await prisma.coinPackage.aggregate({
         _sum: { totalCoins: true },
-        where: { createdAt: { gte: monthStart } },
+        where: { purchaseDate: { gte: monthStart } },
     });
 
     const totalCoinsRedeemed = await prisma.coinTransaction.aggregate({

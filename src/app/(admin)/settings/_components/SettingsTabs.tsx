@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Store, Package, CalendarDays, Calendar, UserCog, ImageIcon } from "lucide-react";
+import { Store, Package, CalendarDays, Calendar, UserCog, ImageIcon, GraduationCap } from "lucide-react";
 
 import ShopInfoForm from "./ShopInfoForm";
 import PackageManager from "../../coins/packages/_components/PackageManager";
 import ActivityManager from "../../activities/_components/ActivityManager";
+import TeacherManager from "./TeacherManager";
 import ScheduleList from "../../classes/_components/ScheduleList";
 import AdminUsersManager from "./AdminUsersManager";
 import ScheduleImageUploader from "./ScheduleImageUploader";
@@ -21,6 +22,7 @@ const TABS: TabConfig[] = [
     { key: "shop", label: "ข้อมูลร้าน", icon: Store },
     { key: "packages", label: "แพ็คเกจเหรียญ", icon: Package },
     { key: "activities", label: "กิจกรรม", icon: CalendarDays },
+    { key: "teachers", label: "ครูผู้สอน", icon: GraduationCap },
     { key: "classes", label: "ตารางคลาส", icon: Calendar },
     { key: "schedule", label: "ตารางกิจกรรม", icon: ImageIcon },
     { key: "users", label: "จัดการผู้ใช้", icon: UserCog },
@@ -35,6 +37,7 @@ interface SettingsTabsProps {
         accountName: string | null;
         note: string | null;
         scheduleImageUrl: string | null;
+        weeklyScheduleImageUrl: string | null;
     };
     packages: {
         id: string;
@@ -51,9 +54,11 @@ interface SettingsTabsProps {
         name: string;
         description: string | null;
         icon: string | null;
+        iconImageUrl: string | null;
         coins: number;
         sortOrder: number;
         isActive: boolean;
+        showOnLanding: boolean;
     }[];
     schedules: {
         id: string;
@@ -76,6 +81,14 @@ interface SettingsTabsProps {
         role: string;
         createdAt: Date;
     }[];
+    teachers: {
+        id: string;
+        name: string;
+        nickname: string | null;
+        color: string | null;
+        isActive: boolean;
+        sortOrder: number;
+    }[];
     currentUserId: string;
 }
 
@@ -85,6 +98,7 @@ export default function SettingsTabs({
     activities,
     schedules,
     adminUsers,
+    teachers,
     currentUserId,
 }: SettingsTabsProps) {
     const router = useRouter();
@@ -141,9 +155,23 @@ export default function SettingsTabs({
                 {activeTab === "shop" && <ShopInfoForm shopInfo={shopInfo} />}
                 {activeTab === "packages" && <PackageManager packages={packages} />}
                 {activeTab === "activities" && <ActivityManager activities={activities} />}
+                {activeTab === "teachers" && <TeacherManager teachers={teachers} />}
                 {activeTab === "classes" && <ScheduleList schedules={schedules} mode="manage" />}
                 {activeTab === "schedule" && (
-                    <ScheduleImageUploader currentImageUrl={shopInfo.scheduleImageUrl} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <ScheduleImageUploader
+                            currentImageUrl={shopInfo.scheduleImageUrl}
+                            type="monthly"
+                            title="ตารางกิจกรรมประจำเดือน"
+                            description="รูปตารางกิจกรรมรายเดือนสำหรับแสดงใน Landing Page (ด้านซ้าย)"
+                        />
+                        <ScheduleImageUploader
+                            currentImageUrl={shopInfo.weeklyScheduleImageUrl}
+                            type="weekly"
+                            title="ตารางกิจกรรมประจำสัปดาห์"
+                            description="รูปตารางกิจกรรมรายสัปดาห์สำหรับแสดงใน Landing Page (ด้านขวา)"
+                        />
+                    </div>
                 )}
                 {activeTab === "users" && (
                     <AdminUsersManager users={adminUsers} currentUserId={currentUserId} />

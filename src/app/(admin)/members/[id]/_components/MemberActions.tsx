@@ -67,6 +67,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
     // Buy confirmation state
     const [selectedPkg, setSelectedPkg] = useState<PackageOption | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<"CASH" | "TRANSFER">("CASH");
+    const [purchaseDate, setPurchaseDate] = useState(format(new Date(), "yyyy-MM-dd"));
     const [note, setNote] = useState("");
 
     // Custom purchase state
@@ -120,6 +121,9 @@ export default function MemberActions({ member, packages, activities }: MemberAc
         }
         fd.set("paymentMethod", paymentMethod);
         if (note.trim()) fd.set("note", note.trim());
+        if (purchaseDate && purchaseDate !== format(new Date(), "yyyy-MM-dd")) {
+            fd.set("purchaseDate", purchaseDate);
+        }
         const result = await purchasePackage(fd);
         setLoading(false);
         if (result.error) setMessage(result.error);
@@ -373,6 +377,23 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                                     เงินโอน
                                 </button>
                             </div>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-[#3d405b] block mb-2">
+                                วันที่ซื้อ <span className="font-normal text-[#3d405b]/40">(สามารถเลือกวันย้อนหลังได้)</span>
+                            </label>
+                            <input
+                                type="date"
+                                value={purchaseDate}
+                                onChange={(e) => setPurchaseDate(e.target.value)}
+                                max={format(new Date(), "yyyy-MM-dd")}
+                                className="w-full px-3 py-2.5 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20 focus:border-[#81b29a]"
+                            />
+                            {purchaseDate !== format(new Date(), "yyyy-MM-dd") && (
+                                <p className="text-xs text-amber-600 mt-1 font-medium">
+                                    ⏳ จะบันทึกเป็นวันที่ {format(new Date(purchaseDate + "T00:00:00"), "d MMMM yyyy", { locale: th })}
+                                </p>
+                            )}
                         </div>
                         <div>
                             <label className="text-sm font-medium text-[#3d405b] block mb-2">

@@ -118,7 +118,7 @@ export default async function UserCoinsPage() {
                         id: `pkg-${pkg.id}`,
                         coins: pkg.totalCoins,
                         amount: Number(pkg.pricePaid),
-                        date: new Date(pkg.createdAt),
+                        date: new Date(pkg.purchaseDate),
                         source: "admin",
                         status: "APPROVED",
                         packageType: pkg.packageType,

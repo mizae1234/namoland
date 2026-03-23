@@ -4,9 +4,21 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 
+function revalidateAll() {
+    revalidatePath("/activities");
+    revalidatePath("/");
+}
+
 export async function getActiveActivities() {
     return prisma.activityConfig.findMany({
         where: { isActive: true },
+        orderBy: { sortOrder: "asc" },
+    });
+}
+
+export async function getActivitiesForLanding() {
+    return prisma.activityConfig.findMany({
+        where: { isActive: true, showOnLanding: true },
         orderBy: { sortOrder: "asc" },
     });
 }
@@ -26,16 +38,17 @@ export async function createActivityConfig(formData: FormData) {
     const icon = (formData.get("icon") as string)?.trim() || null;
     const coins = parseInt(formData.get("coins") as string);
     const sortOrder = parseInt(formData.get("sortOrder") as string) || 0;
+    const showOnLanding = formData.get("showOnLanding") !== "false";
 
     if (!name || isNaN(coins) || coins < 0) {
         return { error: "กรุณากรอกข้อมูลให้ครบ" };
     }
 
     await prisma.activityConfig.create({
-        data: { name, description, icon, coins, sortOrder },
+        data: { name, description, icon, coins, sortOrder, showOnLanding },
     });
 
-    revalidatePath("/activities");
+    revalidateAll();
     return { success: true };
 }
 
@@ -59,7 +72,7 @@ export async function updateActivityConfig(formData: FormData) {
         data: { name, description, icon, coins, sortOrder },
     });
 
-    revalidatePath("/activities");
+    revalidateAll();
     return { success: true };
 }
 
@@ -75,7 +88,36 @@ export async function toggleActivityActive(id: string) {
         data: { isActive: !activity.isActive },
     });
 
-    revalidatePath("/activities");
+    revalidateAll();
+    return { success: true };
+}
+
+export async function toggleShowOnLanding(id: string) {
+    const session = await auth();
+    if (!session?.user || session.user.type !== "ADMIN") return { error: "Unauthorized" };
+
+    const activity = await prisma.activityConfig.findUnique({ where: { id } });
+    if (!activity) return { error: "ไม่พบกิจกรรม" };
+
+    await prisma.activityConfig.update({
+        where: { id },
+        data: { showOnLanding: !activity.showOnLanding },
+    });
+
+    revalidateAll();
+    return { success: true };
+}
+
+export async function updateActivityIcon(id: string, iconImageUrl: string | null) {
+    const session = await auth();
+    if (!session?.user || session.user.type !== "ADMIN") return { error: "Unauthorized" };
+
+    await prisma.activityConfig.update({
+        where: { id },
+        data: { iconImageUrl },
+    });
+
+    revalidateAll();
     return { success: true };
 }
 
@@ -85,7 +127,7 @@ export async function deleteActivityConfig(id: string) {
 
     await prisma.activityConfig.delete({ where: { id } });
 
-    revalidatePath("/activities");
+    revalidateAll();
     return { success: true };
 }
 
@@ -112,6 +154,6 @@ export async function seedActivityConfigs() {
 
     await prisma.activityConfig.createMany({ data: defaults });
 
-    revalidatePath("/activities");
+    revalidateAll();
     return { success: true };
 }

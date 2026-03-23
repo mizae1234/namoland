@@ -21,6 +21,7 @@ export async function purchasePackage(formData: FormData) {
     const customPrice = formData.get("customPrice") as string;
     const note = (formData.get("note") as string) || null;
     const paymentMethod = (formData.get("paymentMethod") as string) || null;
+    const purchaseDateStr = formData.get("purchaseDate") as string;
 
     let coins: number;
     let price: number;
@@ -40,6 +41,9 @@ export async function purchasePackage(formData: FormData) {
         bonus = pkgConfig.bonus;
     }
 
+    // Support backdated purchase date
+    const purchaseDate = purchaseDateStr ? new Date(purchaseDateStr + "T00:00:00") : new Date();
+
     await prisma.coinPackage.create({
         data: {
             userId,
@@ -50,11 +54,13 @@ export async function purchasePackage(formData: FormData) {
             bonusAmount: bonus,
             note,
             paymentMethod,
+            purchaseDate,
         },
     });
 
     revalidatePath("/members");
     revalidatePath("/coins");
+    revalidatePath("/reports");
     return { success: true };
 }
 

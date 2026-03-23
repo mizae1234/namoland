@@ -110,7 +110,7 @@ export default async function MemberDetailPage({
                 )}
             </Card>
 
-            <MemberActions member={member} packages={packageOptions} activities={dbActivities.map(a => ({ name: a.name, coins: a.coins }))} />
+            <MemberActions member={JSON.parse(JSON.stringify(member))} packages={packageOptions} activities={dbActivities.map(a => ({ name: a.name, coins: a.coins }))} />
 
             {/* Member Report (Excel Format) */}
             <MemberReport userId={member.id} memberName={member.parentName} />

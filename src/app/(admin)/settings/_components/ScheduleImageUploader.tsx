@@ -8,9 +8,17 @@ import AlertMessage from "@/components/ui/AlertMessage";
 
 interface ScheduleImageUploaderProps {
     currentImageUrl: string | null;
+    type?: "monthly" | "weekly";
+    title?: string;
+    description?: string;
 }
 
-export default function ScheduleImageUploader({ currentImageUrl }: ScheduleImageUploaderProps) {
+export default function ScheduleImageUploader({
+    currentImageUrl,
+    type = "monthly",
+    title = "ตารางกิจกรรมประจำเดือน",
+    description = "อัพโหลดรูปตารางกิจกรรมสำหรับแสดงใน Landing Page",
+}: ScheduleImageUploaderProps) {
     const router = useRouter();
     const [savedUrl, setSavedUrl] = useState(currentImageUrl);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -55,6 +63,7 @@ export default function ScheduleImageUploader({ currentImageUrl }: ScheduleImage
         try {
             const formData = new FormData();
             formData.append("file", pendingFile);
+            formData.append("type", type);
             const res = await fetch("/api/upload", { method: "POST", body: formData });
             const data = await res.json();
 
@@ -81,10 +90,10 @@ export default function ScheduleImageUploader({ currentImageUrl }: ScheduleImage
     };
 
     const handleRemove = async () => {
-        if (!confirm("ต้องการลบรูปตารางกิจกรรม?")) return;
+        if (!confirm(`ต้องการลบรูป${title}?`)) return;
         setUploading(true);
         try {
-            const res = await fetch("/api/upload", { method: "DELETE" });
+            const res = await fetch(`/api/upload?type=${type}`, { method: "DELETE" });
             const data = await res.json();
             if (!res.ok || data.error) {
                 showMsg(data.error || "ลบไม่สำเร็จ");
@@ -105,10 +114,10 @@ export default function ScheduleImageUploader({ currentImageUrl }: ScheduleImage
         <div>
             <h3 className="font-semibold text-[#3d405b] mb-1 flex items-center gap-2">
                 <ImageIcon size={18} className="text-[#a16b9f]" />
-                ตารางกิจกรรมประจำเดือน
+                {title}
             </h3>
             <p className="text-xs text-[#3d405b]/40 mb-4">
-                อัพโหลดรูปตารางกิจกรรมสำหรับแสดงใน Landing Page (แทนตาราง calendar อัตโนมัติ)
+                {description}
             </p>
 
             <AlertMessage
@@ -133,7 +142,7 @@ export default function ScheduleImageUploader({ currentImageUrl }: ScheduleImage
                         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-2">
                             <CheckCircle size={16} className="text-emerald-500" />
                             <p className="text-sm text-emerald-600 font-medium">
-                                รูปตารางกิจกรรมที่ใช้งานอยู่
+                                รูปที่ใช้งานอยู่
                             </p>
                         </div>
                     )}
@@ -142,7 +151,7 @@ export default function ScheduleImageUploader({ currentImageUrl }: ScheduleImage
                     <div className="relative border border-[#d1cce7]/20 rounded-xl overflow-hidden">
                         <Image
                             src={displayUrl}
-                            alt="ตารางกิจกรรมประจำเดือน"
+                            alt={title}
                             width={800}
                             height={600}
                             className="w-full h-auto object-contain"
@@ -204,7 +213,7 @@ export default function ScheduleImageUploader({ currentImageUrl }: ScheduleImage
                     <Upload size={40} className="text-[#3d405b]/20" />
                     <div className="text-center">
                         <p className="text-sm font-medium text-[#3d405b]/60">
-                            คลิกเพื่อเลือกรูปตารางกิจกรรม
+                            คลิกเพื่อเลือกรูป{title}
                         </p>
                         <p className="text-xs text-[#3d405b]/30 mt-1">JPEG, PNG, WebP · ไม่เกิน 5MB</p>
                     </div>

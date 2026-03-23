@@ -31,6 +31,13 @@ interface ActivityData {
     coins: number;
 }
 
+interface TeacherData {
+    id: string;
+    name: string;
+    nickname: string | null;
+    color: string | null;
+}
+
 interface EntryData {
     id: string;
     dayOfWeek: number;
@@ -38,6 +45,8 @@ interface EntryData {
     endTime: string;
     title: string;
     sortOrder: number;
+    teacherId: string | null;
+    teacher: TeacherData | null;
 }
 
 interface ScheduleData {
@@ -75,7 +84,7 @@ function maskTime(raw: string): string {
     return digits.slice(0, 2) + "." + digits.slice(2);
 }
 
-export default function WeeklyCalendar({ schedule, activities }: { schedule: ScheduleData; activities: ActivityData[] }) {
+export default function WeeklyCalendar({ schedule, activities, teachers }: { schedule: ScheduleData; activities: ActivityData[]; teachers: TeacherData[] }) {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
     const [editingTheme, setEditingTheme] = useState(false);
@@ -87,12 +96,14 @@ export default function WeeklyCalendar({ schedule, activities }: { schedule: Sch
     const [addStart, setAddStart] = useState("");
     const [addEnd, setAddEnd] = useState("");
     const [addCustomTitle, setAddCustomTitle] = useState("");
+    const [addTeacherId, setAddTeacherId] = useState("");
 
     // Edit entry state
     const [editEntryId, setEditEntryId] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState("");
     const [editStart, setEditStart] = useState("");
     const [editEnd, setEditEnd] = useState("");
+    const [editTeacherId, setEditTeacherId] = useState("");
 
     // Delete confirm
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -148,6 +159,7 @@ export default function WeeklyCalendar({ schedule, activities }: { schedule: Sch
         fd.set("endTime", addEnd);
         fd.set("title", title);
         fd.set("sortOrder", String((entriesByDay[addingDay]?.length || 0) + 1));
+        if (addTeacherId) fd.set("teacherId", addTeacherId);
         const result = await addClassEntry(fd);
         setLoading(false);
         if (result.error) showMsg(result.error);
@@ -158,6 +170,7 @@ export default function WeeklyCalendar({ schedule, activities }: { schedule: Sch
             setAddStart("");
             setAddEnd("");
             setAddCustomTitle("");
+            setAddTeacherId("");
         }
     };
 
@@ -166,6 +179,7 @@ export default function WeeklyCalendar({ schedule, activities }: { schedule: Sch
         setEditTitle(entry.title);
         setEditStart(entry.startTime);
         setEditEnd(entry.endTime);
+        setEditTeacherId(entry.teacherId || "");
     };
 
     const handleUpdateEntry = async () => {
@@ -176,6 +190,7 @@ export default function WeeklyCalendar({ schedule, activities }: { schedule: Sch
         fd.set("startTime", editStart);
         fd.set("endTime", editEnd);
         fd.set("title", editTitle);
+        if (editTeacherId) fd.set("teacherId", editTeacherId);
         const result = await updateClassEntry(fd);
         setLoading(false);
         if (result.error) showMsg(result.error);
@@ -287,6 +302,18 @@ export default function WeeklyCalendar({ schedule, activities }: { schedule: Sch
                                                     onChange={(e) => setEditTitle(e.target.value)}
                                                     className="w-full px-2 py-1 border border-gray-200 rounded text-[11px] focus:outline-none"
                                                 />
+                                                {teachers.length > 0 && (
+                                                    <select
+                                                        value={editTeacherId}
+                                                        onChange={(e) => setEditTeacherId(e.target.value)}
+                                                        className="w-full px-2 py-1 border border-gray-200 rounded text-[11px] focus:outline-none bg-white"
+                                                    >
+                                                        <option value="">-- ไม่ระบุครู --</option>
+                                                        {teachers.map((t) => (
+                                                            <option key={t.id} value={t.id}>{t.nickname || t.name}</option>
+                                                        ))}
+                                                    </select>
+                                                )}
                                                 <div className="flex gap-1">
                                                     <button
                                                         onClick={handleUpdateEntry}
@@ -316,6 +343,15 @@ export default function WeeklyCalendar({ schedule, activities }: { schedule: Sch
                                                 <p className="text-[11px] font-bold text-[#3d405b] leading-tight mt-0.5">
                                                     {entry.title}
                                                 </p>
+                                                {entry.teacher && (
+                                                    <p className="text-[9px] mt-0.5 font-medium px-1.5 py-0.5 rounded-full inline-block" 
+                                                        style={{ 
+                                                            backgroundColor: entry.teacher.color ? `${entry.teacher.color}20` : '#81b29a20',
+                                                            color: entry.teacher.color || '#609279'
+                                                        }}>
+                                                        👩‍🏫 {entry.teacher.nickname || entry.teacher.name}
+                                                    </p>
+                                                )}
                                                 <div className="absolute top-1 right-1 hidden group-hover:flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
                                                     <button
                                                         onClick={() => startEditEntry(entry)}
@@ -399,6 +435,18 @@ export default function WeeklyCalendar({ schedule, activities }: { schedule: Sch
                                                 className="px-2 py-1 border border-gray-200 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-[#81b29a]/30"
                                             />
                                         </div>
+                                        {teachers.length > 0 && (
+                                            <select
+                                                value={addTeacherId}
+                                                onChange={(e) => setAddTeacherId(e.target.value)}
+                                                className="w-full px-2 py-1.5 border border-gray-200 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-[#81b29a]/30 bg-white"
+                                            >
+                                                <option value="">-- เลือกครู --</option>
+                                                {teachers.map((t) => (
+                                                    <option key={t.id} value={t.id}>{t.nickname || t.name}</option>
+                                                ))}
+                                            </select>
+                                        )}
                                         <div className="flex gap-1">
                                             <button
                                                 onClick={handleAddEntry}
@@ -408,7 +456,7 @@ export default function WeeklyCalendar({ schedule, activities }: { schedule: Sch
                                                 เพิ่ม
                                             </button>
                                             <button
-                                                onClick={() => { setAddingDay(null); setAddActivityId(""); setAddStart(""); setAddEnd(""); setAddCustomTitle(""); }}
+                                                onClick={() => { setAddingDay(null); setAddActivityId(""); setAddStart(""); setAddEnd(""); setAddCustomTitle(""); setAddTeacherId(""); }}
                                                 className="flex-1 py-1 text-[10px] bg-gray-200 text-gray-600 rounded hover:bg-gray-300"
                                             >
                                                 ยกเลิก
