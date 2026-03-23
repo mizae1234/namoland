@@ -20,6 +20,8 @@ import { getActivitiesForLanding } from "@/actions/activityConfig";
 import LandingSchedule from "./_components/LandingSchedule";
 import LandingActivities from "./_components/LandingActivities";
 
+export const revalidate = 0;
+
 export default async function LandingPage() {
   const [rawSchedules, shopInfo, activities] = await Promise.all([
     getClassSchedulesWithEntries(),
