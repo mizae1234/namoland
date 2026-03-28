@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 
 function revalidateAll() {
     revalidatePath("/activities");
+    revalidatePath("/settings");
     revalidatePath("/");
 }
 

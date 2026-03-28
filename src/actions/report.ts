@@ -34,7 +34,6 @@ const MONTH_NAMES = [
 ];
 
 export async function getOutstandingCoinReport(year: number): Promise<OutstandingCoinReport> {
-    // Get available years from data
     const earliestPackage = await prisma.coinPackage.findFirst({
         orderBy: { purchaseDate: "asc" },
         select: { purchaseDate: true },
@@ -55,146 +54,109 @@ export async function getOutstandingCoinReport(year: number): Promise<Outstandin
     }
     availableYears.sort((a, b) => b - a);
 
-    // B/F: everything before Jan 1 of selected year
-    const yearStart = new Date(year, 0, 1);
-
-    // Purchases (exclude ADJUSTMENT type packages for clean purchase numbers)
-    const bfPackages = await prisma.coinPackage.findMany({
-        where: { purchaseDate: { lt: yearStart } },
-        select: { totalCoins: true, remainingCoins: true, pricePaid: true, bonusAmount: true, packageType: true },
-    });
-
-    const bfPurchasePackages = bfPackages.filter(p => p.packageType !== "ADJUSTMENT");
-    const bfAdjustPackages = bfPackages.filter(p => p.packageType === "ADJUSTMENT");
-
-    const bfPurchase = bfPurchasePackages.reduce((s, p) => s + p.totalCoins, 0);
-    const bfGrossAmount = bfPurchasePackages.reduce((s, p) => s + Number(p.pricePaid) + Number(p.bonusAmount), 0);
-    const bfAmount = bfPurchasePackages.reduce((s, p) => s + Number(p.pricePaid), 0);
-    const bfDiscount = bfPurchasePackages.reduce((s, p) => s + Number(p.bonusAmount), 0);
-
-    // Transactions before year
-    const bfTransactions = await prisma.coinTransaction.findMany({
-        where: { createdAt: { lt: yearStart } },
-        select: { coinsUsed: true, type: true },
-    });
-
-    // Usage = CLASS_FEE + BORROW_FEE etc (positive coinsUsed, not ADJUSTMENT)
-    const bfUsage = bfTransactions
-        .filter(t => t.type !== "ADJUSTMENT" && t.coinsUsed > 0)
-        .reduce((s, t) => s + t.coinsUsed, 0);
-
-    // Adjustment deductions (type=ADJUSTMENT, positive coinsUsed = deduct)
-    const bfAdjustDown = bfTransactions
-        .filter(t => t.type === "ADJUSTMENT" && t.coinsUsed > 0)
-        .reduce((s, t) => s + t.coinsUsed, 0);
-
-    const bfBalance = bfPurchase + bfAdjustPackages.reduce((s, p) => s + p.totalCoins, 0) - bfUsage - bfAdjustDown;
-
-    // Build each month — BATCHED: fetch all data for the year in 2 queries
-    const yearEnd = new Date(year + 1, 0, 1);
-    const [yearPackages, yearTransactions] = await Promise.all([
+    const targetYearEnd = new Date(year + 1, 0, 1);
+    const [allPackages, allTransactions, allAdjustPackages] = await Promise.all([
         prisma.coinPackage.findMany({
-            where: { purchaseDate: { gte: yearStart, lt: yearEnd } },
-            select: { totalCoins: true, pricePaid: true, bonusAmount: true, packageType: true, purchaseDate: true },
+            where: { purchaseDate: { lt: targetYearEnd }, packageType: { not: "ADJUSTMENT" } },
+            select: { id: true, totalCoins: true, pricePaid: true, bonusAmount: true, purchaseDate: true },
         }),
         prisma.coinTransaction.findMany({
-            where: { createdAt: { gte: yearStart, lt: yearEnd } },
-            select: { coinsUsed: true, type: true, createdAt: true },
+            where: { createdAt: { lt: targetYearEnd } },
+            select: { packageId: true, type: true, coinsUsed: true, createdAt: true },
         }),
+        prisma.coinPackage.findMany({
+            where: { purchaseDate: { lt: targetYearEnd }, packageType: "ADJUSTMENT" },
+            select: { totalCoins: true, purchaseDate: true },
+        })
     ]);
 
-    const months: MonthRow[] = [];
-    let runningBalance = bfBalance;
-    // Running cumulative monetary values (outstanding)
-    let runningAmount = bfAmount;
-    let runningGross = bfGrossAmount;
-    let runningDiscount = bfDiscount;
+    const snapshotAt = (date: Date) => {
+        let balance = 0;
+        let amount = 0;
+        let discount = 0;
+        let grossAmount = 0;
 
+        for (const pkg of allPackages) {
+            if (pkg.purchaseDate >= date) continue;
+
+            const txs = allTransactions.filter(t => t.packageId === pkg.id && t.createdAt < date);
+            const consumed = txs.reduce((sum, t) => sum + t.coinsUsed, 0);
+            const remaining = pkg.totalCoins - consumed;
+
+            if (remaining > 0) {
+                balance += remaining;
+                const ratio = remaining / pkg.totalCoins;
+                amount += Number(pkg.pricePaid) * ratio;
+                discount += Number(pkg.bonusAmount) * ratio;
+                grossAmount += (Number(pkg.pricePaid) + Number(pkg.bonusAmount)) * ratio;
+            }
+        }
+
+        for (const adj of allAdjustPackages) {
+            if (adj.purchaseDate < date) balance += adj.totalCoins;
+        }
+
+        const adminAdded = allTransactions
+            .filter(t => t.createdAt < date && t.type === "ADJUSTMENT" && t.coinsUsed < 0)
+            .reduce((s, t) => s + Math.abs(t.coinsUsed), 0);
+        balance += adminAdded;
+
+        return { balance, amount, discount, grossAmount };
+    };
+
+    const bfDate = new Date(year, 0, 1);
+    const bf = snapshotAt(bfDate);
+
+    const months: MonthRow[] = [];
     for (let m = 0; m < 12; m++) {
         const monthStart = new Date(year, m, 1);
         const monthEnd = new Date(year, m + 1, 1);
 
-        // Filter from pre-fetched data
-        const monthPackages = yearPackages.filter(
-            (p) => p.purchaseDate >= monthStart && p.purchaseDate < monthEnd,
-        );
-        const monthTransactions = yearTransactions.filter(
-            (t) => t.createdAt >= monthStart && t.createdAt < monthEnd,
-        );
+        const monthPackages = allPackages.filter(p => p.purchaseDate >= monthStart && p.purchaseDate < monthEnd);
+        const purchase = monthPackages.reduce((s, p) => s + p.totalCoins, 0);
 
-        // Regular purchases (non-ADJUSTMENT packages)
-        const purchasePackages = monthPackages.filter(p => p.packageType !== "ADJUSTMENT");
-        const adjustPackages = monthPackages.filter(p => p.packageType === "ADJUSTMENT");
+        const monthAdjustPackages = allAdjustPackages.filter(p => p.purchaseDate >= monthStart && p.purchaseDate < monthEnd);
+        const adjustUpFromPackages = monthAdjustPackages.reduce((s, p) => s + p.totalCoins, 0);
 
-        const purchase = purchasePackages.reduce((s, p) => s + p.totalCoins, 0);
-        const adjustUpFromPackages = adjustPackages.reduce((s, p) => s + p.totalCoins, 0);
+        const monthTransactions = allTransactions.filter(t => t.createdAt >= monthStart && t.createdAt < monthEnd);
 
         const adjustUpFromExisting = monthTransactions
             .filter(t => t.type === "ADJUSTMENT" && t.coinsUsed < 0)
             .reduce((s, t) => s + Math.abs(t.coinsUsed), 0);
-
         const adjustUp = adjustUpFromPackages + adjustUpFromExisting;
 
-        // Usage = non-ADJUSTMENT transactions (normal spending)
         const usage = monthTransactions
             .filter(t => t.type !== "ADJUSTMENT" && t.coinsUsed > 0)
             .reduce((s, t) => s + t.coinsUsed, 0);
-
-        // Adjustment deductions (admin deducted coins)
         const adjustDown = monthTransactions
             .filter(t => t.type === "ADJUSTMENT" && t.coinsUsed > 0)
             .reduce((s, t) => s + t.coinsUsed, 0);
 
-        // Monthly purchase monetary values
-        const monthAmount = purchasePackages.reduce((s, p) => s + Number(p.pricePaid), 0);
-        const monthGross = purchasePackages.reduce((s, p) => s + Number(p.pricePaid) + Number(p.bonusAmount), 0);
-        const monthDiscount = purchasePackages.reduce((s, p) => s + Number(p.bonusAmount), 0);
-
-        // Net change = purchase + adjustUp - usage - adjustDown
-        const prevBalance = runningBalance;
-        runningBalance = runningBalance + purchase + adjustUp - usage - adjustDown;
-
-        // Add purchase values to running totals
-        runningAmount += monthAmount;
-        runningGross += monthGross;
-        runningDiscount += monthDiscount;
-
-        // Deduct proportional monetary value for coins consumed (usage + adjustDown)
-        const totalConsumed = usage + adjustDown;
-        if (totalConsumed > 0 && prevBalance + purchase + adjustUp > 0) {
-            const balanceBeforeConsumption = prevBalance + purchase + adjustUp;
-            const ratio = totalConsumed / balanceBeforeConsumption;
-            const amountDeducted = runningAmount * ratio;
-            const grossDeducted = runningGross * ratio;
-            const discountDeducted = runningDiscount * ratio;
-            runningAmount -= amountDeducted;
-            runningGross -= grossDeducted;
-            runningDiscount -= discountDeducted;
-        }
+        const snap = snapshotAt(monthEnd);
 
         months.push({
             month: MONTH_NAMES[m],
             monthIndex: m,
-            coinBalance: runningBalance,
+            coinBalance: snap.balance,
             purchase,
             usage,
             adjustUp,
             adjustDown,
-            balance: runningBalance,
-            amount: Math.round(runningAmount * 100) / 100,
-            grossAmount: Math.round(runningGross * 100) / 100,
-            discount: Math.round(runningDiscount * 100) / 100,
-            discountPercent: runningGross > 0 ? Math.round((runningDiscount / runningGross) * 100) / 100 : 0,
+            balance: snap.balance,
+            amount: Math.round(snap.amount * 100) / 100,
+            grossAmount: Math.round(snap.grossAmount * 100) / 100,
+            discount: Math.round(snap.discount * 100) / 100,
+            discountPercent: snap.grossAmount > 0 ? Math.round((snap.discount / snap.grossAmount) * 100) / 100 : 0,
         });
     }
 
     return {
         year,
-        bfBalance,
-        bfAmount,
-        bfGrossAmount,
-        bfDiscount,
-        bfDiscountPercent: bfGrossAmount > 0 ? Math.round((bfDiscount / bfGrossAmount) * 100) / 100 : 0,
+        bfBalance: bf.balance,
+        bfAmount: Math.round(bf.amount * 100) / 100,
+        bfGrossAmount: Math.round(bf.grossAmount * 100) / 100,
+        bfDiscount: Math.round(bf.discount * 100) / 100,
+        bfDiscountPercent: bf.grossAmount > 0 ? Math.round((bf.discount / bf.grossAmount) * 100) / 100 : 0,
         months,
         availableYears,
     };

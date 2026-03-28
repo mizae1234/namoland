@@ -134,6 +134,21 @@ export default async function DashboardPage() {
                     <p className="text-xs text-[#3d405b]/40 mt-1">
                         การเปลี่ยนแปลง
                     </p>
+                    <div className="mt-3 pt-3 border-t border-[#d1cce7]/15">
+                        <div className="flex items-center gap-1.5 mb-1">
+                            {kpi.monthlyRevenueChangePercent >= 0
+                                ? <TrendingUp size={12} className="text-emerald-500" />
+                                : <TrendingDown size={12} className="text-red-500" />
+                            }
+                            <span className="text-xs text-[#3d405b]/40 font-medium">เทียบเดือนก่อน</span>
+                        </div>
+                        <p className={`text-lg font-bold ${kpi.monthlyRevenueChangePercent >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                            {kpi.monthlyRevenueChangePercent >= 0 ? "+" : ""}{kpi.monthlyRevenueChangePercent}%
+                        </p>
+                        <p className="text-xs text-[#3d405b]/40">
+                            การเปลี่ยนแปลง
+                        </p>
+                    </div>
                 </div>
 
                 {/* Books Rented */}

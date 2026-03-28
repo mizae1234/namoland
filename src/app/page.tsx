@@ -202,27 +202,27 @@ export default async function LandingPage() {
                 ดูตารางกิจกรรมทั้งเดือน สมัครสมาชิกเพื่อจองคลาสที่สนใจ
               </p>
             </div>
-            <div className={`grid gap-6 ${scheduleImageUrl && weeklyScheduleImageUrl ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1 max-w-4xl mx-auto"}`}>
+            <div className="grid gap-8 grid-cols-1 max-w-5xl mx-auto">
               {scheduleImageUrl && (
-                <div className="rounded-3xl overflow-hidden shadow-xl border border-[#d1cce7]/20">
+                <div className="rounded-3xl overflow-hidden shadow-xl border border-[#d1cce7]/20 flex justify-center bg-white/50">
                   <Image
                     src={scheduleImageUrl}
                     alt="ตารางกิจกรรมประจำเดือน Namoland"
-                    width={800}
-                    height={600}
-                    className="w-full h-auto object-contain"
+                    width={1200}
+                    height={1600}
+                    className="w-full h-auto object-contain max-h-[90vh]"
                     unoptimized
                   />
                 </div>
               )}
               {weeklyScheduleImageUrl && (
-                <div className="rounded-3xl overflow-hidden shadow-xl border border-[#d1cce7]/20">
+                <div className="rounded-3xl overflow-hidden shadow-xl border border-[#d1cce7]/20 flex justify-center bg-white/50 mt-4">
                   <Image
                     src={weeklyScheduleImageUrl}
                     alt="ตารางกิจกรรมประจำสัปดาห์ Namoland"
-                    width={800}
-                    height={600}
-                    className="w-full h-auto object-contain"
+                    width={1200}
+                    height={1600}
+                    className="w-full h-auto object-contain max-h-[90vh]"
                     unoptimized
                   />
                 </div>

@@ -48,14 +48,21 @@ export async function POST(req: NextRequest) {
         const ext = file.name.split(".").pop() || "jpg";
         let prefix = type === "weekly" ? "weekly_schedule" : "schedule";
         if (type === "activityIcon") prefix = "activity_icon";
+        if (type === "bookCover") prefix = "book_cover";
         const filename = `${prefix}_${Date.now()}.${ext}`;
-        const filepath = path.join(uploadDir, filename);
+        
+        // Use separate folder for books
+        const targetDir = type === "bookCover" ? path.join(uploadDir, "books") : uploadDir;
+        await mkdir(targetDir, { recursive: true });
+        const filepath = path.join(targetDir, filename);
 
         // Write file
         const bytes = await file.arrayBuffer();
         await writeFile(filepath, Buffer.from(bytes));
 
-        const url = `/uploads/${filename}`;
+        const url = type === "bookCover" 
+            ? `/uploads/books/${filename}` 
+            : `/uploads/${filename}`;
 
         if (type === "activityIcon" && activityId) {
             // Save to ActivityConfig
@@ -65,6 +72,16 @@ export async function POST(req: NextRequest) {
             });
             revalidatePath("/activities");
             revalidatePath("/");
+        } else if (type === "bookCover") {
+            const bookId = formData.get("bookId") as string;
+            if (bookId) {
+                await prisma.book.update({
+                    where: { id: bookId },
+                    data: { coverImage: url },
+                });
+                revalidatePath("/books");
+                revalidatePath(`/books/${bookId}`);
+            }
         } else {
             // Save to ShopInfo (schedule images)
             let shop = await prisma.shopInfo.findFirst();
@@ -113,6 +130,16 @@ export async function DELETE(req: NextRequest) {
             });
             revalidatePath("/activities");
             revalidatePath("/");
+        } else if (type === "bookCover") {
+            const bookId = searchParams.get("bookId");
+            if (bookId) {
+                await prisma.book.update({
+                    where: { id: bookId },
+                    data: { coverImage: null },
+                });
+                revalidatePath("/books");
+                revalidatePath(`/books/${bookId}`);
+            }
         } else {
             const shop = await prisma.shopInfo.findFirst();
             if (shop) {

@@ -101,6 +101,10 @@ export async function getOwnerDashboardData() {
         ? Math.round(((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100)
         : todayRevenue > 0 ? 100 : 0;
 
+    const monthlyRevenueChangePercent = lastMonthRevenue > 0
+        ? Math.round(((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100)
+        : thisMonthRevenue > 0 ? 100 : 0;
+
     // Cash received from actual packages
     const todayCash = todayPackages.reduce((s, p) => s + Number(p.pricePaid), 0);
     const yesterdayCash = yesterdayPackages.reduce((s, p) => s + Number(p.pricePaid), 0);
@@ -271,6 +275,7 @@ export async function getOwnerDashboardData() {
             thisMonthRevenue,
             lastMonthRevenue,
             revenueChangePercent,
+            monthlyRevenueChangePercent,
             todayCash,
             yesterdayCash,
             thisMonthCash,

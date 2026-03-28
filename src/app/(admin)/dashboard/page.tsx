@@ -4,18 +4,25 @@ import {
     Coins,
     BookOpen,
     AlertTriangle,
+    TrendingUp,
+    TrendingDown,
 } from "lucide-react";
 import Card from "@/components/ui/Card";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { COIN_TX_TYPE_MAP } from "@/lib/constants";
 
 async function getDashboardStats() {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
     const [
         totalMembers,
         totalChildren,
         activePackages,
         borrowedBooks,
         expiringPackages,
+        totalCoinsPurchased,
+        totalCoinsRedeemed,
     ] = await Promise.all([
         prisma.user.count(),
         prisma.child.count(),
@@ -35,6 +42,14 @@ async function getDashboardStats() {
                 remainingCoins: { gt: 0 },
             },
         }),
+        prisma.coinPackage.aggregate({
+            _sum: { totalCoins: true },
+            where: { purchaseDate: { gte: monthStart } },
+        }),
+        prisma.coinTransaction.aggregate({
+            _sum: { coinsUsed: true },
+            where: { createdAt: { gte: monthStart } },
+        }),
     ]);
 
     return {
@@ -43,6 +58,8 @@ async function getDashboardStats() {
         activePackages,
         borrowedBooks,
         expiringPackages,
+        coinsPurchasedThisMonth: totalCoinsPurchased._sum.totalCoins || 0,
+        coinsRedeemedThisMonth: totalCoinsRedeemed._sum.coinsUsed || 0,
     };
 }
 
@@ -102,6 +119,20 @@ export default async function DashboardPage() {
             icon: AlertTriangle,
             color: "red",
         },
+        {
+            label: "เหรียญขายได้ (เดือนนี้)",
+            value: stats.coinsPurchasedThisMonth,
+            sub: "เหรียญ",
+            icon: TrendingUp,
+            color: "blue",
+        },
+        {
+            label: "เหรียญที่ใช้ไป (เดือนนี้)",
+            value: stats.coinsRedeemedThisMonth,
+            sub: "เหรียญ",
+            icon: TrendingDown,
+            color: "purple",
+        },
     ];
 
     const colorMap: Record<string, { bg: string; text: string; icon: string }> = {
@@ -109,6 +140,8 @@ export default async function DashboardPage() {
         emerald: { bg: "bg-emerald-50", text: "text-emerald-600", icon: "text-emerald-500" },
         amber: { bg: "bg-amber-50", text: "text-amber-600", icon: "text-amber-500" },
         red: { bg: "bg-red-50", text: "text-red-600", icon: "text-red-500" },
+        blue: { bg: "bg-blue-50", text: "text-blue-600", icon: "text-blue-500" },
+        purple: { bg: "bg-purple-50", text: "text-purple-600", icon: "text-purple-500" },
     };
 
 
@@ -122,7 +155,7 @@ export default async function DashboardPage() {
             </div>
 
             {/* Stat Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {statCards.map((card) => {
                     const colors = colorMap[card.color];
                     const Icon = card.icon;
