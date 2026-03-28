@@ -27,6 +27,7 @@ export async function createBook(formData: FormData) {
     const category = formData.get("category") as string;
     const ageRange = formData.get("ageRange") as string;
     const youtubeUrl = formData.get("youtubeUrl") as string;
+    const coverImage = formData.get("coverImage") as string;
     const rentalCostStr = formData.get("rentalCost") as string;
 
     if (!title) return { error: "กรุณากรอกชื่อหนังสือ" };
@@ -41,6 +42,7 @@ export async function createBook(formData: FormData) {
             category: category || null,
             ageRange: ageRange || null,
             youtubeUrl: youtubeUrl || null,
+            coverImage: coverImage || null,
             rentalCost: rentalCostStr ? parseInt(rentalCostStr) : 1,
         },
     });
