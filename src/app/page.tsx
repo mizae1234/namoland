@@ -234,58 +234,7 @@ export default async function LandingPage() {
         <LandingSchedule schedules={schedules} />
       )}
 
-      {/* ─── Library / Coin System ───────────────────────── */}
-      <section id="library" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#f9b61a]/10 rounded-full text-sm font-medium text-[#e55f15] mb-4">
-              <BookOpen size={14} />
-              ระบบสมาชิก
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-bold text-[#3d405b] mb-4">
-              ยืมหนังสือ &amp; <span className="text-[#f9b61a]">ระบบเหรียญ</span>
-            </h2>
-            <p className="text-[#3d405b]/60 max-w-2xl mx-auto">
-              สมาชิกสามารถยืมหนังสือจากห้องสมุดของเรา และใช้ระบบเหรียญในการเข้าร่วมกิจกรรมต่างๆ
-            </p>
-          </div>
 
-          <div className="grid sm:grid-cols-3 gap-8">
-            {[
-              {
-                step: "01",
-                title: "สมัครสมาชิก",
-                desc: "ลงทะเบียนผ่านเว็บไซต์หรือที่ Namoland โดยตรง รับ QR Code สำหรับใช้งาน",
-                color: "#81b29a",
-                icon: "🪪",
-              },
-              {
-                step: "02",
-                title: "เติมเหรียญ",
-                desc: "ซื้อแพ็คเกจเหรียญเพื่อใช้ยืมหนังสือ เข้าเรียน และเข้าร่วมกิจกรรมต่างๆ",
-                color: "#f9b61a",
-                icon: "🪙",
-              },
-              {
-                step: "03",
-                title: "เริ่มใช้งาน",
-                desc: "ยืมหนังสือ จองคลาส และใช้เหรียญเข้าร่วมกิจกรรมสร้างสรรค์ได้เลย!",
-                color: "#e07a5f",
-                icon: "🚀",
-              },
-            ].map((item, i) => (
-              <div key={i} className="relative text-center p-8 bg-gradient-to-b from-white to-[#f4f1de]/30 rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg transition-shadow group">
-                <div className="text-5xl mb-4">{item.icon}</div>
-                <span className="text-xs font-bold tracking-widest uppercase" style={{ color: item.color }}>
-                  STEP {item.step}
-                </span>
-                <h3 className="text-xl font-bold text-[#3d405b] mt-2 mb-3">{item.title}</h3>
-                <p className="text-sm text-[#3d405b]/60 leading-relaxed">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ─── CTA Banner ─────────────────────────────────── */}
       <section className="py-20">
