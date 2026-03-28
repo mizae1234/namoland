@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/i18n/routing";
 import { signOut } from "next-auth/react";
 import {
     LayoutDashboard,
@@ -20,6 +20,7 @@ import {
     X,
     Calendar,
 } from "lucide-react";
+import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 
 type MenuRole = "ADMIN" | "SUPER_ADMIN";
 
@@ -75,6 +76,9 @@ export default function Sidebar({ userName, userRole }: { userName: string; user
 
             {/* Navigation */}
             <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+                <div className="mb-4 px-3">
+                    <LanguageSwitcher />
+                </div>
                 {visibleMenuItems.map((item) => {
                     const isActive =
                         pathname === item.href ||

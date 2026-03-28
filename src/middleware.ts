@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import createMiddleware from 'next-intl/middleware';
+import { routing } from './i18n/routing';
 
 // Force Node.js runtime to support crypto/bcryptjs
 export const runtime = "nodejs";
+
+const handleI18nRouting = createMiddleware(routing);
 
 const adminRoutes = [
     "/dashboard",
@@ -17,35 +21,46 @@ const adminRoutes = [
     "/owner",
 ];
 
-
 export default auth((req) => {
     const { nextUrl } = req;
     const isLoggedIn = !!req.auth;
     const userType = req.auth?.user?.type;
     const userRole = req.auth?.user?.role;
 
+    // Strip the locale prefix for authorization checks
+    // This allows '/th/dashboard' and '/en/dashboard' to both match '/dashboard'
+    const pathWithoutLocale = nextUrl.pathname.replace(new RegExp(`^/(${routing.locales.join('|')})`), '');
+    const cleanPath = pathWithoutLocale || '/';
+
     // Check if trying to access an admin route
     const isAdminRoute = adminRoutes.some(
         (route) =>
-            nextUrl.pathname === route || nextUrl.pathname.startsWith(`${route}/`)
+            cleanPath === route || cleanPath.startsWith(`${route}/`)
     );
 
     if (isAdminRoute) {
         if (!isLoggedIn || userType !== "ADMIN") {
-            return NextResponse.redirect(new URL("/login", nextUrl));
+            // Redirect to the login page, preserving the current locale if present, else default to 'th'
+            const localeMatch = nextUrl.pathname.match(new RegExp(`^/(${routing.locales.join('|')})`));
+            const locale = localeMatch ? localeMatch[1] : routing.defaultLocale;
+            return NextResponse.redirect(new URL(`/${locale}/login`, nextUrl));
         }
     }
 
     // Check Super Admin route restriction
-    if (nextUrl.pathname.startsWith("/reports/revenue")) {
+    if (cleanPath.startsWith("/reports/revenue") || cleanPath.startsWith("/owner")) {
         if (userRole !== "SUPER_ADMIN") {
-            return NextResponse.redirect(new URL("/dashboard", nextUrl));
+            const localeMatch = nextUrl.pathname.match(new RegExp(`^/(${routing.locales.join('|')})`));
+            const locale = localeMatch ? localeMatch[1] : routing.defaultLocale;
+            return NextResponse.redirect(new URL(`/${locale}/dashboard`, nextUrl));
         }
     }
 
-    return NextResponse.next();
+    // Process the internationalization routing (Sets cookies, headers, handles default locale redirects)
+    return handleI18nRouting(req);
 });
 
 export const config = {
-    matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+    // Match all paths except API, static assets, images, etc.
+    matcher: ["/((?!api|_next/static|_next/image|favicon.ico|uploads).*)"],
 };

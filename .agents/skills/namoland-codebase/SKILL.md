@@ -1,0 +1,410 @@
+---
+name: Namoland Codebase Reference
+description: Complete reference for the Namoland Library Platform codebase — all models, server actions, services, pages, components, and business logic patterns.
+---
+
+# Namoland Library Platform — Complete Codebase Reference
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16.1.6 (App Router) |
+| Language | TypeScript 5 |
+| UI | React 19, TailwindCSS 4 |
+| Database | PostgreSQL via Prisma 7.4.2 (`@prisma/adapter-pg`) |
+| Auth | NextAuth v5 (beta.30) with JWT strategy |
+| Icons | lucide-react |
+| Charts | recharts |
+| QR Code | html5-qrcode (scanner), qrcode.react (generator) |
+| Excel | xlsx, xlsx-js-style |
+| Password | bcryptjs |
+| Date | date-fns |
+| Deploy | Docker + docker-compose |
+
+## Project Structure
+
+```
+src/
+├── actions/          # 14 server action files (~90 exported functions)
+├── app/
+│   ├── (admin)/      # Admin dashboard (21 pages, protected by middleware)
+│   ├── (user)/       # User portal (11 pages)
+│   ├── _components/  # Landing page components
+│   ├── api/          # 3 API routes
+│   ├── book/         # Public book detail via QR
+│   ├── login/        # Admin login
+│   ├── user/         # User login/register (not in route group)
+│   └── youtube/      # Public YouTube books page
+├── components/
+│   ├── admin/        # Sidebar.tsx
+│   └── ui/           # AlertMessage, BackLink, Card, DateInput, Modal, PageHeader, StatusBadge
+├── lib/              # 6 service files
+├── types/            # next-auth.d.ts
+└── middleware.ts     # Route protection
+prisma/
+├── schema.prisma     # 15 models, 5 enums
+└── seed.ts           # Database seeder
+```
+
+---
+
+## Database Schema (15 Models)
+
+### Core Models
+
+| Model | Key Fields | Purpose |
+|---|---|---|
+| `User` | parentName, phone (unique), password?, qrCode (unique), lineUserId?, coinExpiryOverride? | Library member (parent) |
+| `Child` | name, birthDate, userId → User | Children of a member |
+| `AdminUser` | name, email (unique), password, role (ADMIN/SUPER_ADMIN) | Admin staff |
+| `Book` | title, qrCode (unique), isbn?, category?, ageRange?, youtubeUrl?, rentalCost (default 1), isAvailable, isActive | Library book catalog |
+
+### Borrow System
+
+| Model | Key Fields | Purpose |
+|---|---|---|
+| `BorrowRecord` | code (unique, BOR-YYYYMM-NNNN), userId, status (RESERVED/BORROWED/RETURNED/OVERDUE/FORFEITED/CANCELLED), borrowDate, dueDate, returnDate?, depositCoins, rentalCoins, lateFeeCoins, damageFeeCoins, depositReturned, depositForfeited, processedById, returnedById | Tracks book borrowing lifecycle |
+| `BorrowItem` | borrowRecordId, bookId, isDamaged, damageNote?, returned, returnedAt? | Individual book in a borrow record |
+
+### Coin Economy
+
+| Model | Key Fields | Purpose |
+|---|---|---|
+| `CoinPackage` | userId, packageType, totalCoins, remainingCoins, pricePaid, bonusAmount, firstUsedAt?, expiresAt?, isExpired, isExtended, paymentMethod?, purchaseDate | Coin package with FIFO deduction |
+| `CoinTransaction` | packageId, type (enum), coinsUsed, className?, classHours?, description?, borrowRecordId?, processedById | Transaction log per coin usage |
+| `TopUpRequest` | userId, packageType, coins, amount, status (PENDING/APPROVED/REJECTED), slipNote?, adminNote?, processedById | Self-service top-up requests |
+| `ExpiryLog` | userId, previousDate?, newDate, note?, performedBy | Audit trail for expiry extension |
+
+### Class System
+
+| Model | Key Fields | Purpose |
+|---|---|---|
+| `ClassSchedule` | title?, theme?, startDate, endDate | Weekly schedule container |
+| `ClassEntry` | scheduleId, teacherId?, dayOfWeek, startTime, endTime, title, sortOrder | Individual class slot |
+| `ClassBooking` | classEntryId, userId, childId?, coinsCharged, status (BOOKED/CHECKED_IN/CANCELLED/NO_SHOW), bookedById, checkedInAt? | Class booking record |
+| `Teacher` | name, nickname?, color?, isActive, sortOrder | Teacher/instructor |
+
+### Config & Settings
+
+| Model | Key Fields | Purpose |
+|---|---|---|
+| `PackageConfig` | key (unique), label, coins, price, bonus, sortOrder, isActive | Configurable coin packages |
+| `ActivityConfig` | name, description?, icon?, iconImageUrl?, coins, sortOrder, isActive, showOnLanding | Activity types with pricing |
+| `ShopInfo` | shopName, bankName?, accountNumber?, accountName?, note?, scheduleImageUrl?, weeklyScheduleImageUrl? | Shop settings (singleton) |
+
+### Enums
+
+- `AdminRole`: ADMIN, SUPER_ADMIN
+- `BorrowStatus`: RESERVED, BORROWED, RETURNED, OVERDUE, FORFEITED, CANCELLED
+- `CoinTransactionType`: CLASS_FEE, BOOK_RENTAL, BOOK_DEPOSIT, BOOK_DEPOSIT_RETURN, BOOK_LATE_FEE, BOOK_DAMAGE_FEE, DEPOSIT_FORFEIT, EXPIRED, ADJUSTMENT, EXTENSION
+- `TopUpStatus`: PENDING, APPROVED, REJECTED
+- `BookingStatus`: BOOKED, CHECKED_IN, CANCELLED, NO_SHOW
+
+---
+
+## Lib Services (src/lib/)
+
+### auth.ts
+- Dual credential providers: `admin-login` (email+password → AdminUser) and `user-login` (phone+password → User)
+- JWT strategy, custom callbacks attach `id`, `role`, `type` to session
+- Login page: `/login`
+
+### prisma.ts
+- PrismaClient with `@prisma/adapter-pg` (Pool-based connection)
+- Singleton pattern for dev environment
+- Debug logging in development
+
+### constants.ts
+- `BORROW_DEPOSIT_COINS = 5`, `BORROW_RENTAL_COINS = 1`, `BORROW_DURATION_DAYS = 14`, `DAMAGE_FEE_PER_BOOK = 1`
+- `LATE_FEE_TIERS`: GRACE_DAYS=5, TIER1(6-15d)=1coin, TIER2(16-30d)=2coins, >30d=forfeit deposit
+- `BORROW_STATUS_MAP`, `COIN_TX_TYPE_MAP` — Thai label + CSS class maps
+
+### utils.ts
+- `calculateLateFee(dueDate, returnDate)` → `{ lateDays, feeCoins, forfeitDeposit }`
+
+### borrow-service.ts
+- `generateBorrowCode()` → `BOR-YYYYMM-NNNN` (race-condition safe via findFirst + orderBy desc)
+- `hasActiveDeposit(userId)` → boolean
+- `getUsersWithActiveDeposit(userIds)` → Set<string> (batch check)
+
+### coin-service.ts — **Central FIFO Engine**
+- `prepareFIFODeduction(userId, coinsNeeded)` → plans deduction from oldest packages
+- `buildPackageDeductOps(deductions, now)` → Prisma update ops (includes expiry clock start on first use)
+- `buildTransactionOps(deductions, type, processedById, opts?)` → CoinTransaction create ops
+- `syncCoinExpiryOverride(userId, deductions, now)` → updates user.coinExpiryOverride if new clock started
+
+---
+
+## Server Actions (src/actions/)
+
+### borrow.ts (755 lines) — Book CRUD + Borrow Lifecycle
+
+| Function | Auth | Purpose |
+|---|---|---|
+| `createBook(formData)` | - | Create book with auto QR (BOOK-XXXX) |
+| `getBookById(id)` | - | Book detail with borrow history |
+| `updateBook(id, formData)` | - | Update book fields |
+| `deleteBook(id)` | - | Delete book (checks active borrows) |
+| `getBooks(search?, status?)` | - | List with search + filter (inactive/available/borrowed) |
+| `getBookByQrCode(qrCode)` | - | Find book by QR with current borrow info |
+| `getBookByQrCodePublic(qrCode)` | - | Public book lookup (limited fields) |
+| `createBorrow(formData)` | Admin | Full borrow: validates coins, FIFO deduction for deposit+rental, marks books unavailable |
+| `returnBooks(formData)` | Auth | Return books: late fee calc, damage fee, deposit refund (shared deposit logic), supports partial returns |
+| `getBorrows(params?)` | - | List borrows with search + date range |
+| `reserveBook(bookId)` | User | User self-reserve: deducts rental only, no deposit |
+| `confirmReservation(borrowId)` | Admin | Confirm reservation → BORROWED, charge deposit if needed |
+| `cancelReservation(borrowId)` | Auth | Cancel reservation: refund rental coins, release books |
+| `rejectReservation(borrowId)` | Admin | Admin reject = cancelReservation |
+| `getUsersWithActiveDeposit(userIds)` | - | Wrapper for borrow-service function |
+
+**Key Business Rules:**
+- Max 5 books per borrow
+- Shared deposit: only 1 deposit per user across all active borrows
+- Partial returns supported (returnItemIds)
+- On full return: deposit returned to earliest active package, cascading depositReturned to zero-deposit records
+- Forfeit deposit if >30 days late
+
+### coin.ts (446 lines) — Coin Packages + Top-Up
+
+| Function | Auth | Purpose |
+|---|---|---|
+| `purchasePackage(formData)` | Auth | Admin adds coins for member (supports CUSTOM type + backdated purchase) |
+| `spendCoins(formData)` | Auth | Manual coin spend (CLASS_FEE type) |
+| `getExpiringPackages()` | - | Packages expiring within 7 days |
+| `extendExpiry(formData)` | Admin | Set member-level coinExpiryOverride + create ExpiryLog |
+| `deductCoins(formData)` | Admin | Manual FIFO deduction (ADJUSTMENT type) |
+| `adjustCoinsUp(formData)` | Admin | Add coins to oldest active package or create new ADJUSTMENT package |
+| `createTopUpRequest(packageType, slipNote?)` | User | User self-service top-up request |
+| `getUserTopUpRequests()` | Auth | User's own top-up history |
+| `getPendingTopUps()` | - | All pending top-up requests |
+| `getAllTopUps()` | - | All top-up requests |
+| `getTopUpsByUser(userId)` | - | Top-ups for specific user |
+| `processTopUp(requestId, action, adminNote?)` | Admin | Approve (creates coin package) or reject top-up |
+
+**Key Business Rules:**
+- FIFO: always deduct from oldest package first
+- Expiry clock starts on FIRST USE of a package (1 month from first use)
+- adjustCoinsUp uses negative coinsUsed in transactions
+- Coin packages never directly deleted — isExpired flag used
+
+### member.ts (311 lines) — Member CRUD
+
+| Function | Auth | Purpose |
+|---|---|---|
+| `createMember(formData)` | - | Create member with auto QR (NML-XXXX), default password = last 4 digits of phone |
+| `getMembers(search?)` | - | List with search (name, phone, children) |
+| `searchMembers(query)` | - | Lightweight member search (top 10) |
+| `getMemberById(id)` | - | Full member detail (children, packages, borrows, expiryLogs) |
+| `getMemberByQrCode(qrCode)` | - | Member by QR (active packages + current borrows) |
+| `updateMember(formData)` | - | Update member + manage children (create/update/delete in transaction) |
+| `resetMemberPassword(id)` | - | Reset to last 4 digits of phone |
+| `updateSelfProfile(formData)` | User | User self-edit profile |
+| `changeSelfPassword(formData)` | User | User change password |
+
+### classBooking.ts (263 lines) — Class Booking System
+
+| Function | Auth | Purpose |
+|---|---|---|
+| `searchMembersForBooking(query)` | - | Member search with children + coin packages |
+| `bookClassForMember(formData)` | Auth | Book class (NO coin deduction at booking time) |
+| `checkInBooking(bookingId)` | Auth | Check-in with FIFO coin deduction (looks up ActivityConfig for pricing) |
+| `cancelBooking(bookingId)` | Auth | Cancel (no refund needed — coins not yet deducted) |
+| `markNoShow(bookingId)` | Auth | Mark as NO_SHOW |
+| `getBookingsByEntry(entryId)` | - | Bookings for a class entry |
+| `getBookingsForUser(userId)` | - | User portal booking history |
+
+**Key: `findActivityConfig(classTitle)` — 3-tier matching: exact → contains → reverse-contains**
+
+### classSchedule.ts (206 lines) — Schedule CRUD
+
+| Function | Auth | Purpose |
+|---|---|---|
+| `getClassSchedules()` | - | List all with entry count |
+| `getClassSchedulesWithEntries()` | - | Full schedule with entries + teacher info |
+| `getClassScheduleById(id)` | - | Single schedule with entries |
+| `createClassSchedule(formData)` | Admin | Create week (auto-adjusts to Monday) |
+| `updateClassSchedule(formData)` | Admin | Update theme |
+| `deleteClassSchedule(id)` | Admin | Delete (cascade entries+bookings) |
+| `addClassEntry(formData)` | Admin | Add class entry to schedule |
+| `updateClassEntry(formData)` | Admin | Update class entry |
+| `deleteClassEntry(id)` | Admin | Delete class entry |
+| `duplicateSchedule(id)` | Admin | Clone schedule to next week |
+
+### report.ts (535 lines) — Reports
+
+| Function | Purpose |
+|---|---|
+| `getOutstandingCoinReport(year)` | Yearly coin balance report: Uses Exact Package Snapshot Method (calculates true remaining ratio of unspent packages per month) instead of global WAC to prevent monetary drift. |
+| `getClassAttendanceReport(dateFrom, dateTo, status?, search?)` | Class attendance with status summary |
+| `getMemberReport(userId)` | Per-member coin timeline (FIFO cost attribution, purchase/class/adjust events) |
+
+### dashboard.ts (320 lines)
+
+| Function | Purpose |
+|---|---|
+| `getOwnerDashboardData()` | Full owner dashboard: KPI cards (today/yesterday/month revenue+cash), 30-day revenue trend, business alerts (overdue, expiring, dead stock, low coins), top books, customer insights, financial summary |
+
+### Other Action Files
+
+| File | Functions | Purpose |
+|---|---|---|
+| `admin.ts` (120 lines) | `getAdminUsers`, `createAdminUser`, `updateAdminUser`, `deleteAdminUser` | Admin user CRUD (bcrypt passwords, self-delete prevention) |
+| `shop.ts` (92 lines) | `getShopInfo`, `updateShopInfo`, `updateScheduleImage`, `removeScheduleImage` | Shop settings (singleton pattern) |
+| `register.ts` (61 lines) | `registerUser` | Public user self-registration |
+| `packageConfig.ts` (126 lines) | `getActivePackages`, `getAllPackageConfigs`, `getPackageByKey`, `createPackageConfig`, `updatePackageConfig`, `togglePackageActive`, `deletePackageConfig`, `seedPackageConfigs` | Coin package configuration CRUD |
+| `activityConfig.ts` (160 lines) | `getActiveActivities`, `getActivitiesForLanding`, `getAllActivityConfigs`, `createActivityConfig`, `updateActivityConfig`, `toggleActivityActive`, `toggleShowOnLanding`, `updateActivityIcon`, `deleteActivityConfig`, `seedActivityConfigs` | Activity type configuration CRUD |
+| `book-search.ts` (32 lines) | `searchBooks(search, skip)` | Public paginated book search (PAGE_SIZE=12) |
+
+---
+
+## App Routes
+
+### Admin Routes — `(admin)/` group
+Protected by middleware (requires ADMIN session).
+
+| Route | Purpose |
+|---|---|
+| `/dashboard` | Owner analytics dashboard |
+| `/owner` | Owner dashboard (alternate) |
+| `/members` | Member list |
+| `/members/new` | Add member |
+| `/members/[id]` | Member detail (coins, borrows, children, expiry) |
+| `/coins` | Coin management overview |
+| `/coins/packages` | Package configuration |
+| `/coins/top-ups` | Top-up request management |
+| `/books` | Book catalog |
+| `/books/new` | Add book |
+| `/books/[id]` | Book detail + borrow history |
+| `/borrows` | Borrow list |
+| `/borrows/new/[userId]` | Create borrow for member |
+| `/borrows/[id]` | Borrow detail |
+| `/borrows/scan` | QR scanner for borrow operations |
+| `/classes` | Class schedule list |
+| `/classes/[id]` | Schedule detail + booking management |
+| `/activities` | Activity configuration |
+| `/reports` | Reports hub |
+| `/settings` | Shop settings, teachers |
+| `/settings/users` | Admin user management |
+
+### User Routes — `(user)/user/` group
+
+| Route | Purpose |
+|---|---|
+| `/user` | User dashboard |
+| `/user/profile` | Edit profile + children |
+| `/user/qr` | View personal QR code |
+| `/user/coins` | Coin balance + history |
+| `/user/coins/top-up` | Submit top-up request |
+| `/user/books` | Browse book catalog |
+| `/user/books/[id]` | Book detail + reserve |
+| `/user/borrows` | Borrow history |
+| `/user/classes` | Class booking history |
+| `/user/youtube` | YouTube book videos |
+
+### Public Routes
+
+| Route | Purpose |
+|---|---|
+| `/` | Landing page (schedule + activities) |
+| `/login` | Admin login |
+| `/user/login` | User login |
+| `/user/register` | User registration |
+| `/book/[qrCode]` | Public book detail via QR scan |
+| `/youtube` | Public YouTube books |
+
+### API Routes
+
+| Route | Purpose |
+|---|---|
+| `/api/auth/[...nextauth]` | NextAuth handler |
+| `/api/members/[id]/bookings` | Member bookings API |
+| `/api/upload` | File upload endpoint |
+
+---
+
+## UI Components (src/components/)
+
+### Admin
+- `Sidebar.tsx` — Admin sidebar navigation (7208 bytes)
+
+### Shared UI
+- `AlertMessage.tsx` — Success/error alert display
+- `BackLink.tsx` — Back navigation link
+- `Card.tsx` — Reusable card container
+- `DateInput.tsx` — Date picker input (4563 bytes)
+- `Modal.tsx` — Modal dialog (4320 bytes)
+- `PageHeader.tsx` — Page title header
+- `StatusBadge.tsx` — Status badge with color
+
+### Landing Components (src/app/_components/)
+- `LandingActivities.tsx` — Activity cards for landing page (8292 bytes)
+- `LandingSchedule.tsx` — Weekly schedule display for landing page (13178 bytes)
+
+---
+
+## Middleware (src/middleware.ts)
+
+- Forces Node.js runtime
+- Protected admin routes: `/dashboard`, `/members`, `/coins`, `/books`, `/borrows`, `/activities`, `/classes`, `/reports`, `/settings`, `/owner`
+- SUPER_ADMIN restriction: `/reports/revenue`
+- Redirect to `/login` for unauthorized admin access
+
+---
+
+## Key Business Logic Patterns
+
+### FIFO Coin Deduction Pattern
+All coin-consuming operations use the shared `coin-service.ts`:
+1. `prepareFIFODeduction(userId, coinsNeeded)` — plan from oldest packages
+2. `buildPackageDeductOps(deductions, now)` — build Prisma update ops
+3. `buildTransactionOps(deductions, type, processedById)` — build transaction logs
+4. Execute in `prisma.$transaction([...ops])`
+5. `syncCoinExpiryOverride(userId, deductions, now)` — post-transaction sync
+
+### Exact Snapshot Reporting Method (Outstanding Coins)
+To prevent mathematical drift from Weighted Average Cost (WAC) calculations over time, reporting engine (`report.ts`) dynamically calculates exact unspent coin ratios from the database for each individual package at the end-of-month snapshot timestamp.
+- **Why**: FIFO consumption means packages have non-linear depletion vectors.
+- **How**: `Amount = sum((pkg.remaining / pkg.total) * pkg.pricePaid)` iterated over all historically active packages up to the cutoff date.
+
+### Shared Deposit Logic
+- One deposit covers all active borrows for a user
+- `hasActiveDeposit(userId)` checks for any BORROWED record with unreturned deposit
+- Deposit refunded only when LAST borrow is returned
+- Deposit forfeit if >30 days overdue
+
+### Class Booking Flow
+1. **Book** → no coin deduction, just a reservation
+2. **Check-in** → FIFO coin deduction using ActivityConfig pricing
+3. **Cancel/No-show** → no refund needed
+
+### Borrow Code Generation
+- Pattern: `BOR-YYYYMM-NNNN`
+- Race-condition safe: uses `findFirst({ orderBy: { code: "desc" } })` instead of count
+
+### Authentication
+- Dual providers: admin-login (email), user-login (phone)
+- Session carries: id, role, type (ADMIN/USER)
+- Default user password: last 4 digits of phone number
+
+---
+
+## Common Patterns & Conventions
+
+1. **Server Actions** — All in `src/actions/`, use `"use server"` directive
+2. **revalidatePath** — Called after mutations to refresh related pages
+3. **Error Handling** — Return `{ error: "message" }` or `{ success: true }`
+4. **bcrypt** — Dynamic import for ESM/CJS compatibility: `const bcryptModule = await import("bcryptjs")`
+5. **FormData** — All create/update actions accept FormData
+6. **Thai UI** — All user-facing error messages and labels in Thai
+7. **Prisma Transactions** — `prisma.$transaction([...ops])` for multi-step operations
+8. **QR Codes** — Auto-generated: `NML-XXXX` (members), `BOOK-XXXX` (books), `USR-XXXX` (self-registered)
+
+---
+
+## Deployment Workflow
+
+The project uses a custom bash script for remote deployment.
+1. Commit all changes to the `main` branch.
+2. Run `bash deploy.sh` from the root directory.
+3. The script connects to the remote server via SSH, pulls the latest `main` branch, recreates the `uploads` directory permissions, and rebuilds the `namoland-app` Docker image using `docker compose`.

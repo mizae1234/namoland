@@ -1,0 +1,328 @@
+{
+  "Common": {
+    "save": "บันทึก",
+    "cancel": "ยกเลิก",
+    "search": "ค้นหา...",
+    "confirm": "ยืนยัน",
+    "delete": "ลบ",
+    "edit": "แก้ไข",
+    "back": "ย้อนกลับ",
+    "success": "สำเร็จ",
+    "error": "เกิดข้อผิดพลาด"
+  },
+  "Landing": {
+    "nav": {
+      "activities": "กิจกรรม",
+      "programs": "โปรแกรม",
+      "library": "ห้องสมุด",
+      "contact": "ติดต่อ",
+      "login": "เข้าสู่ระบบ",
+      "register": "สมัครสมาชิก"
+    },
+    "hero": {
+      "titlePart1": "Namoland",
+      "titlePart2": "Kids Creative Club",
+      "subtitlePrefix": "พื้นที่สร้างสรรค์สำหรับเด็กๆ ที่เต็มไปด้วย",
+      "art": " ศิลปะ",
+      "english": "ภาษาอังกฤษ",
+      "science": "วิทยาศาสตร์",
+      "imagination": " จินตนาการ",
+      "description": "🎨 Jolly English & Art & Design for Kids · 📚 Playgroup · Grammar · Workshops · Private Classes",
+      "startBtn": "เริ่มต้นใช้งาน",
+      "loginBtn": "เข้าสู่ระบบสมาชิก",
+      "stats": {
+        "members": "สมาชิก",
+        "activities": "กิจกรรม/สัปดาห์",
+        "experience": "ปีประสบการณ์"
+      }
+    },
+    "activities": {
+      "badge": "กิจกรรมของเรา",
+      "title1": "เรียนรู้ผ่าน",
+      "title2": "การสร้างสรรค์",
+      "desc": "กิจกรรมที่ออกแบบมาเพื่อให้เด็กๆ ได้พัฒนาทักษะหลากหลายด้าน ผ่านการเล่น การทดลอง และการสร้างสรรค์"
+    },
+    "programs": {
+      "badge": "📅 ตารางกิจกรรม",
+      "title1": "ตารางกิจกรรม",
+      "title2": "ประจำเดือน",
+      "desc": "ดูตารางกิจกรรมทั้งเดือน สมัครสมาชิกเพื่อจองคลาสที่สนใจ"
+    },
+    "cta": {
+      "title": "พร้อมให้ลูกน้อยเริ่มต้นการเรียนรู้? ✨",
+      "desc": "สมัครสมาชิกวันนี้ เพื่อเข้าถึงกิจกรรมสร้างสรรค์ ห้องสมุด และโปรแกรมพิเศษมากมาย",
+      "registerBtn": "สมัครสมาชิก — ฟรี!",
+      "loginBtn": "เข้าสู่ระบบสมาชิกเดิม"
+    },
+    "footer": {
+      "desc": "พื้นที่สร้างสรรค์สำหรับเด็กๆ ที่เต็มไปด้วยศิลปะ ภาษา วิทยาศาสตร์ และจินตนาการ",
+      "quickLinks": {
+        "title": "ลิงก์ด่วน",
+        "login": "เข้าสู่ระบบสมาชิก",
+        "register": "สมัครสมาชิก",
+        "adminLogin": "Admin เข้าสู่ระบบ",
+        "youtube": "ดู YouTube"
+      },
+      "contact": {
+        "title": "ติดต่อเรา",
+        "facebook": "Facebook: Namoland Kids Creative Club"
+      },
+      "copyright": "© {year} Namoland Kids Creative Club. All rights reserved."
+    }
+  },
+  "AdminAuth": {
+    "title": "เข้าสู่ระบบ Admin",
+    "subtitle": "ระบบจัดการนโมแลนด์",
+    "email": "อีเมล",
+    "password": "รหัสผ่าน",
+    "loginBtn": "เข้าสู่ระบบ",
+    "error": {
+      "invalid": "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+      "system": "เกิดข้อผิดพลาด กรุณาลองใหม่"
+    },
+    "copyright": "© {year} Namoland. All rights reserved."
+  },
+  "UserAuth": {
+    "Login": {
+      "title": "เข้าสู่ระบบสมาชิก",
+      "phone": "เบอร์โทรศัพท์",
+      "phonePlaceholder": "08x-xxx-xxxx",
+      "password": "รหัสผ่าน",
+      "passwordDefault": "รหัสผ่านเริ่มต้น: 4 ตัวท้ายของเบอร์โทร",
+      "loginBtn": "เข้าสู่ระบบ",
+      "loadingBtn": "กำลังเข้าสู่ระบบ...",
+      "noAccount": "ยังไม่มีบัญชี?",
+      "registerLink": "สมัครสมาชิก",
+      "error": {
+        "invalid": "เบอร์โทรหรือรหัสผ่านไม่ถูกต้อง"
+      }
+    },
+    "Register": {
+      "title": "สมัครสมาชิก",
+      "parentName": "ชื่อผู้ปกครอง *",
+      "parentNamePlaceholder": "ชื่อ-นามสกุล",
+      "phone": "เบอร์โทรศัพท์ *",
+      "password": "รหัสผ่าน *",
+      "passwordPlaceholder": "อย่างน้อย 4 ตัว",
+      "childrenTitle": "ข้อมูลเด็ก",
+      "optional": "(ไม่บังคับ)",
+      "addBtn": "เพิ่ม",
+      "childNamePlaceholder": "ชื่อเด็ก",
+      "registerBtn": "สมัครสมาชิก",
+      "loadingBtn": "กำลังสมัคร...",
+      "hasAccount": "มีบัญชีอยู่แล้ว?",
+      "loginLink": "เข้าสู่ระบบ",
+      "error": {
+        "loginFailed": "สมัครสำเร็จ แต่ login ไม่ได้ กรุณา login ด้วยตัวเอง"
+      }
+    },
+    "Nav": {
+      "home": "หน้าหลัก",
+      "books": "หนังสือ",
+      "classes": "คลาส",
+      "borrows": "ยืม-คืน",
+      "coins": "เหรียญ",
+      "profile": "โปรไฟล์"
+    }
+  },
+  "UserDashboard": {
+    "notFound": "ไม่พบข้อมูล",
+    "welcome": "สวัสดี {name} 👋",
+    "subtitle": "ยินดีต้อนรับสู่ Namoland",
+    "stats": {
+      "coins": "เหรียญคงเหลือ",
+      "topup": "เติม",
+      "expirePrefix": "หมดอายุ",
+      "expireSoon": "หมดแล้ว!",
+      "expireDays": "อีก {days} วัน",
+      "borrows": "กำลังยืม",
+      "items": "รายการ"
+    },
+    "borrows": {
+      "title": "หนังสือที่กำลังยืม",
+      "dueDate": "กำหนดคืน: "
+    },
+    "youtube": {
+      "title": "หนังสือใน YouTube",
+      "seeAll": "ดูทั้งหมด →",
+      "defaultCategory": "หนังสือ"
+    },
+    "bookings": {
+      "title": "คลาสที่จอง",
+      "seeAll": "ดูทั้งหมด →",
+      "empty": "ยังไม่มีคลาสที่จอง",
+      "waiting": "รอเข้าเรียน"
+    },
+    "days": {
+      "0": "จันทร์",
+      "1": "อังคาร",
+      "2": "พุธ",
+      "3": "พฤหัสฯ",
+      "4": "ศุกร์",
+      "5": "เสาร์",
+      "6": "อาทิตย์"
+    }
+  },
+  "UserProfile": {
+    "title": "โปรไฟล์",
+    "notFound": "ไม่พบข้อมูล",
+    "logout": "ออกจากระบบ",
+    "PersonalInfo": {
+      "title": "ข้อมูลส่วนตัว",
+      "edit": "แก้ไข",
+      "parentName": "ชื่อผู้ปกครอง",
+      "phone": "เบอร์โทร",
+      "editTitle": "แก้ไขข้อมูลส่วนตัว",
+      "children": "เด็กในครอบครัว",
+      "addChild": "เพิ่มเด็ก",
+      "childNamePlaceholder": "ชื่อเด็ก",
+      "cancel": "ยกเลิก",
+      "save": "บันทึก",
+      "saving": "กำลังบันทึก..."
+    },
+    "Password": {
+      "changeBtn": "เปลี่ยนรหัสผ่าน",
+      "title": "เปลี่ยนรหัสผ่าน",
+      "currentLabel": "รหัสผ่านเดิม",
+      "newLabel": "รหัสผ่านใหม่",
+      "cancel": "ยกเลิก",
+      "changeSubmit": "เปลี่ยนรหัสผ่าน",
+      "changing": "กำลังเปลี่ยน..."
+    },
+    "messages": {
+      "saveSuccess": "บันทึกสำเร็จ!",
+      "pwSuccess": "เปลี่ยนรหัสผ่านสำเร็จ!"
+    }
+  },
+  "UserQr": {
+    "title": "QR Code ของฉัน",
+    "instruction": "แสดง QR Code นี้ให้พนักงานที่ร้าน",
+    "footer1": "QR Code นี้ใช้สำหรับยืม-คืนหนังสือ",
+    "footer2": "และตรวจสอบเหรียญที่ร้าน"
+  },
+  "UserBorrows": {
+    "title": "ประวัติยืม-คืน",
+    "empty": "ยังไม่มีประวัติการยืม",
+    "browseBooks": "ดูหนังสือ →",
+    "activeTitle": "รายการที่กำลังดำเนินการ",
+    "pastTitle": "ประวัติที่ผ่านมา",
+    "status": {
+      "RESERVED": "รอ Admin อนุมัติ",
+      "BORROWED": "กำลังยืม",
+      "RETURNED": "คืนแล้ว",
+      "OVERDUE": "เกินกำหนด",
+      "FORFEITED": "ยึดมัดจำ",
+      "CANCELLED": "ยกเลิก"
+    },
+    "labels": {
+      "borrowDate": "ยืม",
+      "dueDate": "กำหนดคืน",
+      "returnDate": "คืนเมื่อ",
+      "rentalCoins": "ค่ายืม",
+      "depositCoins": "มัดจำ",
+      "lateFeeCoins": "ค่าปรับ",
+      "depositReturned": "คืนมัดจำแล้ว",
+      "depositForfeited": "ยึดมัดจำ"
+    },
+    "CancelButton": {
+      "triggerBtn": "ยกเลิกการจอง",
+      "confirmMessage": "ยกเลิกการจอง? ค่ายืม 1 เหรียญจะถูกคืนให้",
+      "confirmBtn": "ยืนยันยกเลิก",
+      "cancelBtn": "ไม่ยกเลิก"
+    }
+  },
+  "UserBooks": {
+    "title": "หนังสือ",
+    "filters": {
+      "ALL": "ทั้งหมด",
+      "AVAILABLE": "ว่าง",
+      "BORROWED": "ถูกยืม"
+    },
+    "searchPlaceholder": "ค้นหาชื่อหนังสือ...",
+    "loading": "กำลังค้นหา...",
+    "loadingMore": "กำลังโหลด...",
+    "emptyState": {
+      "search": "ไม่พบหนังสือ \"{query}\"",
+      "filter": "ไม่พบหนังสือในหมวดนี้",
+      "all": "ยังไม่มีหนังสือ"
+    },
+    "bookItem": {
+      "available": "ว่าง",
+      "borrowed": "ถูกยืม",
+      "hasYoutube": "มี YouTube"
+    },
+    "loadMoreBtn": "โหลดเพิ่มเติม"
+  },
+  "UserYoutube": {
+    "title": "หนังสือใน YouTube",
+    "back": "กลับหน้าหลัก",
+    "empty": "ยังไม่มีหนังสือใน YouTube",
+    "defaultCategory": "หนังสือ",
+    "watchBtn": "ดู →"
+  },
+  "UserClasses": {
+    "title": "ประวัติจองคลาส",
+    "back": "← กลับ",
+    "description": "ดูรายการจองคลาสทั้งหมดของคุณ",
+    "upcomingTitle": "รอเข้าเรียน",
+    "pastTitle": "ประวัติ",
+    "emptyAll": "ยังไม่มีประวัติจองคลาส",
+    "emptyHistory": "ยังไม่มีประวัติ",
+    "status": {
+      "BOOKED": "จองแล้ว",
+      "CHECKED_IN": "เข้าเรียนแล้ว",
+      "CANCELLED": "ยกเลิก",
+      "NO_SHOW": "ไม่มาเรียน"
+    },
+    "card": {
+      "week": "สัปดาห์",
+      "child": "บุตร"
+    },
+    "days": {
+      "0": "จันทร์",
+      "1": "อังคาร",
+      "2": "พุธ",
+      "3": "พฤหัสฯ",
+      "4": "ศุกร์",
+      "5": "เสาร์",
+      "6": "อาทิตย์"
+    }
+  },
+  "UserCoins": {
+    "title": "เหรียญคงเหลือทั้งหมด",
+    "expiryPrefix": "หมดอายุ",
+    "expired": "หมดแล้ว!",
+    "expireDays": "อีก {days} วัน",
+    "topUpBtn": "เติมเหรียญ",
+    "pendingRequestsTitle": "รอดำเนินการ",
+    "historyTitle": "ประวัติการเติมเหรียญ",
+    "emptyHistory": "ยังไม่มีประวัติการเติมเหรียญ",
+    "adminTopUp": "เติมโดยแอดมิน",
+    "recentTransactionsTitle": "ธุรกรรมล่าสุด",
+    "emptyTransactions": "ยังไม่มีธุรกรรม",
+    "status": {
+      "PENDING": "รอดำเนินการ",
+      "APPROVED": "อนุมัติแล้ว",
+      "APPROVED_SHORT": "เติมแล้ว",
+      "REJECTED": "ปฏิเสธ"
+    }
+  },
+  "UserCoinsTopUp": {
+    "title": "แจ้งโอนสำเร็จ!",
+    "subtitle": "กรุณารอ admin ตรวจสอบ เหรียญจะเข้าบัญชีเมื่ออนุมัติ",
+    "backToCoins": "กลับหน้าเหรียญ",
+    "headerTitle": "เติมเหรียญ",
+    "step1Title": "เลือกแพ็คเกจ",
+    "bonus": "โบนัส",
+    "step2Title": "โอนเงิน",
+    "bankLabel": "ธนาคาร",
+    "accountLabel": "เลขบัญชี",
+    "accountNameLabel": "ชื่อบัญชี",
+    "copyTitle": "คัดลอก",
+    "noBankAccount": "ยังไม่ได้ตั้งค่าบัญชีธนาคาร กรุณาติดต่อ admin",
+    "step3Title": "แจ้งโอนเงิน",
+    "notePlaceholder": "หมายเหตุ (เช่น โอนแล้วเวลา 14:30 น.)",
+    "submitBtn": "แจ้งโอนเงิน",
+    "sending": "กำลังส่ง..."
+  }
+}

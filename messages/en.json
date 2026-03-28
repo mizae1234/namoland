@@ -1,0 +1,328 @@
+{
+  "Common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "search": "Search...",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "success": "Success",
+    "error": "Error"
+  },
+  "Landing": {
+    "nav": {
+      "activities": "Activities",
+      "programs": "Programs",
+      "library": "Library",
+      "contact": "Contact",
+      "login": "Login",
+      "register": "Register"
+    },
+    "hero": {
+      "titlePart1": "Namoland",
+      "titlePart2": "Kids Creative Club",
+      "subtitlePrefix": "A creative space for kids filled with",
+      "art": " Art",
+      "english": "English",
+      "science": "Science",
+      "imagination": " and Imagination",
+      "description": "🎨 Jolly English & Art & Design for Kids · 📚 Playgroup · Grammar · Workshops · Private Classes",
+      "startBtn": "Get Started",
+      "loginBtn": "Member Login",
+      "stats": {
+        "members": "Members",
+        "activities": "Activities/Week",
+        "experience": "Years Experience"
+      }
+    },
+    "activities": {
+      "badge": "Our Activities",
+      "title1": "Learn through",
+      "title2": "Creativity",
+      "desc": "Activities designed to help children develop diverse skills through play, experimentation, and creativity."
+    },
+    "programs": {
+      "badge": "📅 Schedule",
+      "title1": "Monthly",
+      "title2": "Schedule",
+      "desc": "View our monthly schedule. Sign up to book classes."
+    },
+    "cta": {
+      "title": "Ready to spark your child's learning? ✨",
+      "desc": "Register today to access creative activities, the library, and special programs.",
+      "registerBtn": "Sign Up — Free!",
+      "loginBtn": "Member Login"
+    },
+    "footer": {
+      "desc": "A creative space for kids filled with art, languages, science, and imagination.",
+      "quickLinks": {
+        "title": "Quick Links",
+        "login": "Member Login",
+        "register": "Register",
+        "adminLogin": "Admin Login",
+        "youtube": "Watch YouTube"
+      },
+      "contact": {
+        "title": "Contact Us",
+        "facebook": "Facebook: Namoland Kids Creative Club"
+      },
+      "copyright": "© {year} Namoland Kids Creative Club. All rights reserved."
+    }
+  },
+  "AdminAuth": {
+    "title": "Admin Login",
+    "subtitle": "Namoland Management",
+    "email": "Email",
+    "password": "Password",
+    "loginBtn": "Login",
+    "error": {
+      "invalid": "Invalid email or password",
+      "system": "An error occurred, please try again"
+    },
+    "copyright": "© {year} Namoland. All rights reserved."
+  },
+  "UserAuth": {
+    "Login": {
+      "title": "Member Login",
+      "phone": "Phone Number",
+      "phonePlaceholder": "08x-xxx-xxxx",
+      "password": "Password",
+      "passwordDefault": "Default password: last 4 digits of phone",
+      "loginBtn": "Login",
+      "loadingBtn": "Logging in...",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Sign Up",
+      "error": {
+        "invalid": "Invalid phone number or password"
+      }
+    },
+    "Register": {
+      "title": "Sign Up",
+      "parentName": "Parent Name *",
+      "parentNamePlaceholder": "First Name - Last Name",
+      "phone": "Phone Number *",
+      "password": "Password *",
+      "passwordPlaceholder": "Min. 4 characters",
+      "childrenTitle": "Child Information",
+      "optional": "(Optional)",
+      "addBtn": "Add",
+      "childNamePlaceholder": "Child's Name",
+      "registerBtn": "Sign Up",
+      "loadingBtn": "Registering...",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Login",
+      "error": {
+        "loginFailed": "Registration successful, but automatic login failed. Please login manually."
+      }
+    },
+    "Nav": {
+      "home": "Home",
+      "books": "Books",
+      "classes": "Classes",
+      "borrows": "Borrows",
+      "coins": "Coins",
+      "profile": "Profile"
+    }
+  },
+  "UserDashboard": {
+    "notFound": "Data not found",
+    "welcome": "Hello {name} 👋",
+    "subtitle": "Welcome to Namoland",
+    "stats": {
+      "coins": "Remaining Coins",
+      "topup": "Top up",
+      "expirePrefix": "Expires",
+      "expireSoon": "Expired!",
+      "expireDays": "in {days} days",
+      "borrows": "Borrowing",
+      "items": "items"
+    },
+    "borrows": {
+      "title": "Books Borrowed",
+      "dueDate": "Due date: "
+    },
+    "youtube": {
+      "title": "Books on YouTube",
+      "seeAll": "See all →",
+      "defaultCategory": "Book"
+    },
+    "bookings": {
+      "title": "Booked Classes",
+      "seeAll": "See all →",
+      "empty": "No classes booked yet",
+      "waiting": "Waiting"
+    },
+    "days": {
+      "0": "Mon",
+      "1": "Tue",
+      "2": "Wed",
+      "3": "Thu",
+      "4": "Fri",
+      "5": "Sat",
+      "6": "Sun"
+    }
+  },
+  "UserProfile": {
+    "title": "Profile",
+    "notFound": "Data not found",
+    "logout": "Sign Out",
+    "PersonalInfo": {
+      "title": "Personal Information",
+      "edit": "Edit",
+      "parentName": "Parent Name",
+      "phone": "Phone Number",
+      "editTitle": "Edit Personal Information",
+      "children": "Children",
+      "addChild": "Add Child",
+      "childNamePlaceholder": "Child's Name",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving..."
+    },
+    "Password": {
+      "changeBtn": "Change Password",
+      "title": "Change Password",
+      "currentLabel": "Current Password",
+      "newLabel": "New Password",
+      "cancel": "Cancel",
+      "changeSubmit": "Change Password",
+      "changing": "Changing..."
+    },
+    "messages": {
+      "saveSuccess": "Saved successfully!",
+      "pwSuccess": "Password changed successfully!"
+    }
+  },
+  "UserQr": {
+    "title": "My QR Code",
+    "instruction": "Show this QR Code to staff at the store",
+    "footer1": "This QR Code is used for borrowing/returning books",
+    "footer2": "and checking your coins at the store"
+  },
+  "UserBorrows": {
+    "title": "Borrowing History",
+    "empty": "No borrowing history yet",
+    "browseBooks": "Browse Books →",
+    "activeTitle": "Active Items",
+    "pastTitle": "Past History",
+    "status": {
+      "RESERVED": "Pending Approval",
+      "BORROWED": "Borrowed",
+      "RETURNED": "Returned",
+      "OVERDUE": "Overdue",
+      "FORFEITED": "Deposit Forfeited",
+      "CANCELLED": "Cancelled"
+    },
+    "labels": {
+      "borrowDate": "Borrowed",
+      "dueDate": "Due",
+      "returnDate": "Returned on",
+      "rentalCoins": "Rental Fee",
+      "depositCoins": "Deposit",
+      "lateFeeCoins": "Late fee",
+      "depositReturned": "Deposit returned",
+      "depositForfeited": "Deposit forfeited"
+    },
+    "CancelButton": {
+      "triggerBtn": "Cancel Reservation",
+      "confirmMessage": "Cancel reservation? The 1 coin rental fee will be refunded",
+      "confirmBtn": "Confirm Cancel",
+      "cancelBtn": "Do not cancel"
+    }
+  },
+  "UserBooks": {
+    "title": "Books",
+    "filters": {
+      "ALL": "All",
+      "AVAILABLE": "Available",
+      "BORROWED": "Borrowed"
+    },
+    "searchPlaceholder": "Search books...",
+    "loading": "Searching...",
+    "loadingMore": "Loading...",
+    "emptyState": {
+      "search": "No books found for \"{query}\"",
+      "filter": "No books found in this category",
+      "all": "No books available yet"
+    },
+    "bookItem": {
+      "available": "Available",
+      "borrowed": "Borrowed",
+      "hasYoutube": "Has YouTube"
+    },
+    "loadMoreBtn": "Load More"
+  },
+  "UserYoutube": {
+    "title": "Books on YouTube",
+    "back": "Back to Home",
+    "empty": "No books on YouTube yet",
+    "defaultCategory": "Book",
+    "watchBtn": "Watch →"
+  },
+  "UserClasses": {
+    "title": "Class Booking History",
+    "back": "← Back",
+    "description": "View all your class bookings",
+    "upcomingTitle": "Upcoming Classes",
+    "pastTitle": "History",
+    "emptyAll": "No booking history yet",
+    "emptyHistory": "No history yet",
+    "status": {
+      "BOOKED": "Booked",
+      "CHECKED_IN": "Checked-in",
+      "CANCELLED": "Cancelled",
+      "NO_SHOW": "No Show"
+    },
+    "card": {
+      "week": "Week",
+      "child": "Child"
+    },
+    "days": {
+      "0": "Mon",
+      "1": "Tue",
+      "2": "Wed",
+      "3": "Thu",
+      "4": "Fri",
+      "5": "Sat",
+      "6": "Sun"
+    }
+  },
+  "UserCoins": {
+    "title": "Total Remaining Coins",
+    "expiryPrefix": "Expires",
+    "expired": "Expired!",
+    "expireDays": "in {days} days",
+    "topUpBtn": "Top up coins",
+    "pendingRequestsTitle": "Pending Requests",
+    "historyTitle": "Top Up History",
+    "emptyHistory": "No top up history yet",
+    "adminTopUp": "Top up by Admin",
+    "recentTransactionsTitle": "Recent Transactions",
+    "emptyTransactions": "No transactions yet",
+    "status": {
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "APPROVED_SHORT": "Approved",
+      "REJECTED": "Rejected"
+    }
+  },
+  "UserCoinsTopUp": {
+    "title": "Transfer Notified!",
+    "subtitle": "Please wait for admin verification. Coins will be credited upon approval.",
+    "backToCoins": "Back to Coins",
+    "headerTitle": "Top Up Coins",
+    "step1Title": "Select Package",
+    "bonus": "Bonus",
+    "step2Title": "Transfer Money",
+    "bankLabel": "Bank",
+    "accountLabel": "Account No.",
+    "accountNameLabel": "Account Name",
+    "copyTitle": "Copy",
+    "noBankAccount": "Bank account not set up. Please contact admin.",
+    "step3Title": "Notify Transfer",
+    "notePlaceholder": "Note (e.g. transferred at 14:30)",
+    "submitBtn": "Confirm Transfer",
+    "sending": "Sending..."
+  }
+}
