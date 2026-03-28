@@ -7,12 +7,12 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: Promise<{ filename: string }> }
+    { params }: { params: Promise<{ filename: string[] }> }
 ) {
     const { filename } = await params;
 
     // Resolve the file path to the dedicated persistent uploads folder
-    const filepath = path.join(process.cwd(), "uploads", filename);
+    const filepath = path.join(process.cwd(), "uploads", ...filename);
 
     if (!fs.existsSync(filepath)) {
         return NextResponse.json({ error: "File not found" }, { status: 404 });
@@ -22,7 +22,7 @@ export async function GET(
         const fileBuffer = await readFile(filepath);
         
         // Determine content type
-        const ext = path.extname(filename).toLowerCase();
+        const ext = path.extname(filename[filename.length - 1]).toLowerCase();
         let contentType = "application/octet-stream";
         if (ext === ".jpg" || ext === ".jpeg") contentType = "image/jpeg";
         if (ext === ".png") contentType = "image/png";
