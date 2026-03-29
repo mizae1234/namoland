@@ -240,7 +240,7 @@ prisma/
 |---|---|
 | `getOutstandingCoinReport(year)` | Yearly coin balance report: Uses Exact Package Snapshot Method (calculates true remaining ratio of unspent packages per month) instead of global WAC to prevent monetary drift. |
 | `getClassAttendanceReport(dateFrom, dateTo, status?, search?)` | Class attendance with status summary |
-| `getMemberReport(userId)` | Per-member coin timeline (FIFO cost attribution, purchase/class/adjust events) |
+| `getMemberReport(userId)` | Per-member coin timeline (Simulates a **Global FIFO Cost Allocation** chronologically across all transactions, bypassing incorrect DB bindings from historical bugs) |
 
 ### dashboard.ts (320 lines)
 
@@ -357,13 +357,16 @@ Protected by middleware (requires ADMIN session).
 
 ## Key Business Logic Patterns
 
-### FIFO Coin Deduction Pattern
-All coin-consuming operations use the shared `coin-service.ts`:
-1. `prepareFIFODeduction(userId, coinsNeeded)` — plan from oldest packages
+### True FIFO Coin Deduction Pattern
+All coin-consuming operations and refunds use the shared `coin-service.ts` heavily governed by `purchaseDate` ordering instead of `createdAt` to support backdated administration:
+1. `prepareFIFODeduction(userId, coinsNeeded)` — plan usage starting from packages with the oldest `purchaseDate`
 2. `buildPackageDeductOps(deductions, now)` — build Prisma update ops
 3. `buildTransactionOps(deductions, type, processedById)` — build transaction logs
 4. Execute in `prisma.$transaction([...ops])`
-5. `syncCoinExpiryOverride(userId, deductions, now)` — post-transaction sync
+5. Refund operations (`returnBooks`, `cancelReservation`) MUST explicitly sort eligible packages by `purchaseDate` ascending to correctly restore coins to the absolute oldest package first.
+
+### Global FIFO Reporting Simulation
+Due to early bugs where transactions were occasionally bound to incorrect packages, report engines (`getMemberReport`) do not trust the DB's `Transaction -> Package` relationship to calculate per-coin resource cost. Instead, they build a **Cost Pool** from all packages sorted by `purchaseDate`, map all timeline events chronologically, and simulate consumption to output true FIFO cost per resource.
 
 ### Exact Snapshot Reporting Method (Outstanding Coins)
 To prevent mathematical drift from Weighted Average Cost (WAC) calculations over time, reporting engine (`report.ts`) dynamically calculates exact unspent coin ratios from the database for each individual package at the end-of-month snapshot timestamp.
@@ -395,11 +398,12 @@ To prevent mathematical drift from Weighted Average Cost (WAC) calculations over
 ## Common Patterns & Conventions
 
 1. **Server Actions** — All in `src/actions/`, use `"use server"` directive
-2. **revalidatePath** — Called after mutations to refresh related pages
-3. **Error Handling** — Return `{ error: "message" }` or `{ success: true }`
-4. **bcrypt** — Dynamic import for ESM/CJS compatibility: `const bcryptModule = await import("bcryptjs")`
-5. **FormData** — All create/update actions accept FormData
-6. **Prisma Transactions** — `prisma.$transaction([...ops])` for multi-step operations
+2. **revalidatePath & router.refresh()** — Server-side path revalidation and client-side soft refreshes following Server Actions.
+3. **Event-driven Client Sync** — Sibling stateful Client Components (like Reports grids or History tables) bypass `router.refresh()`. Instead, Server Action success handlers dispatch custom window events (`window.dispatchEvent(new Event('refresh-member-data'))`) triggering local `useEffect` fetches.
+4. **Error Handling** — Return `{ error: "message" }` or `{ success: true }`
+5. **bcrypt** — Dynamic import for ESM/CJS compatibility: `const bcryptModule = await import("bcryptjs")`
+6. **FormData** — All create/update actions accept FormData
+7. **Prisma Transactions** — `prisma.$transaction([...ops])` for multi-step operations
 7. **QR Codes** — Auto-generated: `NML-XXXX` (members), `BOOK-XXXX` (books), `USR-XXXX` (self-registered)
 
 ---
