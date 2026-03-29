@@ -20,7 +20,7 @@
       "register": "Register"
     },
     "hero": {
-      "titlePart1": "Namoland",
+      "titlePart1": "NAMOLAND",
       "titlePart2": "Kids Creative Club",
       "subtitlePrefix": "A creative space for kids filled with",
       "art": " Art",
@@ -65,14 +65,14 @@
       },
       "contact": {
         "title": "Contact Us",
-        "facebook": "Facebook: Namoland Kids Creative Club"
+        "facebook": "Facebook: NAMOLAND Kids Creative Club"
       },
-      "copyright": "© {year} Namoland Kids Creative Club. All rights reserved."
+      "copyright": "© {year} NAMOLAND Kids Creative Club. All rights reserved."
     }
   },
   "AdminAuth": {
     "title": "Admin Login",
-    "subtitle": "Namoland Management",
+    "subtitle": "NAMOLAND Management",
     "email": "Email",
     "password": "Password",
     "loginBtn": "Login",
@@ -80,7 +80,7 @@
       "invalid": "Invalid email or password",
       "system": "An error occurred, please try again"
     },
-    "copyright": "© {year} Namoland. All rights reserved."
+    "copyright": "© {year} NAMOLAND. All rights reserved."
   },
   "UserAuth": {
     "Login": {
@@ -128,7 +128,7 @@
   "UserDashboard": {
     "notFound": "Data not found",
     "welcome": "Hello {name} 👋",
-    "subtitle": "Welcome to Namoland",
+    "subtitle": "Welcome to NAMOLAND",
     "stats": {
       "coins": "Remaining Coins",
       "topup": "Top up",
@@ -340,15 +340,15 @@
     "youtubeBtn": "Watch YouTube",
     "loginToReserveBtn": "Login to Reserve",
     "unavailableBtn": "Book is currently borrowed",
-    "footer": "© 2026 Namoland Library",
+    "footer": "© 2026 NAMOLAND Library",
     "reserveBtn": {
-      "success": "Reserved successfully! Please pick up the book at Namoland",
+      "success": "Reserved successfully! Please pick up the book at NAMOLAND",
       "booking": "Reserving...",
       "action": "Reserve Book (Deducts 6 Coins)"
     }
   },
   "AdminSidebar": {
-    "appTitle": "Namoland",
+    "appTitle": "NAMOLAND",
     "appSubtitle": "Management",
     "menu": {
       "dashboard": "Dashboard",
@@ -370,7 +370,7 @@
   },
   "AdminDashboard": {
     "title": "Admin Dashboard",
-    "subtitle": "Namoland System Overview",
+    "subtitle": "NAMOLAND System Overview",
     "stats": {
       "totalMembers": "Total Members",
       "totalChildren": "Children",
@@ -396,7 +396,7 @@
   },
   "AdminOwner": {
     "title": "Owner Dashboard",
-    "subtitlePrefix": "Namoland Business Overview",
+    "subtitlePrefix": "NAMOLAND Business Overview",
     "kpi": {
       "todayRevenue": "Today's Revenue",
       "yesterdayRevenue": "Yesterday",

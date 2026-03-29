@@ -196,8 +196,8 @@ export default function BookingPanel({
                         </button>
                     </div>
                     <div className="bg-[#81b29a]/10 rounded-lg p-3">
-                        <p className="text-sm font-bold text-[#3d405b]">{entry.title}</p>
-                        <p className="text-xs text-[#3d405b]/50 mt-0.5">
+                        <p className="text-base font-bold text-[#3d405b]">{entry.title}</p>
+                        <p className="text-sm text-[#3d405b]/50 mt-0.5">
                             {DAY_LABELS[entry.dayOfWeek]} • {entry.startTime}-{entry.endTime}
                         </p>
                     </div>

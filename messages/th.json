@@ -20,7 +20,7 @@
       "register": "สมัครสมาชิก"
     },
     "hero": {
-      "titlePart1": "Namoland",
+      "titlePart1": "NAMOLAND",
       "titlePart2": "Kids Creative Club",
       "subtitlePrefix": "พื้นที่สร้างสรรค์สำหรับเด็กๆ ที่เต็มไปด้วย",
       "art": " ศิลปะ",
@@ -65,9 +65,9 @@
       },
       "contact": {
         "title": "ติดต่อเรา",
-        "facebook": "Facebook: Namoland Kids Creative Club"
+        "facebook": "Facebook: NAMOLAND Kids Creative Club"
       },
-      "copyright": "© {year} Namoland Kids Creative Club. All rights reserved."
+      "copyright": "© {year} NAMOLAND Kids Creative Club. All rights reserved."
     }
   },
   "AdminAuth": {
@@ -80,7 +80,7 @@
       "invalid": "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
       "system": "เกิดข้อผิดพลาด กรุณาลองใหม่"
     },
-    "copyright": "© {year} Namoland. All rights reserved."
+    "copyright": "© {year} NAMOLAND. All rights reserved."
   },
   "UserAuth": {
     "Login": {
@@ -128,7 +128,7 @@
   "UserDashboard": {
     "notFound": "ไม่พบข้อมูล",
     "welcome": "สวัสดี {name} 👋",
-    "subtitle": "ยินดีต้อนรับสู่ Namoland",
+    "subtitle": "ยินดีต้อนรับสู่ NAMOLAND",
     "stats": {
       "coins": "เหรียญคงเหลือ",
       "topup": "เติม",
@@ -340,15 +340,15 @@
     "youtubeBtn": "ดู YouTube",
     "loginToReserveBtn": "เข้าสู่ระบบเพื่อจองยืม",
     "unavailableBtn": "หนังสือถูกยืมอยู่",
-    "footer": "© 2026 Namoland. ห้องสมุดนโมแลนด์",
+    "footer": "© 2026 NAMOLAND. ห้องสมุดนโมแลนด์",
     "reserveBtn": {
-      "success": "จองสำเร็จ! กรุณามารับหนังสือที่ Namoland",
+      "success": "จองสำเร็จ! กรุณามารับหนังสือที่ NAMOLAND",
       "booking": "กำลังจอง...",
       "action": "จองยืมหนังสือ (หัก 6 เหรียญ)"
     }
   },
   "AdminSidebar": {
-    "appTitle": "Namoland",
+    "appTitle": "NAMOLAND",
     "appSubtitle": "ระบบจัดการ",
     "menu": {
       "dashboard": "Dashboard",
@@ -370,7 +370,7 @@
   },
   "AdminDashboard": {
     "title": "Admin Dashboard",
-    "subtitle": "ภาพรวมระบบ Namoland",
+    "subtitle": "ภาพรวมระบบ NAMOLAND",
     "stats": {
       "totalMembers": "สมาชิกทั้งหมด",
       "totalChildren": "เด็ก",
@@ -396,7 +396,7 @@
   },
   "AdminOwner": {
     "title": "Owner Dashboard",
-    "subtitlePrefix": "ภาพรวมธุรกิจ Namoland",
+    "subtitlePrefix": "ภาพรวมธุรกิจ NAMOLAND",
     "kpi": {
       "todayRevenue": "รายได้วันนี้",
       "yesterdayRevenue": "เมื่อวาน",

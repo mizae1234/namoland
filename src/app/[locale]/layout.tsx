@@ -18,8 +18,8 @@ const kanit = Kanit({
 });
 
 export const metadata: Metadata = {
-  title: "Namoland Management",
-  description: "Namoland System for Book Borrowing and Coin Management",
+  title: "NAMOLAND Management",
+  description: "NAMOLAND System for Book Borrowing and Coin Management",
 };
 
 export const viewport: Viewport = {

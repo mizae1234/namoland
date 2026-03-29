@@ -16,7 +16,7 @@ export default async function YouTubePage() {
                     <div className="inline-flex items-center justify-center w-14 h-14 bg-red-100 rounded-2xl mb-3">
                         <Youtube size={28} className="text-red-500" />
                     </div>
-                    <h1 className="text-2xl font-bold text-[#3d405b]">Namoland YouTube</h1>
+                    <h1 className="text-2xl font-bold text-[#3d405b]">NAMOLAND YouTube</h1>
                     <p className="text-[#3d405b]/50 mt-1">ดูหนังสือและกิจกรรมจากนโมแลนด์</p>
                 </div>
 

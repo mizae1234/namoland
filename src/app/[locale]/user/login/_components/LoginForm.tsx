@@ -42,8 +42,8 @@ export default function LoginForm() {
             <div className="w-full max-w-sm">
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <Image src="/namoland-logo.png" alt="Namoland" width={64} height={64} className="w-16 h-16 rounded-2xl object-cover mx-auto shadow-lg shadow-[#81b29a]/30 mb-3" />
-                    <h1 className="text-xl font-bold text-[#3d405b]">Namoland</h1>
+                    <Image src="/namoland-logo.png" alt="NAMOLAND" width={64} height={64} className="w-16 h-16 rounded-2xl object-cover mx-auto shadow-lg shadow-[#81b29a]/30 mb-3" />
+                    <h1 className="text-xl font-bold text-[#3d405b]">NAMOLAND</h1>
                     <p className="text-[#3d405b]/50 text-sm mt-1">{t("title")}</p>
                 </div>
 

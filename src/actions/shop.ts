@@ -8,7 +8,7 @@ export async function getShopInfo() {
     let shop = await prisma.shopInfo.findFirst();
     if (!shop) {
         shop = await prisma.shopInfo.create({
-            data: { shopName: "Namoland" },
+            data: { shopName: "NAMOLAND" },
         });
     }
     return shop;
@@ -29,14 +29,14 @@ export async function updateShopInfo(formData: FormData) {
     let shop = await prisma.shopInfo.findFirst();
     if (!shop) {
         shop = await prisma.shopInfo.create({
-            data: { shopName: shopName || "Namoland" },
+            data: { shopName: shopName || "NAMOLAND" },
         });
     }
 
     await prisma.shopInfo.update({
         where: { id: shop.id },
         data: {
-            shopName: shopName || "Namoland",
+            shopName: shopName || "NAMOLAND",
             bankName: bankName || null,
             accountNumber: accountNumber || null,
             accountName: accountName || null,
@@ -57,7 +57,7 @@ export async function updateScheduleImage(url: string) {
     let shop = await prisma.shopInfo.findFirst();
     if (!shop) {
         shop = await prisma.shopInfo.create({
-            data: { shopName: "Namoland" },
+            data: { shopName: "NAMOLAND" },
         });
     }
 

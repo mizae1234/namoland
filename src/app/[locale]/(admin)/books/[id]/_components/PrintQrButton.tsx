@@ -42,7 +42,7 @@ export default function PrintQrButton({
                 </style>
             </head>
             <body>
-                <div class="logo">📚 Namoland</div>
+                <div class="logo">📚 NAMOLAND</div>
                 <div class="qr-container" id="qr-target"></div>
                 <div class="title">${title}</div>
                 <div class="code">${qrCode}</div>

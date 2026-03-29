@@ -273,27 +273,27 @@ export default function ScheduleList({ schedules, mode = "manage" }: { schedules
                         return (
                             <div
                                 key={`day-${day}`}
-                                className={`min-h-[80px] border rounded-lg p-1 ${isToday ? "border-[#609279] bg-[#81b29a]/5" : "border-[#d1cce7]/20 bg-white"
+                                className={`min-h-[80px] border rounded-lg p-1.5 ${isToday ? "border-[#609279] bg-[#81b29a]/5" : "border-[#d1cce7]/20 bg-white"
                                     } ${schedule ? "cursor-pointer hover:shadow-sm transition-shadow" : ""}`}
                                 onClick={() => schedule && router.push(`/classes/${schedule.id}`)}
                             >
-                                <p className={`text-[10px] font-bold mb-0.5 ${isToday ? "text-[#609279]" : "text-[#3d405b]/40"}`}>
+                                <p className={`text-xs font-bold mb-1 ${isToday ? "text-[#609279]" : "text-[#3d405b]/40"}`}>
                                     {day}
                                 </p>
-                                <div className="space-y-0.5">
+                                <div className="space-y-1">
                                     {entries.slice(0, 3).map(({ entry }) => (
-                                        <div key={entry.id} className="bg-[#81b29a]/10 rounded px-1 py-0.5">
-                                            <p className="text-[8px] text-gray-400 leading-none flex items-center gap-0.5">
-                                                <Clock size={7} />
+                                        <div key={entry.id} className="bg-[#81b29a]/10 rounded px-1.5 py-1">
+                                            <p className="text-[10px] text-gray-500 flex items-center gap-1 mb-0.5">
+                                                <Clock size={10} />
                                                 {entry.startTime}
                                             </p>
-                                            <p className="text-[9px] font-semibold text-[#3d405b] leading-tight truncate">
+                                            <p className="text-[11px] font-semibold text-[#3d405b] leading-tight truncate">
                                                 {entry.title}
                                             </p>
                                         </div>
                                     ))}
                                     {entries.length > 3 && (
-                                        <p className="text-[8px] text-[#609279] font-medium text-center">{t("others", { count: entries.length - 3 })}</p>
+                                        <p className="text-[10px] text-[#609279] font-medium text-center mt-1">{t("others", { count: entries.length - 3 })}</p>
                                     )}
                                 </div>
                             </div>

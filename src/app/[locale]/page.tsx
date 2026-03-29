@@ -51,8 +51,8 @@ export default async function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#d1cce7]/30">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center justify-between h-14 sm:h-16">
           <div className="flex items-center gap-2 sm:gap-3">
-            <Image src="/namoland-logo.png" alt="Namoland" width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-cover" />
-            <span className="font-bold text-base sm:text-lg text-[#3d405b]">Namoland</span>
+            <Image src="/namoland-logo.png" alt="NAMOLAND" width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-cover" />
+            <span className="font-bold text-base sm:text-lg text-[#3d405b]">NAMOLAND</span>
           </div>
           <div className="hidden md:flex items-center gap-6 text-sm font-medium">
             <a href="#activities" className="text-[#3d405b]/70 hover:text-[#3d405b] transition-colors">{t("nav.activities")}</a>
@@ -136,7 +136,7 @@ export default async function LandingPage() {
               <div className="relative w-full max-w-[480px] rounded-[2.5rem] overflow-hidden shadow-2xl shadow-[#3d405b]/10 border-4 border-white">
                 <Image
                   src="/hero-kids.png"
-                  alt="เด็กๆ กำลังสร้างสรรค์ผลงานศิลปะที่ Namoland"
+                  alt="เด็กๆ กำลังสร้างสรรค์ผลงานศิลปะที่ NAMOLAND"
                   width={480}
                   height={480}
                   className="w-full h-auto object-cover"
@@ -197,7 +197,7 @@ export default async function LandingPage() {
                 <div className="rounded-3xl overflow-hidden shadow-xl border border-[#d1cce7]/20 flex justify-center bg-white/50">
                   <Image
                     src={scheduleImageUrl}
-                    alt="ตารางกิจกรรมประจำเดือน Namoland"
+                    alt="ตารางกิจกรรมประจำเดือน NAMOLAND"
                     width={1200}
                     height={1600}
                     className="w-full h-auto object-contain max-h-[90vh]"
@@ -209,7 +209,7 @@ export default async function LandingPage() {
                 <div className="rounded-3xl overflow-hidden shadow-xl border border-[#d1cce7]/20 flex justify-center bg-white/50 mt-4">
                   <Image
                     src={weeklyScheduleImageUrl}
-                    alt="ตารางกิจกรรมประจำสัปดาห์ Namoland"
+                    alt="ตารางกิจกรรมประจำสัปดาห์ NAMOLAND"
                     width={1200}
                     height={1600}
                     className="w-full h-auto object-contain max-h-[90vh]"
@@ -267,8 +267,8 @@ export default async function LandingPage() {
             {/* Brand */}
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <Image src="/namoland-logo.png" alt="Namoland" width={40} height={40} className="w-10 h-10 rounded-xl object-cover" />
-                <span className="font-bold text-lg">Namoland Kids Creative Club</span>
+                <Image src="/namoland-logo.png" alt="NAMOLAND" width={40} height={40} className="w-10 h-10 rounded-xl object-cover" />
+                <span className="font-bold text-lg">NAMOLAND Kids Creative Club</span>
               </div>
               <p className="text-white/50 text-sm leading-relaxed">
                 {t("footer.desc")}

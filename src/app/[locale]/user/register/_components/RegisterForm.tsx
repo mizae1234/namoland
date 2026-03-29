@@ -76,7 +76,7 @@ export default function RegisterForm() {
                     <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-[#3d405b] to-[#609279] rounded-2xl text-white text-2xl font-bold shadow-lg shadow-[#81b29a]/30 mb-3">
                         N
                     </div>
-                    <h1 className="text-xl font-bold text-[#3d405b]">Namoland</h1>
+                    <h1 className="text-xl font-bold text-[#3d405b]">NAMOLAND</h1>
                     <p className="text-[#3d405b]/50 text-sm mt-1">{t("title")}</p>
                 </div>
 

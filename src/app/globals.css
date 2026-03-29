@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: var(--font-kanit), var(--font-inter), sans-serif;
+  --font-sans: "Agrandir Grand", var(--font-kanit), var(--font-inter), sans-serif;
 
-  /* ─── Namoland Brand Colors ─── */
+  /* ─── NAMOLAND Brand Colors ─── */
   --color-brand-green: #81b29a;
   --color-brand-green-dark: #609279;
   --color-brand-blue: #3d405b;

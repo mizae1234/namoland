@@ -16,7 +16,7 @@ export default async function AdminLayout({
 
     return (
         <SessionProvider session={session}>
-            <div className="min-h-screen bg-[#f4f1de]">
+            <div className="min-h-screen bg-[#f4f1de] text-[17px]">
                 <Sidebar userName={session.user.name || "Admin"} userRole={session.user.role || "ADMIN"} />
                 <main className="md:ml-64 p-4 pt-16 md:pt-8 md:p-8">
                     {children}

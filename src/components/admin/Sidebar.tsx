@@ -60,7 +60,7 @@ export default function Sidebar({ userName, userRole }: { userName: string; user
             <div className="p-6 border-b border-[#d1cce7]/20">
                 <div className="flex items-center gap-3">
                     <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                        <Image src="/namoland-logo.png" alt="Namoland" width={40} height={40} className="w-10 h-10 rounded-xl object-cover" />
+                        <Image src="/namoland-logo.png" alt="NAMOLAND" width={40} height={40} className="w-10 h-10 rounded-xl object-cover" />
                         <div>
                             <h1 className="font-bold text-[#3d405b]">{t("appTitle")}</h1>
                             <p className="text-xs text-[#3d405b]/40">{t("appSubtitle")}</p>

@@ -28,8 +28,8 @@ export default async function BookLandingPage({
             <div className="w-full max-w-md">
                 {/* Logo */}
                 <div className="text-center mb-6">
-                    <Image src="/namoland-logo.png" alt="Namoland" width={64} height={64} className="w-16 h-16 rounded-2xl object-cover mx-auto shadow-lg shadow-[#81b29a]/30 mb-3" />
-                    <h1 className="text-lg font-bold text-[#3d405b]">Namoland</h1>
+                    <Image src="/namoland-logo.png" alt="NAMOLAND" width={64} height={64} className="w-16 h-16 rounded-2xl object-cover mx-auto shadow-lg shadow-[#81b29a]/30 mb-3" />
+                    <h1 className="text-lg font-bold text-[#3d405b]">NAMOLAND</h1>
                 </div>
 
                 {/* Book Card */}

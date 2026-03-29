@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
             let shop = await prisma.shopInfo.findFirst();
             if (!shop) {
                 shop = await prisma.shopInfo.create({
-                    data: { shopName: "Namoland" },
+                    data: { shopName: "NAMOLAND" },
                 });
             }
 

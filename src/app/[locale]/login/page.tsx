@@ -46,8 +46,8 @@ export default function LoginPage() {
             <div className="w-full max-w-md">
                 {/* Logo Section */}
                 <div className="text-center mb-8">
-                    <Image src="/namoland-logo.png" alt="Namoland" width={64} height={64} className="w-16 h-16 rounded-2xl mx-auto mb-4 shadow-lg shadow-[#a16b9f]/20" />
-                    <h1 className="text-2xl font-bold text-[#3d405b]">Namoland</h1>
+                    <Image src="/namoland-logo.png" alt="NAMOLAND" width={64} height={64} className="w-16 h-16 rounded-2xl mx-auto mb-4 shadow-lg shadow-[#a16b9f]/20" />
+                    <h1 className="text-2xl font-bold text-[#3d405b]">NAMOLAND</h1>
                     <p className="text-[#3d405b]/50 mt-1">{t("subtitle")}</p>
                 </div>
 

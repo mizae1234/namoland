@@ -271,9 +271,9 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
                     return (
                         <div key={dayIdx} className="flex flex-col">
                             {/* Day Header */}
-                            <div className={`${colors.header} text-white text-center py-2 rounded-t-xl`}>
-                                <p className="text-xs font-bold tracking-wider">{DAY_LABELS[dayIdx]}</p>
-                                <p className="text-[10px] opacity-80">{DAY_LABELS_TH[dayIdx]} ({dayDate})</p>
+                            <div className={`${colors.header} text-white text-center py-2.5 rounded-t-xl`}>
+                                <p className="text-sm font-bold tracking-wider">{DAY_LABELS[dayIdx]}</p>
+                                <p className="text-xs opacity-80">{DAY_LABELS_TH[dayIdx]} ({dayDate})</p>
                             </div>
 
                             {/* Entries */}
@@ -336,19 +336,19 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
                                             </div>
                                         ) : (
                                             <div
-                                                className={`${colors.card} border rounded-lg p-2 group relative cursor-pointer`}
+                                                className={`${colors.card} border rounded-lg p-2.5 group relative cursor-pointer`}
                                                 onClick={() => setSelectedEntry(entry)}
                                                 title={t("viewBookingsTooltip")}
                                             >
-                                                <p className="text-[10px] font-semibold text-gray-500 flex items-center gap-0.5">
-                                                    <Clock size={9} />
+                                                <p className="text-xs font-semibold text-gray-500 flex items-center gap-1">
+                                                    <Clock size={12} />
                                                     {entry.startTime}-{entry.endTime}
                                                 </p>
-                                                <p className="text-[11px] font-bold text-[#3d405b] leading-tight mt-0.5">
+                                                <p className="text-sm font-bold text-[#3d405b] leading-tight mt-1">
                                                     {entry.title}
                                                 </p>
                                                 {entry.teacher && (
-                                                    <p className="text-[9px] mt-0.5 font-medium px-1.5 py-0.5 rounded-full inline-block" 
+                                                    <p className="text-[11px] mt-1 font-medium px-2 py-0.5 rounded-full inline-block" 
                                                         style={{ 
                                                             backgroundColor: entry.teacher.color ? `${entry.teacher.color}20` : '#81b29a20',
                                                             color: entry.teacher.color || '#609279'
@@ -470,9 +470,9 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
                                 ) : (
                                     <button
                                         onClick={() => setAddingDay(dayIdx)}
-                                        className="w-full py-1.5 border-2 border-dashed border-[#d1cce7]/30 rounded-lg text-[10px] text-[#3d405b]/30 hover:border-[#81b29a]/40 hover:text-[#609279] transition-colors flex items-center justify-center gap-1"
+                                        className="w-full py-2 border-2 border-dashed border-[#d1cce7]/30 rounded-lg text-xs font-medium text-[#3d405b]/40 hover:border-[#81b29a]/40 hover:text-[#609279] transition-colors flex items-center justify-center gap-1"
                                     >
-                                        <Plus size={10} />
+                                        <Plus size={14} />
                                         {t("addClassBtn")}
                                     </button>
                                 )}
