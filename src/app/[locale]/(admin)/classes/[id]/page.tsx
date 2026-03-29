@@ -5,8 +5,10 @@ import { notFound } from "next/navigation";
 import WeeklyCalendar from "./_components/WeeklyCalendar";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 export default async function ClassDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const t = await getTranslations("AdminClasses.detail");
     const { id } = await params;
     const [schedule, activities, teachers] = await Promise.all([
         getClassScheduleById(id),
@@ -21,9 +23,9 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
             <div className="mb-6">
                 <Link href="/classes" className="inline-flex items-center gap-1.5 text-sm text-[#3d405b]/50 hover:text-[#3d405b] transition-colors mb-3">
                     <ArrowLeft size={16} />
-                    กลับรายการตาราง
+                    {t("backToList")}
                 </Link>
-                <h1 className="text-2xl font-bold text-[#3d405b]">ตารางคลาส</h1>
+                <h1 className="text-2xl font-bold text-[#3d405b]">{t("title")}</h1>
             </div>
 
             <WeeklyCalendar

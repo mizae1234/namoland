@@ -7,8 +7,11 @@ import { ImageIcon, Upload, X } from "lucide-react";
 import Image from "next/image";
 import BackLink from "@/components/ui/BackLink";
 import AlertMessage from "@/components/ui/AlertMessage";
+import { useTranslations } from "next-intl";
 
 export default function NewBookPage() {
+    const t = useTranslations("AdminBooks.newBook");
+    const tc = useTranslations("Common");
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -27,20 +30,18 @@ export default function NewBookPage() {
             const formData = new FormData();
             formData.append("file", file);
             formData.append("type", "bookCover");
-            
-            // Note: no bookId appended yet because the book doesn't exist
 
             const res = await fetch("/api/upload", {
                 method: "POST",
                 body: formData,
             });
 
-            if (!res.ok) throw new Error("อัพโหลดไม่สำเร็จ");
+            if (!res.ok) throw new Error(t("uploadError"));
             const data = await res.json();
             
             setCoverImage(data.url);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาด");
+            setError(err instanceof Error ? err.message : tc("error"));
         } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = "";
@@ -68,9 +69,9 @@ export default function NewBookPage() {
 
     return (
         <div className="max-w-2xl">
-            <BackLink href="/books" label="กลับไปหน้าหนังสือ" />
+            <BackLink href="/books" label={t("backLabel")} />
 
-            <h1 className="text-2xl font-bold text-[#3d405b] mb-6">เพิ่มหนังสือใหม่</h1>
+            <h1 className="text-2xl font-bold text-[#3d405b] mb-6">{t("title")}</h1>
 
             <AlertMessage message={error} />
 
@@ -79,7 +80,7 @@ export default function NewBookPage() {
                 {/* Book Cover Image Upload */}
                 <div>
                     <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">
-                        รูปภาพหน้าปก
+                        {t("coverImage")}
                     </label>
                     <div className="flex gap-4 items-start">
                         <div className="relative w-32 h-40 rounded-xl overflow-hidden border-2 border-dashed border-[#d1cce7]/50 bg-[#f4f1de]/30 flex flex-col items-center justify-center flex-shrink-0">
@@ -106,12 +107,12 @@ export default function NewBookPage() {
                             ) : (
                                 <div className="text-center p-4">
                                     <ImageIcon size={24} className="text-[#3d405b]/20 mx-auto mb-1" />
-                                    <span className="text-[10px] text-[#3d405b]/40">ไม่มีรูปภาพ</span>
+                                    <span className="text-[10px] text-[#3d405b]/40">{t("noImage")}</span>
                                 </div>
                             )}
                             {uploading && (
                                 <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                                    <span className="text-xs font-medium text-[#609279] animate-pulse">กำลังโหลด...</span>
+                                    <span className="text-xs font-medium text-[#609279] animate-pulse">{t("uploading")}</span>
                                 </div>
                             )}
                         </div>
@@ -130,18 +131,18 @@ export default function NewBookPage() {
                                 className="inline-flex items-center gap-2 px-4 py-2 bg-[#f4f1de]/50 hover:bg-[#d1cce7]/20 border border-[#d1cce7]/30 text-[#3d405b]/70 text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
                             >
                                 <Upload size={16} />
-                                {coverImage ? "เปลี่ยนรูป" : "อัพโหลดรูปภาพ"}
+                                {coverImage ? t("changeImage") : t("uploadImage")}
                             </button>
                             <p className="text-xs text-[#3d405b]/40 mt-2">
-                                รองรับไฟล์ JPEG, PNG, WebP ขนาดไม่เกิน 5MB<br />
-                                แนะนำภาพสัดส่วนแนวตั้ง (Portrait)
+                                {t("uploadHint")}<br />
+                                {t("uploadHint2")}
                             </p>
                         </div>
                     </div>
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">ชื่อหนังสือ *</label>
+                    <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">{t("bookTitle")}</label>
                     <input name="title" type="text" required className="w-full px-4 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -150,20 +151,20 @@ export default function NewBookPage() {
                         <input name="isbn" type="text" className="w-full px-4 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm" />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">หมวดหมู่</label>
-                        <input name="category" type="text" className="w-full px-4 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm" placeholder="เช่น นิทาน, วิทยาศาสตร์" />
+                        <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">{t("category")}</label>
+                        <input name="category" type="text" className="w-full px-4 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm" placeholder={t("categoryPlaceholder")} />
                     </div>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">ช่วงอายุ</label>
-                    <input name="ageRange" type="text" className="w-full px-4 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm" placeholder="เช่น 3-6 ปี" />
+                    <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">{t("ageRange")}</label>
+                    <input name="ageRange" type="text" className="w-full px-4 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm" placeholder={t("ageRangePlaceholder")} />
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">YouTube URL</label>
                     <input name="youtubeUrl" type="url" className="w-full px-4 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm" placeholder="https://youtube.com/..." />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">ค่ายืม (เหรียญ)</label>
+                    <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">{t("rentalCost")}</label>
                     <input name="rentalCost" type="number" min="0" defaultValue={1} className="w-full px-4 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm" placeholder="1" />
                 </div>
 
@@ -172,7 +173,7 @@ export default function NewBookPage() {
                     disabled={loading}
                     className="w-full py-3 bg-[#609279] hover:bg-[#609279] text-white font-medium rounded-xl transition-colors shadow-lg shadow-[#81b29a]/30 disabled:opacity-50"
                 >
-                    {loading ? "กำลังบันทึก..." : "บันทึกหนังสือ"}
+                    {loading ? t("saving") : t("save")}
                 </button>
             </form>
         </div>

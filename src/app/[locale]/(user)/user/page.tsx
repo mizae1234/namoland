@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import Link from "next/link";
 import { BookOpen, QrCode, Coins, Youtube, Plus, CalendarDays, Clock, Check } from "lucide-react";
 
@@ -8,17 +8,26 @@ import { BookOpen, QrCode, Coins, Youtube, Plus, CalendarDays, Clock, Check } fr
 
 export default async function UserHomePage() {
     const t = await getTranslations("UserDashboard");
+    const locale = await getLocale();
+    const dateLocale = locale === "th" ? "th-TH" : "en-US";
     const session = await auth();
     const userId = session!.user.id;
 
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-            children: true,
-            coinPackages: { where: { isExpired: false, remainingCoins: { gt: 0 } } },
-            borrowRecords: { where: { status: "BORROWED" }, include: { items: { include: { book: true } } } },
-        },
-    });
+    const [user, youtubeBooks] = await Promise.all([
+        prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+                children: true,
+                coinPackages: { where: { isExpired: false, remainingCoins: { gt: 0 } } },
+                borrowRecords: { where: { status: "BORROWED" }, include: { items: { include: { book: true } } } },
+            },
+        }),
+        prisma.book.findMany({
+            where: { youtubeUrl: { not: null } },
+            take: 3,
+            orderBy: { createdAt: "desc" },
+        }),
+    ]);
 
     if (!user) return <div className="p-4 text-center text-[#3d405b]/40">{t("notFound")}</div>;
 
@@ -31,12 +40,6 @@ export default async function UserHomePage() {
     const daysLeft = latestExpiry
         ? Math.ceil((latestExpiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
         : null;
-
-    const youtubeBooks = await prisma.book.findMany({
-        where: { youtubeUrl: { not: null } },
-        take: 3,
-        orderBy: { createdAt: "desc" },
-    });
 
     return (
         <div className="p-4">
@@ -82,7 +85,7 @@ export default async function UserHomePage() {
                     {latestExpiry && totalCoins > 0 && (
                         <p className={`text-[10px] mt-1 ${daysLeft !== null && daysLeft <= 7 ? "text-red-500 font-medium" : "text-[#3d405b]/35"
                             }`}>
-                            {t("stats.expirePrefix")} {latestExpiry.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" })}
+                            {t("stats.expirePrefix")} {latestExpiry.toLocaleDateString(dateLocale, { day: "numeric", month: "short", year: "2-digit" })}
                             {daysLeft !== null && daysLeft <= 7 && (
                                 <span> ({daysLeft <= 0 ? t("stats.expireSoon") : t("stats.expireDays", { days: daysLeft })})</span>
                             )}
@@ -115,7 +118,7 @@ export default async function UserHomePage() {
                                     <div>
                                         <p className="text-sm font-medium text-[#3d405b]/80">{item.book.title}</p>
                                         <p className="text-xs text-[#3d405b]/40">
-                                            {t("borrows.dueDate")} {new Date(br.dueDate).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" })}
+                                            {t("borrows.dueDate")} {new Date(br.dueDate).toLocaleDateString(dateLocale, { day: "numeric", month: "short", year: "2-digit" })}
                                         </p>
                                     </div>
                                 </div>

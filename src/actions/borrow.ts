@@ -119,16 +119,30 @@ export async function deleteBook(id: string) {
 }
 
 export async function getBooks(search?: string, status?: string) {
-    const books = await prisma.book.findMany({
-        where: search
-            ? {
-                OR: [
-                    { title: { contains: search, mode: "insensitive" } },
-                    { isbn: { contains: search, mode: "insensitive" } },
-                    { category: { contains: search, mode: "insensitive" } },
-                ],
-            }
-            : undefined,
+    // Build where clause with status filter at DB level
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: Record<string, any> = {};
+
+    if (search) {
+        where.OR = [
+            { title: { contains: search, mode: "insensitive" } },
+            { isbn: { contains: search, mode: "insensitive" } },
+            { category: { contains: search, mode: "insensitive" } },
+        ];
+    }
+
+    if (status === "inactive") {
+        where.isActive = false;
+    } else if (status === "available") {
+        where.isActive = true;
+        where.borrowItems = { none: { borrowRecord: { status: "BORROWED" } } };
+    } else if (status === "borrowed") {
+        where.isActive = true;
+        where.borrowItems = { some: { borrowRecord: { status: "BORROWED" } } };
+    }
+
+    return prisma.book.findMany({
+        where: Object.keys(where).length > 0 ? where : undefined,
         include: {
             borrowItems: {
                 where: { borrowRecord: { status: "BORROWED" } },
@@ -137,11 +151,6 @@ export async function getBooks(search?: string, status?: string) {
         },
         orderBy: { createdAt: "desc" },
     });
-
-    if (status === "inactive") return books.filter((b) => !b.isActive);
-    if (status === "available") return books.filter((b) => b.isActive && b.borrowItems.length === 0);
-    if (status === "borrowed") return books.filter((b) => b.isActive && b.borrowItems.length > 0);
-    return books;
 }
 
 export async function getBookByQrCode(qrCode: string) {
@@ -421,6 +430,8 @@ export async function getBorrows(params?: {
     search?: string;
     from?: string;
     to?: string;
+    page?: number;
+    pageSize?: number;
 }) {
     const where: Record<string, unknown>[] = [];
 
@@ -445,15 +456,26 @@ export async function getBorrows(params?: {
         where.push({ borrowDate: { lte: toDate } });
     }
 
-    return prisma.borrowRecord.findMany({
-        where: where.length > 0 ? { AND: where } : undefined,
-        include: {
-            user: true,
-            items: { include: { book: true } },
-            processedBy: true,
-        },
-        orderBy: { borrowDate: "desc" },
-    });
+    const whereClause = where.length > 0 ? { AND: where } : undefined;
+    const page = params?.page ?? 1;
+    const pageSize = params?.pageSize ?? 15;
+
+    const [records, totalCount] = await Promise.all([
+        prisma.borrowRecord.findMany({
+            where: whereClause,
+            include: {
+                user: true,
+                items: { include: { book: true } },
+                processedBy: true,
+            },
+            orderBy: { borrowDate: "desc" },
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+        }),
+        prisma.borrowRecord.count({ where: whereClause }),
+    ]);
+
+    return { records, totalCount };
 }
 
 export async function getBookByQrCodePublic(qrCode: string) {

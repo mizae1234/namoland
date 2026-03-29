@@ -10,6 +10,7 @@ import {
 import Card from "@/components/ui/Card";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { COIN_TX_TYPE_MAP } from "@/lib/constants";
+import { getTranslations } from "next-intl/server";
 
 async function getDashboardStats() {
     const now = new Date();
@@ -86,50 +87,53 @@ async function getRecentTransactions() {
 }
 
 export default async function DashboardPage() {
-    const stats = await getDashboardStats();
-    const recentBorrows = await getRecentBorrows();
-    const recentTransactions = await getRecentTransactions();
+    const t = await getTranslations("AdminDashboard");
+    const [stats, recentBorrows, recentTransactions] = await Promise.all([
+        getDashboardStats(),
+        getRecentBorrows(),
+        getRecentTransactions(),
+    ]);
 
     const statCards = [
         {
-            label: "สมาชิกทั้งหมด",
+            label: t("stats.totalMembers"),
             value: stats.totalMembers,
-            sub: `${stats.totalChildren} เด็ก`,
+            sub: `${stats.totalChildren} ${t("stats.totalChildren")}`,
             icon: Users,
             color: "green",
         },
         {
-            label: "แพ็คเกจเหรียญ Active",
+            label: t("stats.activePackages"),
             value: stats.activePackages,
-            sub: "แพ็คเกจ",
+            sub: t("stats.packagesUnit"),
             icon: Coins,
             color: "emerald",
         },
         {
-            label: "หนังสือที่กำลังยืม",
+            label: t("stats.borrowedBooks"),
             value: stats.borrowedBooks,
-            sub: "รายการ",
+            sub: t("stats.itemsUnit"),
             icon: BookOpen,
             color: "amber",
         },
         {
-            label: "เหรียญใกล้หมดอายุ",
+            label: t("stats.expiringPackages"),
             value: stats.expiringPackages,
-            sub: "ภายใน 7 วัน",
+            sub: t("stats.within7Days"),
             icon: AlertTriangle,
             color: "red",
         },
         {
-            label: "เหรียญขายได้ (เดือนนี้)",
+            label: t("stats.coinsPurchased"),
             value: stats.coinsPurchasedThisMonth,
-            sub: "เหรียญ",
+            sub: t("stats.coinsUnit"),
             icon: TrendingUp,
             color: "blue",
         },
         {
-            label: "เหรียญที่ใช้ไป (เดือนนี้)",
+            label: t("stats.coinsRedeemed"),
             value: stats.coinsRedeemedThisMonth,
-            sub: "เหรียญ",
+            sub: t("stats.coinsUnit"),
             icon: TrendingDown,
             color: "purple",
         },
@@ -150,8 +154,8 @@ export default async function DashboardPage() {
         <div>
             {/* Header */}
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-[#3d405b]">Admin Dashboard</h1>
-                <p className="text-[#3d405b]/50 mt-1">ภาพรวมระบบ Namoland</p>
+                <h1 className="text-2xl font-bold text-[#3d405b]">{t("title")}</h1>
+                <p className="text-[#3d405b]/50 mt-1">{t("subtitle")}</p>
             </div>
 
             {/* Stat Cards */}
@@ -188,13 +192,13 @@ export default async function DashboardPage() {
                     <div className="p-6 border-b border-[#d1cce7]/20">
                         <h2 className="font-semibold text-[#3d405b] flex items-center gap-2">
                             <BookOpen size={18} className="text-[#609279]" />
-                            รายการยืมล่าสุด
+                            {t("recentBorrows.title")}
                         </h2>
                     </div>
                     <div className="divide-y divide-[#d1cce7]/15">
                         {recentBorrows.length === 0 ? (
                             <div className="p-6 text-center text-[#3d405b]/40 text-sm">
-                                ยังไม่มีรายการยืม
+                                {t("recentBorrows.empty")}
                             </div>
                         ) : (
                             recentBorrows.map((b) => {
@@ -202,7 +206,7 @@ export default async function DashboardPage() {
                                     <div key={b.id} className="px-6 py-4 flex items-center justify-between">
                                         <div>
                                             <p className="text-sm font-medium text-[#3d405b]/80">{b.user.parentName}</p>
-                                            <p className="text-xs text-[#3d405b]/40">{b.code} · {b.items.length} เล่ม</p>
+                                            <p className="text-xs text-[#3d405b]/40">{b.code} · {b.items.length} {t("recentBorrows.booksUnit")}</p>
                                         </div>
                                         <StatusBadge status={b.status} />
                                     </div>
@@ -217,13 +221,13 @@ export default async function DashboardPage() {
                     <div className="p-6 border-b border-[#d1cce7]/20">
                         <h2 className="font-semibold text-[#3d405b] flex items-center gap-2">
                             <Coins size={18} className="text-emerald-500" />
-                            ธุรกรรมเหรียญล่าสุด
+                            {t("recentTransactions.title")}
                         </h2>
                     </div>
                     <div className="divide-y divide-[#d1cce7]/15">
                         {recentTransactions.length === 0 ? (
                             <div className="p-6 text-center text-[#3d405b]/40 text-sm">
-                                ยังไม่มีธุรกรรมเหรียญ
+                                {t("recentTransactions.empty")}
                             </div>
                         ) : (
                             recentTransactions.map((tx) => (
@@ -238,7 +242,7 @@ export default async function DashboardPage() {
                                         </p>
                                     </div>
                                     <span className="text-sm font-semibold text-red-500">
-                                        -{tx.coinsUsed} เหรียญ
+                                        -{tx.coinsUsed} {t("stats.coinsUnit")}
                                     </span>
                                 </div>
                             ))

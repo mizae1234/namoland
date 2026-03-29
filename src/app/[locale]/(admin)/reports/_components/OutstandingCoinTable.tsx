@@ -6,6 +6,7 @@ import { getOutstandingCoinReport } from "@/actions/report";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import Card from "@/components/ui/Card";
 import * as XLSX from "xlsx";
+import { useTranslations } from "next-intl";
 
 function fmt(n: number) {
     if (n === 0) return "";
@@ -27,6 +28,7 @@ export default function OutstandingCoinTable({
 }: {
     initialData: OutstandingCoinReport;
 }) {
+    const t = useTranslations("AdminReports.outstandingCoin");
     const [data, setData] = useState(initialData);
     const [isPending, startTransition] = useTransition();
 
@@ -104,7 +106,7 @@ export default function OutstandingCoinTable({
 
         // Total row
         rows.push({
-            "End of Month": "รวม",
+            "End of Month": t("table.total"),
             "Coin Balance": lastMonth?.balance || 0,
             "Purchase": totalPurchase,
             "Adj +": totalAdjustUp || "",
@@ -161,7 +163,7 @@ export default function OutstandingCoinTable({
                     <ChevronRight size={18} />
                 </button>
                 {isPending && (
-                    <span className="text-xs text-[#3d405b]/40 ml-2">กำลังโหลด...</span>
+                    <span className="text-xs text-[#3d405b]/40 ml-2">{t("loading")}</span>
                 )}
 
                 <div className="ml-auto">
@@ -170,7 +172,7 @@ export default function OutstandingCoinTable({
                         className="flex items-center gap-2 px-4 py-2 bg-[#609279] text-white rounded-lg text-sm font-medium hover:bg-[#4e7a63] transition-colors"
                     >
                         <Download size={14} />
-                        Export Excel
+                        {t("exportBtn")}
                     </button>
                 </div>
             </div>
@@ -182,44 +184,44 @@ export default function OutstandingCoinTable({
                         <thead>
                             <tr className="bg-[#f4f1de]/50 border-b border-[#d1cce7]/30">
                                 <th className="text-left px-4 py-3 font-semibold text-[#3d405b]/70 w-[100px]">
-                                    End of Month
+                                    {t("table.endOfMonth")}
                                 </th>
                                 <th className="text-right px-4 py-3 font-semibold text-[#3d405b]/70">
-                                    Coin Balance
+                                    {t("table.coinBalance")}
                                 </th>
                                 <th className="text-right px-4 py-3 font-semibold text-[#3d405b]/70">
-                                    Purchase
+                                    {t("table.purchase")}
                                 </th>
                                 <th className="text-right px-3 py-3 font-semibold text-blue-600/70 text-xs">
-                                    Adj +
+                                    {t("table.adjUp")}
                                 </th>
                                 <th className="text-right px-4 py-3 font-semibold text-[#3d405b]/70">
-                                    Usage
+                                    {t("table.usage")}
                                 </th>
                                 <th className="text-right px-3 py-3 font-semibold text-orange-600/70 text-xs">
-                                    Adj −
+                                    {t("table.adjDown")}
                                 </th>
                                 <th className="text-right px-4 py-3 font-semibold text-[#3d405b]/70">
-                                    Balance
+                                    {t("table.balance")}
                                 </th>
                                 <th className="text-right px-4 py-3 font-semibold text-[#3d405b]/70">
-                                    Amount
+                                    {t("table.amount")}
                                 </th>
                                 <th className="text-right px-4 py-3 font-semibold text-[#3d405b]/70">
-                                    Gross
+                                    {t("table.gross")}
                                 </th>
                                 <th className="text-right px-4 py-3 font-semibold text-[#3d405b]/70">
-                                    Discount
+                                    {t("table.discount")}
                                 </th>
                                 <th className="text-right px-4 py-3 font-semibold text-[#3d405b]/70">
-                                    % Disc
+                                    {t("table.pctDisc")}
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
                             {/* B/F Row */}
                             <tr className="border-b border-[#d1cce7]/20 bg-[#81b29a]/10/50">
-                                <td className="px-4 py-3 font-medium text-[#3d405b]/80">B/F</td>
+                                <td className="px-4 py-3 font-medium text-[#3d405b]/80">{t("table.bf")}</td>
                                 <td className="px-4 py-3 text-right font-mono text-[#3d405b] font-medium">
                                     {fmtInt(data.bfBalance)}
                                 </td>
@@ -271,7 +273,7 @@ export default function OutstandingCoinTable({
                                             </span>
                                             {isCurrentMonth && (
                                                 <span className="ml-2 text-[10px] bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-full">
-                                                    ปัจจุบัน
+                                                    {t("table.current")}
                                                 </span>
                                             )}
                                         </td>
@@ -311,7 +313,7 @@ export default function OutstandingCoinTable({
 
                             {/* Totals Row */}
                             <tr className="bg-[#d1cce7]/15 border-t-2 border-[#d1cce7]/30 font-semibold">
-                                <td className="px-4 py-3 text-[#3d405b]/80">รวม</td>
+                                <td className="px-4 py-3 text-[#3d405b]/80">{t("table.total")}</td>
                                 <td className="px-4 py-3 text-right font-mono text-[#3d405b]">
                                     {fmtInt(lastMonth?.balance || 0)}
                                 </td>

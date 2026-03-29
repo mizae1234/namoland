@@ -11,6 +11,7 @@ import {
 import { Plus, Pencil, Trash2, Check, X, Download, ToggleLeft, ToggleRight } from "lucide-react";
 import Card from "@/components/ui/Card";
 import AlertMessage from "@/components/ui/AlertMessage";
+import { useTranslations } from "next-intl";
 
 interface PackageData {
     id: string;
@@ -24,6 +25,7 @@ interface PackageData {
 }
 
 export default function PackageManager({ packages }: { packages: PackageData[] }) {
+    const t = useTranslations("AdminSettings.packages");
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
     const [editId, setEditId] = useState<string | null>(null);
@@ -73,7 +75,7 @@ export default function PackageManager({ packages }: { packages: PackageData[] }
         setLoading(false);
         if (result.error) showMsg(result.error);
         else {
-            showMsg("อัปเดตสำเร็จ!");
+            showMsg(t("messages.updateSuccess"));
             setEditId(null);
         }
     };
@@ -90,7 +92,7 @@ export default function PackageManager({ packages }: { packages: PackageData[] }
         setLoading(false);
         if (result.error) showMsg(result.error);
         else {
-            showMsg("เพิ่มแพ็คเกจสำเร็จ!");
+            showMsg(t("messages.addSuccess"));
             setShowAdd(false);
             setAddLabel("");
             setAddCoins("");
@@ -105,7 +107,7 @@ export default function PackageManager({ packages }: { packages: PackageData[] }
         const result = await togglePackageActive(id);
         setLoading(false);
         if (result.error) showMsg(result.error);
-        else showMsg("อัปเดตสถานะสำเร็จ!");
+        else showMsg(t("messages.statusSuccess"));
     };
 
     const handleDelete = async (id: string) => {
@@ -114,7 +116,7 @@ export default function PackageManager({ packages }: { packages: PackageData[] }
         setLoading(false);
         setDeleteConfirmId(null);
         if (result.error) showMsg(result.error);
-        else showMsg("ลบสำเร็จ!");
+        else showMsg(t("messages.deleteSuccess"));
     };
 
     const handleSeed = async () => {
@@ -122,28 +124,28 @@ export default function PackageManager({ packages }: { packages: PackageData[] }
         const result = await seedPackageConfigs();
         setLoading(false);
         if (result.error) showMsg(result.error);
-        else showMsg("สร้างแพ็คเกจเริ่มต้นสำเร็จ!");
+        else showMsg(t("messages.seedSuccess"));
     };
 
     return (
         <div>
             <AlertMessage
-                type={message.includes("สำเร็จ") ? "success" : "error"}
+                type={(message.includes("สำเร็จ") || message.includes("success")) ? "success" : "error"}
                 message={message}
             />
 
             {/* Seed button — only if no packages */}
             {packages.length === 0 && (
                 <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
-                    <p className="text-amber-800 font-medium mb-3">ยังไม่มีแพ็คเกจเหรียญ</p>
-                    <p className="text-sm text-amber-600 mb-4">คุณสามารถสร้างแพ็คเกจเริ่มต้น 4 รายการ หรือเพิ่มเอง</p>
+                    <p className="text-amber-800 font-medium mb-3">{t("seed.title")}</p>
+                    <p className="text-sm text-amber-600 mb-4">{t("seed.desc")}</p>
                     <button
                         onClick={handleSeed}
                         disabled={loading}
                         className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 text-white rounded-xl text-sm font-medium hover:bg-amber-600 transition-colors disabled:opacity-50"
                     >
                         <Download size={16} />
-                        สร้างแพ็คเกจเริ่มต้น
+                        {t("seed.button")}
                     </button>
                 </div>
             )}
@@ -155,27 +157,27 @@ export default function PackageManager({ packages }: { packages: PackageData[] }
                     className="flex items-center gap-2 px-4 py-2.5 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#4e7a64] transition-colors shadow-md shadow-[#81b29a]/30"
                 >
                     <Plus size={16} />
-                    เพิ่มแพ็คเกจ
+                    {t("addBtn")}
                 </button>
             </div>
 
             {/* Add Form */}
             {showAdd && (
                 <Card className="mb-4">
-                    <h3 className="font-semibold text-[#3d405b] mb-4">เพิ่มแพ็คเกจใหม่</h3>
+                    <h3 className="font-semibold text-[#3d405b] mb-4">{t("form.title")}</h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         <div>
-                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">ชื่อแพ็คเกจ</label>
+                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("form.name")}</label>
                             <input
                                 type="text"
                                 value={addLabel}
                                 onChange={(e) => setAddLabel(e.target.value)}
-                                placeholder="เช่น 50 เหรียญ"
+                                placeholder={t("form.namePh")}
                                 className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20 focus:border-[#81b29a]"
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">จำนวนเหรียญ</label>
+                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("form.coins")}</label>
                             <input
                                 type="number"
                                 value={addCoins}
@@ -186,7 +188,7 @@ export default function PackageManager({ packages }: { packages: PackageData[] }
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">ราคา (บาท)</label>
+                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("form.price")}</label>
                             <input
                                 type="number"
                                 value={addPrice}
@@ -197,7 +199,7 @@ export default function PackageManager({ packages }: { packages: PackageData[] }
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">โบนัส (บาท)</label>
+                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("form.bonus")}</label>
                             <input
                                 type="number"
                                 value={addBonus}
@@ -208,7 +210,7 @@ export default function PackageManager({ packages }: { packages: PackageData[] }
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">ลำดับ</label>
+                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("form.sortOrder")}</label>
                             <input
                                 type="number"
                                 value={addSort}
@@ -224,7 +226,7 @@ export default function PackageManager({ packages }: { packages: PackageData[] }
                             onClick={() => setShowAdd(false)}
                             className="px-4 py-2 text-sm text-[#3d405b]/50 hover:text-[#3d405b] transition-colors"
                         >
-                            ยกเลิก
+                            {t("form.cancel")}
                         </button>
                         <button
                             onClick={handleAdd}
@@ -232,7 +234,7 @@ export default function PackageManager({ packages }: { packages: PackageData[] }
                             className="flex items-center gap-2 px-4 py-2 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#4e7a64] transition-colors disabled:opacity-50"
                         >
                             <Check size={16} />
-                            บันทึก
+                            {t("form.save")}
                         </button>
                     </div>
                 </Card>
@@ -244,20 +246,20 @@ export default function PackageManager({ packages }: { packages: PackageData[] }
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b border-[#d1cce7]/20 text-left">
-                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60">ลำดับ</th>
-                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60">ชื่อ</th>
-                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60 text-right">เหรียญ</th>
-                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60 text-right">ราคา (฿)</th>
-                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60 text-right">โบนัส (฿)</th>
-                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60 text-center">สถานะ</th>
-                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60 text-center">จัดการ</th>
+                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60">{t("table.sort")}</th>
+                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60">{t("table.name")}</th>
+                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60 text-right">{t("table.coins")}</th>
+                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60 text-right">{t("table.price")}</th>
+                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60 text-right">{t("table.bonus")}</th>
+                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60 text-center">{t("table.status")}</th>
+                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60 text-center">{t("table.manage")}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#d1cce7]/15">
                             {packages.length === 0 ? (
                                 <tr>
                                     <td colSpan={7} className="py-8 text-center text-[#3d405b]/40">
-                                        ยังไม่มีแพ็คเกจ
+                                        {t("table.empty")}
                                     </td>
                                 </tr>
                             ) : (
@@ -310,7 +312,7 @@ export default function PackageManager({ packages }: { packages: PackageData[] }
                                                 </td>
                                                 <td className="py-2 px-4 text-center">
                                                     <span className={`text-xs px-2 py-0.5 rounded-full ${pkg.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-                                                        {pkg.isActive ? "เปิด" : "ปิด"}
+                                                        {pkg.isActive ? t("table.on") : t("table.off")}
                                                     </span>
                                                 </td>
                                                 <td className="py-2 px-4">
@@ -326,7 +328,7 @@ export default function PackageManager({ packages }: { packages: PackageData[] }
                                                         <button
                                                             onClick={cancelEdit}
                                                             className="p-1.5 text-[#3d405b]/40 hover:bg-[#d1cce7]/15 rounded-lg transition-colors"
-                                                            title="ยกเลิก"
+                                                            title={t("form.cancel")}
                                                         >
                                                             <X size={16} />
                                                         </button>
@@ -345,7 +347,7 @@ export default function PackageManager({ packages }: { packages: PackageData[] }
                                                         onClick={() => handleToggle(pkg.id)}
                                                         disabled={loading}
                                                         className="disabled:opacity-50"
-                                                        title={pkg.isActive ? "ปิดแพ็คเกจ" : "เปิดแพ็คเกจ"}
+                                                        title={pkg.isActive ? t("table.disable") : t("table.enable")}
                                                     >
                                                         {pkg.isActive ? (
                                                             <ToggleRight size={24} className="text-emerald-500" />
@@ -359,7 +361,7 @@ export default function PackageManager({ packages }: { packages: PackageData[] }
                                                         <button
                                                             onClick={() => startEdit(pkg)}
                                                             className="p-1.5 text-[#3d405b]/40 hover:text-[#609279] hover:bg-[#81b29a]/10 rounded-lg transition-colors"
-                                                            title="แก้ไข"
+                                                            title={t("table.edit")}
                                                         >
                                                             <Pencil size={14} />
                                                         </button>
@@ -370,13 +372,13 @@ export default function PackageManager({ packages }: { packages: PackageData[] }
                                                                     disabled={loading}
                                                                     className="px-2 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
                                                                 >
-                                                                    ยืนยันลบ
+                                                                    {t("table.confirmDelete")}
                                                                 </button>
                                                                 <button
                                                                     onClick={() => setDeleteConfirmId(null)}
                                                                     className="px-2 py-1 text-xs text-[#3d405b]/50 hover:bg-[#d1cce7]/15 rounded-lg transition-colors"
                                                                 >
-                                                                    ยกเลิก
+                                                                    {t("form.cancel")}
                                                                 </button>
                                                             </div>
                                                         ) : (
@@ -384,7 +386,7 @@ export default function PackageManager({ packages }: { packages: PackageData[] }
                                                                 onClick={() => setDeleteConfirmId(pkg.id)}
                                                                 disabled={loading}
                                                                 className="p-1.5 text-[#3d405b]/40 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                                                                title="ลบ"
+                                                                title={t("table.delete")}
                                                             >
                                                                 <Trash2 size={14} />
                                                             </button>

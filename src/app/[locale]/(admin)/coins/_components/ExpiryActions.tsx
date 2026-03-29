@@ -4,9 +4,10 @@ import { useState } from "react";
 import { extendExpiry, deductCoins } from "@/actions/coin";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { th } from "date-fns/locale";
+import { th, enUS } from "date-fns/locale";
 import Modal from "@/components/ui/Modal";
 import DateInput from "@/components/ui/DateInput";
+import { useLocale, useTranslations } from "next-intl";
 
 interface ExpiryActionsProps {
     packageId: string;
@@ -17,6 +18,9 @@ interface ExpiryActionsProps {
 
 export default function ExpiryActions({ userId, remainingCoins, currentExpiry }: ExpiryActionsProps) {
     const router = useRouter();
+    const t = useTranslations("AdminCoins.actions");
+    const locale = useLocale();
+    const isThai = locale === "th";
     const [showExtend, setShowExtend] = useState(false);
     const [loading, setLoading] = useState(false);
     const [confirmDeduct, setConfirmDeduct] = useState(false);
@@ -66,14 +70,14 @@ export default function ExpiryActions({ userId, remainingCoins, currentExpiry }:
                         disabled={loading}
                         className="px-3 py-1.5 bg-[#609279] text-white rounded-lg text-xs font-medium hover:bg-[#81b29a] disabled:opacity-50"
                     >
-                        ขยายเวลา
+                        {t("extendBtn")}
                     </button>
                     <button
                         onClick={() => setConfirmDeduct(true)}
                         disabled={loading}
                         className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-medium hover:bg-red-600 disabled:opacity-50"
                     >
-                        ตัดเหรียญ
+                        {t("deductBtn")}
                     </button>
                 </div>
 
@@ -82,13 +86,13 @@ export default function ExpiryActions({ userId, remainingCoins, currentExpiry }:
                         {/* Current expiry */}
                         {currentDate && (
                             <div className="text-xs text-[#3d405b]/40">
-                                หมดอายุปัจจุบัน: <span className="font-medium text-red-500">{format(currentDate, "d MMM yyyy", { locale: th })}</span>
+                                {t("currentExpiry")} <span className="font-medium text-red-500">{format(currentDate, isThai ? "d MMM yyyy" : "MMM d, yyyy", { locale: isThai ? th : enUS })}</span>
                             </div>
                         )}
 
                         {/* Date picker */}
                         <div>
-                            <label className="text-xs text-[#3d405b]/50 block mb-1">วันหมดอายุใหม่</label>
+                            <label className="text-xs text-[#3d405b]/50 block mb-1">{t("newExpiry")}</label>
                             <DateInput
                                 value={extendDate}
                                 onChange={(val) => setExtendDate(val)}
@@ -100,9 +104,9 @@ export default function ExpiryActions({ userId, remainingCoins, currentExpiry }:
                         {/* Quick presets */}
                         <div className="flex gap-1.5 flex-wrap">
                             {[
-                                { label: "+30 วัน", days: 30 },
-                                { label: "+60 วัน", days: 60 },
-                                { label: "+90 วัน", days: 90 },
+                                { label: t("preset30"), days: 30 },
+                                { label: t("preset60"), days: 60 },
+                                { label: t("preset90"), days: 90 },
                             ].map((opt) => (
                                 <button
                                     key={opt.days}
@@ -122,12 +126,12 @@ export default function ExpiryActions({ userId, remainingCoins, currentExpiry }:
 
                         {/* Note */}
                         <div>
-                            <label className="text-xs text-[#3d405b]/50 block mb-1">หมายเหตุ</label>
+                            <label className="text-xs text-[#3d405b]/50 block mb-1">{t("noteLabel")}</label>
                             <input
                                 type="text"
                                 value={extendNote}
                                 onChange={(e) => setExtendNote(e.target.value)}
-                                placeholder="เหตุผล..."
+                                placeholder={t("notePlaceholder")}
                                 className="w-full px-3 py-1.5 border border-[#d1cce7]/30 rounded-lg text-sm"
                             />
                         </div>
@@ -137,7 +141,7 @@ export default function ExpiryActions({ userId, remainingCoins, currentExpiry }:
                             disabled={loading || !extendDate}
                             className="w-full py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-medium hover:bg-emerald-600 disabled:opacity-50"
                         >
-                            {loading ? "กำลังดำเนินการ..." : "ยืนยันขยายเวลา"}
+                            {loading ? t("processing") : t("confirmExtend")}
                         </button>
                     </div>
                 )}
@@ -147,9 +151,9 @@ export default function ExpiryActions({ userId, remainingCoins, currentExpiry }:
             <Modal
                 open={confirmDeduct}
                 onClose={() => setConfirmDeduct(false)}
-                title="ตัดเหรียญหมดอายุ"
-                message={`ยืนยันต้องการตัดเหรียญ ${remainingCoins} เหรียญ ที่ใกล้หมดอายุ?`}
-                confirmLabel="ตัดเหรียญ"
+                title={t("deductTitle")}
+                message={t("deductMessage", { coins: remainingCoins })}
+                confirmLabel={t("confirmDeductBtn")}
                 onConfirm={handleDeductAll}
                 loading={loading}
             />

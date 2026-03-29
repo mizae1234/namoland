@@ -5,8 +5,8 @@ import { createAdminUser, updateAdminUser, deleteAdminUser } from "@/actions/adm
 import { Plus, Pencil, Trash2, Check, X, Shield, ShieldCheck } from "lucide-react";
 import Card from "@/components/ui/Card";
 import AlertMessage from "@/components/ui/AlertMessage";
-import { format } from "date-fns";
-import { th } from "date-fns/locale";
+import { th, enUS as en } from "date-fns/locale";
+import { useTranslations, useLocale } from "next-intl";
 
 interface AdminUser {
     id: string;
@@ -23,6 +23,10 @@ export default function AdminUsersManager({
     users: AdminUser[];
     currentUserId: string;
 }) {
+    const t = useTranslations("AdminSettings.adminUsers");
+    const locale = useLocale();
+    const dateLocale = locale === "en" ? en : th;
+
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
     const [showAdd, setShowAdd] = useState(false);
@@ -57,7 +61,7 @@ export default function AdminUsersManager({
         setLoading(false);
         if (result.error) showMsg(result.error);
         else {
-            showMsg("เพิ่มผู้ดูแลสำเร็จ!");
+            showMsg(t("messages.addSuccess"));
             setShowAdd(false);
             setAddName("");
             setAddEmail("");
@@ -86,7 +90,7 @@ export default function AdminUsersManager({
         setLoading(false);
         if (result.error) showMsg(result.error);
         else {
-            showMsg("อัปเดตสำเร็จ!");
+            showMsg(t("messages.updateSuccess"));
             setEditId(null);
         }
     };
@@ -97,64 +101,64 @@ export default function AdminUsersManager({
         setLoading(false);
         setDeleteConfirmId(null);
         if (result.error) showMsg(result.error);
-        else showMsg("ลบสำเร็จ!");
+        else showMsg(t("messages.deleteSuccess"));
     };
 
     return (
         <div>
             <AlertMessage
-                type={message.includes("สำเร็จ") ? "success" : "error"}
+                type={message && !message.includes("error") && !message.includes("fail") && (message.includes("สำเร็จ") || message.includes("success")) ? "success" : "error"}
                 message={message}
             />
 
             <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-[#3d405b]">ผู้ดูแลระบบ</h2>
+                <h2 className="text-lg font-bold text-[#3d405b]">{t("title")}</h2>
                 <button
                     onClick={() => setShowAdd(!showAdd)}
                     className="flex items-center gap-2 px-4 py-2.5 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#4e7a64] transition-colors shadow-md shadow-[#81b29a]/30"
                 >
                     <Plus size={16} />
-                    เพิ่มผู้ดูแล
+                    {t("addBtn")}
                 </button>
             </div>
 
             {/* Add Form */}
             {showAdd && (
                 <Card className="mb-4">
-                    <h3 className="font-semibold text-[#3d405b] mb-4">เพิ่มผู้ดูแลใหม่</h3>
+                    <h3 className="font-semibold text-[#3d405b] mb-4">{t("addTitle")}</h3>
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">ชื่อ</label>
+                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("nameLabel")}</label>
                             <input
                                 type="text"
                                 value={addName}
                                 onChange={(e) => setAddName(e.target.value)}
-                                placeholder="ชื่อ"
+                                placeholder={t("namePh")}
                                 className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20"
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">อีเมล</label>
+                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("emailLabel")}</label>
                             <input
                                 type="email"
                                 value={addEmail}
                                 onChange={(e) => setAddEmail(e.target.value)}
-                                placeholder="email@example.com"
+                                placeholder={t("emailPh")}
                                 className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20"
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">รหัสผ่าน</label>
+                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("passwordLabel")}</label>
                             <input
                                 type="password"
                                 value={addPassword}
                                 onChange={(e) => setAddPassword(e.target.value)}
-                                placeholder="รหัสผ่าน"
+                                placeholder={t("passwordPh")}
                                 className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20"
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">สิทธิ์</label>
+                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("roleLabel")}</label>
                             <select
                                 value={addRole}
                                 onChange={(e) => setAddRole(e.target.value)}
@@ -170,7 +174,7 @@ export default function AdminUsersManager({
                             onClick={() => setShowAdd(false)}
                             className="px-4 py-2 text-sm text-[#3d405b]/50 hover:text-[#3d405b]"
                         >
-                            ยกเลิก
+                            {t("cancel")}
                         </button>
                         <button
                             onClick={handleAdd}
@@ -178,7 +182,7 @@ export default function AdminUsersManager({
                             className="flex items-center gap-2 px-4 py-2 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#4e7a64] disabled:opacity-50"
                         >
                             <Check size={16} />
-                            บันทึก
+                            {t("save")}
                         </button>
                     </div>
                 </Card>
@@ -190,11 +194,11 @@ export default function AdminUsersManager({
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b border-[#d1cce7]/20 text-left">
-                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60">ชื่อ</th>
-                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60">อีเมล</th>
-                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60 text-center">สิทธิ์</th>
-                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60">สร้างเมื่อ</th>
-                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60 text-center">จัดการ</th>
+                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60">{t("table.name")}</th>
+                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60">{t("table.email")}</th>
+                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60 text-center">{t("table.role")}</th>
+                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60">{t("table.createdAt")}</th>
+                                <th className="py-3 px-4 font-semibold text-[#3d405b]/60 text-center">{t("table.manage")}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#d1cce7]/15">
@@ -233,7 +237,7 @@ export default function AdminUsersManager({
                                                     type="password"
                                                     value={editPassword}
                                                     onChange={(e) => setEditPassword(e.target.value)}
-                                                    placeholder="ไม่เปลี่ยนเว้นว่าง"
+                                                    placeholder={t("passwordEditPh")}
                                                     className="w-full px-2 py-1 border border-[#d1cce7]/30 rounded-lg text-sm"
                                                 />
                                             </td>
@@ -260,7 +264,7 @@ export default function AdminUsersManager({
                                             <td className="py-3 px-4 font-medium text-[#3d405b]">
                                                 {user.name}
                                                 {user.id === currentUserId && (
-                                                    <span className="text-xs text-[#609279] ml-1.5">(คุณ)</span>
+                                                    <span className="text-xs text-[#609279] ml-1.5">({t("table.you")})</span>
                                                 )}
                                             </td>
                                             <td className="py-3 px-4 text-[#3d405b]/60">{user.email}</td>
@@ -276,14 +280,14 @@ export default function AdminUsersManager({
                                                 )}
                                             </td>
                                             <td className="py-3 px-4 text-[#3d405b]/40 text-xs">
-                                                {format(new Date(user.createdAt), "d MMM yy", { locale: th })}
+                                                {new Date(user.createdAt).toLocaleDateString(locale === "en" ? "en-US" : "th-TH", { day: 'numeric', month: 'short', year: '2-digit' })}
                                             </td>
                                             <td className="py-3 px-4">
                                                 <div className="flex items-center justify-center gap-1">
                                                     <button
                                                         onClick={() => startEdit(user)}
                                                         className="p-1.5 text-[#3d405b]/40 hover:text-[#609279] hover:bg-[#81b29a]/10 rounded-lg"
-                                                        title="แก้ไข"
+                                                        title={t("table.edit")}
                                                     >
                                                         <Pencil size={14} />
                                                     </button>
@@ -295,13 +299,13 @@ export default function AdminUsersManager({
                                                                     disabled={loading}
                                                                     className="px-2 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
                                                                 >
-                                                                    ยืนยัน
+                                                                    {t("table.confirmDelete")}
                                                                 </button>
                                                                 <button
                                                                     onClick={() => setDeleteConfirmId(null)}
                                                                     className="px-2 py-1 text-xs text-[#3d405b]/50 hover:bg-[#d1cce7]/15 rounded-lg"
                                                                 >
-                                                                    ยกเลิก
+                                                                    {t("cancel")}
                                                                 </button>
                                                             </div>
                                                         ) : (
@@ -309,7 +313,7 @@ export default function AdminUsersManager({
                                                                 onClick={() => setDeleteConfirmId(user.id)}
                                                                 disabled={loading}
                                                                 className="p-1.5 text-[#3d405b]/40 hover:text-red-500 hover:bg-red-50 rounded-lg disabled:opacity-50"
-                                                                title="ลบ"
+                                                                title={t("table.delete")}
                                                             >
                                                                 <Trash2 size={14} />
                                                             </button>

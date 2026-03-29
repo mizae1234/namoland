@@ -21,6 +21,7 @@ import {
     Coins,
 } from "lucide-react";
 import AlertMessage from "@/components/ui/AlertMessage";
+import { useTranslations } from "next-intl";
 
 interface EntryData {
     id: string;
@@ -51,13 +52,6 @@ interface MemberResult {
     totalCoins: number;
 }
 
-const STATUS_LABELS: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-    BOOKED: { label: "จองแล้ว", color: "bg-blue-100 text-blue-700", icon: <Clock size={12} /> },
-    CHECKED_IN: { label: "เข้าเรียนแล้ว", color: "bg-emerald-100 text-emerald-700", icon: <Check size={12} /> },
-    CANCELLED: { label: "ยกเลิก", color: "bg-gray-100 text-gray-500", icon: <XCircle size={12} /> },
-    NO_SHOW: { label: "ไม่มาเรียน", color: "bg-red-100 text-red-600", icon: <Ban size={12} /> },
-};
-
 const DAY_LABELS = ["จันทร์", "อังคาร", "พุธ", "พฤหัสฯ", "ศุกร์", "เสาร์", "อาทิตย์"];
 
 export default function BookingPanel({
@@ -67,6 +61,17 @@ export default function BookingPanel({
     entry: EntryData;
     onClose: () => void;
 }) {
+    const t = useTranslations("AdminClasses.bookingPanel");
+    const tWeek = useTranslations("AdminClasses.weeklyCalendar");
+    const DAY_LABELS = tWeek.raw("dayLabelsTh") as string[];
+
+    const STATUS_LABELS: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+        BOOKED: { label: t("statusBooked"), color: "bg-blue-100 text-blue-700", icon: <Clock size={12} /> },
+        CHECKED_IN: { label: t("statusCheckedIn"), color: "bg-emerald-100 text-emerald-700", icon: <Check size={12} /> },
+        CANCELLED: { label: t("statusCancelled"), color: "bg-gray-100 text-gray-500", icon: <XCircle size={12} /> },
+        NO_SHOW: { label: t("statusNoShow"), color: "bg-red-100 text-red-600", icon: <Ban size={12} /> },
+    };
+
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
     const [tab, setTab] = useState<"book" | "list">("list");
@@ -91,7 +96,7 @@ export default function BookingPanel({
     const showMsg = (msg: string) => {
         setMessage(msg);
         // Only auto-dismiss success messages; errors stay visible
-        if (msg.includes("สำเร็จ")) {
+        if (msg.includes("สำเร็จ") || msg.includes("success")) {
             setTimeout(() => setMessage(""), 3000);
         }
     };
@@ -131,7 +136,7 @@ export default function BookingPanel({
         setLoading(false);
         if (result.error) showMsg(result.error);
         else {
-            showMsg("จองสำเร็จ!");
+            showMsg(t("successBook"));
             setSelectedMember(null);
             setSelectedChildId("");
             setSearchQuery("");
@@ -160,11 +165,11 @@ export default function BookingPanel({
             showMsg(result.error);
         } else {
             const msgs: Record<string, string> = {
-                checkin: `Check-in สำเร็จ!${result.coinsCharged ? ` หักเหรียญ ${result.coinsCharged}` : ""}`,
-                cancel: "ยกเลิกจองสำเร็จ",
-                noshow: "บันทึกไม่มาเรียน",
+                checkin: `${t("successCheckin")}${result.coinsCharged ? ` ${t("coinsDeducted", { coins: result.coinsCharged })}` : ""}`,
+                cancel: t("successCancel"),
+                noshow: t("successNoShow"),
             };
-            showMsg(msgs[actionType] || "สำเร็จ");
+            showMsg(msgs[actionType] || "Success");
             await loadBookings();
         }
     };
@@ -182,7 +187,7 @@ export default function BookingPanel({
                 {/* Header */}
                 <div className="sticky top-0 bg-white border-b border-[#d1cce7]/20 p-4 z-10">
                     <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-bold text-[#3d405b] text-lg">จัดการผู้จอง</h3>
+                        <h3 className="font-bold text-[#3d405b] text-lg">{t("panelTitle")}</h3>
                         <button
                             onClick={onClose}
                             className="p-1.5 hover:bg-[#d1cce7]/15 rounded-lg transition-colors"
@@ -198,16 +203,16 @@ export default function BookingPanel({
                     </div>
                     <div className="flex gap-2 mt-3 text-xs">
                         <span className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 rounded-lg">
-                            <Clock size={11} /> จอง {bookedCount}
+                            <Clock size={11} /> {t("bookedCount", { count: bookedCount })}
                         </span>
                         <span className="flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg">
-                            <Check size={11} /> เข้าเรียน {checkedInCount}
+                            <Check size={11} /> {t("checkedInCount", { count: checkedInCount })}
                         </span>
                     </div>
                 </div>
 
                 <AlertMessage
-                    type={message.includes("สำเร็จ") ? "success" : "error"}
+                    type={(message.includes("สำเร็จ") || message.includes("success")) ? "success" : "error"}
                     message={message}
                 />
 
@@ -221,7 +226,7 @@ export default function BookingPanel({
                             }`}
                     >
                         <Users size={14} className="inline mr-1.5" />
-                        รายชื่อผู้จอง ({bookings.length})
+                        {t("tabList", { count: bookings.length })}
                     </button>
                     <button
                         onClick={() => setTab("book")}
@@ -231,7 +236,7 @@ export default function BookingPanel({
                             }`}
                     >
                         <UserPlus size={14} className="inline mr-1.5" />
-                        จองใหม่
+                        {t("tabBook")}
                     </button>
                 </div>
 
@@ -241,7 +246,7 @@ export default function BookingPanel({
                         <div className="space-y-4">
                             <div>
                                 <label className="text-xs font-medium text-[#3d405b]/60 mb-1 block">
-                                    ค้นหาสมาชิก (ชื่อ/เบอร์)
+                                    {t("searchLabel")}
                                 </label>
                                 <div className="relative">
                                     <Search
@@ -252,7 +257,7 @@ export default function BookingPanel({
                                         type="text"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        placeholder="พิมพ์ชื่อหรือเบอร์โทร..."
+                                        placeholder={t("searchPlaceholder")}
                                         className="w-full pl-9 pr-3 py-2.5 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20 focus:border-[#81b29a]"
                                     />
                                     {searching && (
@@ -310,14 +315,14 @@ export default function BookingPanel({
                                         </div>
                                         <p className="text-xs text-[#609279] font-medium mt-1 flex items-center gap-1">
                                             <Coins size={11} />
-                                            เหรียญคงเหลือ {selectedMember.totalCoins}
+                                            {t("coinsBalance", { coins: selectedMember.totalCoins })}
                                         </p>
                                     </div>
 
                                     {selectedMember.children.length > 0 ? (
                                         <div>
                                             <label className="text-xs font-medium text-[#3d405b]/60 mb-1 block">
-                                                เลือกบุตร <span className="text-red-400">*</span>
+                                                {t("childLabel")} <span className="text-red-400">*</span>
                                             </label>
                                             <select
                                                 value={selectedChildId}
@@ -326,19 +331,19 @@ export default function BookingPanel({
                                                     !selectedChildId ? "border-red-300" : "border-[#d1cce7]/30"
                                                 }`}
                                             >
-                                                <option value="">-- กรุณาเลือกบุตร --</option>
+                                                <option value="">{t("childSelect")}</option>
                                                 {selectedMember.children.map((c) => (
                                                     <option key={c.id} value={c.id}>{c.name}</option>
                                                 ))}
                                             </select>
                                             {!selectedChildId && (
-                                                <p className="text-xs text-red-400 mt-1">กรุณาเลือกบุตรที่จะเข้าเรียน</p>
+                                                <p className="text-xs text-red-400 mt-1">{t("childRequired")}</p>
                                             )}
                                         </div>
                                     ) : (
                                         <div className="bg-amber-50 rounded-xl p-3">
-                                            <p className="text-xs text-amber-600 font-medium">⚠️ สมาชิกนี้ยังไม่มีข้อมูลเด็ก</p>
-                                            <p className="text-xs text-amber-500 mt-0.5">กรุณาเพิ่มข้อมูลเด็กในหน้าสมาชิกก่อนจอง</p>
+                                            <p className="text-xs text-amber-600 font-medium">{t("noChildWarning")}</p>
+                                            <p className="text-xs text-amber-500 mt-0.5">{t("noChildInstruction")}</p>
                                         </div>
                                     )}
 
@@ -348,7 +353,7 @@ export default function BookingPanel({
                                         className="w-full py-3 bg-[#609279] text-white rounded-xl font-medium text-sm hover:bg-[#4e7a64] disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
                                     >
                                         <UserPlus size={16} />
-                                        จองคลาส
+                                        {t("bookBtn")}
                                     </button>
                                 </div>
                             )}
@@ -361,7 +366,7 @@ export default function BookingPanel({
                             {bookings.length === 0 ? (
                                 <div className="text-center py-8">
                                     <Users size={32} className="mx-auto text-[#3d405b]/15 mb-2" />
-                                    <p className="text-sm text-[#3d405b]/30">ยังไม่มีผู้จอง</p>
+                                    <p className="text-sm text-[#3d405b]/30">{t("emptyBookings")}</p>
                                 </div>
                             ) : (
                                 bookings.map((b) => {
@@ -372,10 +377,10 @@ export default function BookingPanel({
                                                 <div>
                                                     <p className="text-sm font-semibold text-[#3d405b]">{b.user.parentName}</p>
                                                     {b.child && (
-                                                        <p className="text-xs text-[#3d405b]/40">บุตร: {b.child.name}</p>
+                                                        <p className="text-xs text-[#3d405b]/40">{t("childPrefix")}{b.child.name}</p>
                                                     )}
                                                     <p className="text-[10px] text-[#3d405b]/30 mt-0.5">
-                                                        {b.user.phone} • จองโดย {b.bookedBy.name}
+                                                        {b.user.phone} • {t("bookedBy", { name: b.bookedBy.name })}
                                                     </p>
                                                 </div>
                                                 <span className={`${statusInfo.color} px-2 py-0.5 rounded-full text-[10px] font-medium flex items-center gap-1`}>
@@ -387,7 +392,7 @@ export default function BookingPanel({
                                             {b.status === "CHECKED_IN" && b.coinsCharged > 0 && (
                                                 <p className="text-xs text-emerald-600 flex items-center gap-1 mb-2">
                                                     <Coins size={11} />
-                                                    หักเหรียญ {b.coinsCharged}
+                                                    {t("coinsDeducted", { coins: b.coinsCharged })}
                                                 </p>
                                             )}
 
@@ -398,21 +403,21 @@ export default function BookingPanel({
                                                         disabled={loading}
                                                         className="flex-1 py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-medium hover:bg-emerald-600 disabled:opacity-50 flex items-center justify-center gap-1"
                                                     >
-                                                        <Check size={12} /> Check-in
+                                                        <Check size={12} /> {t("checkInBtn")}
                                                     </button>
                                                     <button
                                                         onClick={() => setConfirmAction({ type: "cancel", bookingId: b.id, memberName: b.child ? b.child.name : b.user.parentName })}
                                                         disabled={loading}
                                                         className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-xs hover:bg-gray-200 disabled:opacity-50"
                                                     >
-                                                        ยกเลิก
+                                                        {t("cancelBtn")}
                                                     </button>
                                                     <button
                                                         onClick={() => setConfirmAction({ type: "noshow", bookingId: b.id, memberName: b.child ? b.child.name : b.user.parentName })}
                                                         disabled={loading}
                                                         className="px-3 py-1.5 bg-red-50 text-red-400 rounded-lg text-xs hover:bg-red-100 disabled:opacity-50"
                                                     >
-                                                        ไม่มา
+                                                        {t("noShowBtn")}
                                                     </button>
                                                 </div>
                                             )}
@@ -430,9 +435,9 @@ export default function BookingPanel({
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
                     <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4">
                         <h4 className="text-lg font-bold text-[#3d405b] mb-2">
-                            {confirmAction.type === "checkin" && "ยืนยัน Check-in"}
-                            {confirmAction.type === "cancel" && "ยืนยันยกเลิก"}
-                            {confirmAction.type === "noshow" && "ยืนยันไม่มาเรียน"}
+                            {confirmAction.type === "checkin" && t("confirmCheckinTitle")}
+                            {confirmAction.type === "cancel" && t("confirmCancelTitle")}
+                            {confirmAction.type === "noshow" && t("confirmNoShowTitle")}
                         </h4>
                         <p className="text-sm text-[#3d405b]/60 mb-1">
                             <strong>{confirmAction.memberName}</strong>
@@ -443,7 +448,7 @@ export default function BookingPanel({
                         {confirmAction.type === "checkin" && (
                             <p className="text-xs text-amber-600 bg-amber-50 rounded-lg p-2 mb-4 flex items-center gap-1">
                                 <Coins size={12} />
-                                ระบบจะหักเหรียญอัตโนมัติตามค่ากิจกรรม
+                                {t("confirmHintCheckin")}
                             </p>
                         )}
                         <div className="flex gap-2">
@@ -457,13 +462,13 @@ export default function BookingPanel({
                                             : "bg-gray-500 hover:bg-gray-600"
                                     }`}
                             >
-                                {loading ? "กำลังดำเนินการ..." : "ยืนยัน"}
+                                {loading ? t("loadingBtn") : t("confirmBtn")}
                             </button>
                             <button
                                 onClick={() => setConfirmAction(null)}
                                 className="px-4 py-2.5 bg-gray-100 text-gray-500 rounded-xl text-sm hover:bg-gray-200"
                             >
-                                ยกเลิก
+                                {t("cancelConfirmBtn")}
                             </button>
                         </div>
                     </div>

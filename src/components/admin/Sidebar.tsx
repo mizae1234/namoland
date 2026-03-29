@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "@/i18n/routing";
 import { signOut } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import {
     LayoutDashboard,
     Users,
@@ -25,26 +26,27 @@ import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 type MenuRole = "ADMIN" | "SUPER_ADMIN";
 
 interface MenuItem {
-    label: string;
+    key: string;
     href: string;
     icon: React.ComponentType<{ size?: number; className?: string }>;
     roles: MenuRole[];
 }
 
 const menuItems: MenuItem[] = [
-    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["ADMIN", "SUPER_ADMIN"] },
-    { label: "ภาพรวมธุรกิจ", href: "/owner", icon: Crown, roles: ["SUPER_ADMIN"] },
-    { label: "สมาชิก", href: "/members", icon: Users, roles: ["ADMIN", "SUPER_ADMIN"] },
-    { label: "เหรียญ", href: "/coins", icon: Coins, roles: ["ADMIN", "SUPER_ADMIN"] },
-    { label: "หนังสือ", href: "/books", icon: BookOpen, roles: ["ADMIN", "SUPER_ADMIN"] },
-    { label: "ยืม-คืน", href: "/borrows", icon: ArrowLeftRight, roles: ["ADMIN", "SUPER_ADMIN"] },
-    { label: "สแกน QR", href: "/borrows/scan", icon: QrCode, roles: ["ADMIN", "SUPER_ADMIN"] },
-    { label: "ตารางคลาส", href: "/classes", icon: Calendar, roles: ["ADMIN", "SUPER_ADMIN"] },
-    { label: "รายงาน", href: "/reports", icon: BarChart3, roles: ["SUPER_ADMIN"] },
-    { label: "ตั้งค่า", href: "/settings", icon: Settings, roles: ["SUPER_ADMIN"] },
+    { key: "dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["ADMIN", "SUPER_ADMIN"] },
+    { key: "owner", href: "/owner", icon: Crown, roles: ["SUPER_ADMIN"] },
+    { key: "members", href: "/members", icon: Users, roles: ["ADMIN", "SUPER_ADMIN"] },
+    { key: "coins", href: "/coins", icon: Coins, roles: ["ADMIN", "SUPER_ADMIN"] },
+    { key: "books", href: "/books", icon: BookOpen, roles: ["ADMIN", "SUPER_ADMIN"] },
+    { key: "borrows", href: "/borrows", icon: ArrowLeftRight, roles: ["ADMIN", "SUPER_ADMIN"] },
+    { key: "scan", href: "/borrows/scan", icon: QrCode, roles: ["ADMIN", "SUPER_ADMIN"] },
+    { key: "classes", href: "/classes", icon: Calendar, roles: ["ADMIN", "SUPER_ADMIN"] },
+    { key: "reports", href: "/reports", icon: BarChart3, roles: ["SUPER_ADMIN"] },
+    { key: "settings", href: "/settings", icon: Settings, roles: ["SUPER_ADMIN"] },
 ];
 
 export default function Sidebar({ userName, userRole }: { userName: string; userRole: string }) {
+    const t = useTranslations("AdminSidebar");
     const pathname = usePathname();
     const [open, setOpen] = useState(false);
 
@@ -60,8 +62,8 @@ export default function Sidebar({ userName, userRole }: { userName: string; user
                     <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                         <Image src="/namoland-logo.png" alt="Namoland" width={40} height={40} className="w-10 h-10 rounded-xl object-cover" />
                         <div>
-                            <h1 className="font-bold text-[#3d405b]">Namoland</h1>
-                            <p className="text-xs text-[#3d405b]/40">ระบบจัดการ</p>
+                            <h1 className="font-bold text-[#3d405b]">{t("appTitle")}</h1>
+                            <p className="text-xs text-[#3d405b]/40">{t("appSubtitle")}</p>
                         </div>
                     </Link>
                     {/* Close button on mobile */}
@@ -103,7 +105,7 @@ export default function Sidebar({ userName, userRole }: { userName: string; user
                                 size={20}
                                 className={isActive ? "text-[#609279]" : "text-[#3d405b]/30"}
                             />
-                            {item.label}
+                            {t(`menu.${item.key}`)}
                         </Link>
                     );
                 })}
@@ -122,7 +124,7 @@ export default function Sidebar({ userName, userRole }: { userName: string; user
                             {userName}
                         </p>
                         <p className="text-xs text-[#3d405b]/40">
-                            {userRole === "SUPER_ADMIN" ? "Super Admin" : "ผู้ดูแลระบบ"}
+                            {userRole === "SUPER_ADMIN" ? t("role.superAdmin") : t("role.admin")}
                         </p>
                     </div>
                 </div>
@@ -131,7 +133,7 @@ export default function Sidebar({ userName, userRole }: { userName: string; user
                     className="flex items-center gap-2 text-sm text-[#3d405b]/40 hover:text-red-500 active:text-red-500 transition-colors w-full px-2 py-2.5 rounded-lg hover:bg-red-50 active:bg-red-50"
                 >
                     <LogOut size={16} />
-                    ออกจากระบบ
+                    {t("logout")}
                 </button>
             </div>
         </>

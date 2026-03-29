@@ -373,6 +373,7 @@ export async function getAllTopUps() {
     return prisma.topUpRequest.findMany({
         include: { user: { select: { parentName: true, phone: true } } },
         orderBy: { createdAt: "desc" },
+        take: 100,
     });
 }
 

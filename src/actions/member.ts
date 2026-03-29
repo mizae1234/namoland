@@ -63,10 +63,12 @@ export async function getMembers(search?: string) {
             children: true,
             coinPackages: {
                 where: { isExpired: false, remainingCoins: { gt: 0 } },
+                select: { remainingCoins: true },
             },
             _count: { select: { borrowRecords: true } },
         },
         orderBy: { createdAt: "desc" },
+        take: 100,
     });
 }
 
@@ -104,15 +106,17 @@ export async function getMemberById(id: string) {
         include: {
             children: true,
             coinPackages: {
-                include: { transactions: { orderBy: { createdAt: "desc" } } },
+                include: { transactions: { orderBy: { createdAt: "desc" }, take: 50 } },
                 orderBy: { createdAt: "desc" },
             },
             borrowRecords: {
                 include: { items: { include: { book: true } } },
                 orderBy: { createdAt: "desc" },
+                take: 30,
             },
             expiryLogs: {
                 orderBy: { createdAt: "desc" },
+                take: 20,
             },
         },
     });

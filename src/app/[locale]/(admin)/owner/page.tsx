@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import RevenueChart from "./_components/RevenueChart";
 import Card from "@/components/ui/Card";
+import { getTranslations, getLocale } from "next-intl/server";
 
 function formatMoney(n: number) {
     return n.toLocaleString("th-TH", { minimumFractionDigits: 0 });
@@ -32,6 +33,10 @@ function formatDate(iso: string) {
 }
 
 export default async function DashboardPage() {
+    const t = await getTranslations("AdminOwner");
+    const localeStr = await getLocale();
+    const isThai = localeStr === "th";
+
     const data = await getOwnerDashboardData();
     const { kpi, alerts, topBooks, customerInsights, financial } = data;
 
@@ -46,11 +51,11 @@ export default async function DashboardPage() {
             {/* Header */}
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-[#3d405b]">
-                    Owner Dashboard
+                    {t("title")}
                 </h1>
                 <p className="text-[#3d405b]/50 mt-1">
-                    ภาพรวมธุรกิจ Namoland ·{" "}
-                    {new Date().toLocaleDateString("th-TH", {
+                    {t("subtitlePrefix")} ·{" "}
+                    {new Date().toLocaleDateString(isThai ? "th-TH" : "en-US", {
                         weekday: "long",
                         day: "numeric",
                         month: "long",
@@ -67,24 +72,24 @@ export default async function DashboardPage() {
                         <div className="bg-emerald-50 p-2 rounded-lg">
                             <DollarSign size={16} className="text-emerald-500" />
                         </div>
-                        <span className="text-xs text-[#3d405b]/40 font-medium">รายได้วันนี้</span>
+                        <span className="text-xs text-[#3d405b]/40 font-medium">{t("kpi.todayRevenue")}</span>
                     </div>
                     <p className="text-2xl font-bold text-[#3d405b]">
                         ฿{formatMoney(kpi.todayRevenue)}
                     </p>
                     <p className="text-xs text-[#3d405b]/40 mt-1">
-                        เมื่อวาน ฿{formatMoney(kpi.yesterdayRevenue)}
+                        {t("kpi.yesterdayRevenue")} ฿{formatMoney(kpi.yesterdayRevenue)}
                     </p>
                     <div className="mt-3 pt-3 border-t border-[#d1cce7]/15">
                         <div className="flex items-center gap-1.5 mb-1">
                             <Banknote size={12} className="text-blue-500" />
-                            <span className="text-xs text-[#3d405b]/40 font-medium">เงินรับวันนี้</span>
+                            <span className="text-xs text-[#3d405b]/40 font-medium">{t("kpi.todayCash")}</span>
                         </div>
                         <p className="text-lg font-bold text-blue-600">
                             ฿{formatMoney(kpi.todayCash)}
                         </p>
                         <p className="text-xs text-[#3d405b]/40">
-                            เมื่อวาน ฿{formatMoney(kpi.yesterdayCash)}
+                            {t("kpi.yesterdayCash")} ฿{formatMoney(kpi.yesterdayCash)}
                         </p>
                     </div>
                 </div>
@@ -95,24 +100,24 @@ export default async function DashboardPage() {
                         <div className="bg-[#81b29a]/10 p-2 rounded-lg">
                             <BarChart3 size={16} className="text-[#609279]" />
                         </div>
-                        <span className="text-xs text-[#3d405b]/40 font-medium">รายได้เดือนนี้</span>
+                        <span className="text-xs text-[#3d405b]/40 font-medium">{t("kpi.thisMonthRevenue")}</span>
                     </div>
                     <p className="text-2xl font-bold text-[#3d405b]">
                         ฿{formatMoney(kpi.thisMonthRevenue)}
                     </p>
                     <p className="text-xs text-[#3d405b]/40 mt-1">
-                        เดือนก่อน ฿{formatMoney(kpi.lastMonthRevenue)}
+                        {t("kpi.lastMonthRevenue")} ฿{formatMoney(kpi.lastMonthRevenue)}
                     </p>
                     <div className="mt-3 pt-3 border-t border-[#d1cce7]/15">
                         <div className="flex items-center gap-1.5 mb-1">
                             <Banknote size={12} className="text-blue-500" />
-                            <span className="text-xs text-[#3d405b]/40 font-medium">เงินรับเดือนนี้</span>
+                            <span className="text-xs text-[#3d405b]/40 font-medium">{t("kpi.thisMonthCash")}</span>
                         </div>
                         <p className="text-lg font-bold text-blue-600">
                             ฿{formatMoney(kpi.thisMonthCash)}
                         </p>
                         <p className="text-xs text-[#3d405b]/40">
-                            เดือนก่อน ฿{formatMoney(kpi.lastMonthCash)}
+                            {t("kpi.lastMonthCash")} ฿{formatMoney(kpi.lastMonthCash)}
                         </p>
                     </div>
                 </div>
@@ -126,13 +131,13 @@ export default async function DashboardPage() {
                                 : <TrendingDown size={16} className="text-red-500" />
                             }
                         </div>
-                        <span className="text-xs text-[#3d405b]/40 font-medium">เทียบเมื่อวาน</span>
+                        <span className="text-xs text-[#3d405b]/40 font-medium">{t("kpi.compareYesterday")}</span>
                     </div>
                     <p className={`text-2xl font-bold ${kpi.revenueChangePercent >= 0 ? "text-emerald-600" : "text-red-600"}`}>
                         {kpi.revenueChangePercent >= 0 ? "+" : ""}{kpi.revenueChangePercent}%
                     </p>
                     <p className="text-xs text-[#3d405b]/40 mt-1">
-                        การเปลี่ยนแปลง
+                        {t("kpi.change")}
                     </p>
                     <div className="mt-3 pt-3 border-t border-[#d1cce7]/15">
                         <div className="flex items-center gap-1.5 mb-1">
@@ -140,13 +145,13 @@ export default async function DashboardPage() {
                                 ? <TrendingUp size={12} className="text-emerald-500" />
                                 : <TrendingDown size={12} className="text-red-500" />
                             }
-                            <span className="text-xs text-[#3d405b]/40 font-medium">เทียบเดือนก่อน</span>
+                            <span className="text-xs text-[#3d405b]/40 font-medium">{t("kpi.compareLastMonth")}</span>
                         </div>
                         <p className={`text-lg font-bold ${kpi.monthlyRevenueChangePercent >= 0 ? "text-emerald-600" : "text-red-600"}`}>
                             {kpi.monthlyRevenueChangePercent >= 0 ? "+" : ""}{kpi.monthlyRevenueChangePercent}%
                         </p>
                         <p className="text-xs text-[#3d405b]/40">
-                            การเปลี่ยนแปลง
+                            {t("kpi.change")}
                         </p>
                     </div>
                 </div>
@@ -157,12 +162,12 @@ export default async function DashboardPage() {
                         <div className="bg-amber-50 p-2 rounded-lg">
                             <BookOpen size={16} className="text-amber-500" />
                         </div>
-                        <span className="text-xs text-[#3d405b]/40 font-medium">กำลังถูกยืม</span>
+                        <span className="text-xs text-[#3d405b]/40 font-medium">{t("kpi.borrowing")}</span>
                     </div>
                     <p className="text-2xl font-bold text-[#3d405b]">
                         {kpi.borrowedCount}
                     </p>
-                    <p className="text-xs text-[#3d405b]/40 mt-1">เล่ม</p>
+                    <p className="text-xs text-[#3d405b]/40 mt-1">{t("kpi.booksUnit")}</p>
                 </div>
 
                 {/* Overdue */}
@@ -172,14 +177,14 @@ export default async function DashboardPage() {
                             <AlertTriangle size={16} className={kpi.overdueCount > 0 ? "text-red-500" : "text-[#3d405b]/40"} />
                         </div>
                         <span className={`text-xs font-medium ${kpi.overdueCount > 0 ? "text-red-500" : "text-[#3d405b]/40"}`}>
-                            เกินกำหนดคืน
+                            {t("kpi.overdue")}
                         </span>
                     </div>
                     <p className={`text-2xl font-bold ${kpi.overdueCount > 0 ? "text-red-600" : "text-[#3d405b]"}`}>
                         {kpi.overdueCount}
                     </p>
                     <p className={`text-xs mt-1 ${kpi.overdueCount > 0 ? "text-red-400" : "text-[#3d405b]/40"}`}>
-                        รายการ
+                        {t("kpi.itemsUnit")}
                     </p>
                 </div>
 
@@ -189,12 +194,12 @@ export default async function DashboardPage() {
                         <div className="bg-violet-50 p-2 rounded-lg">
                             <Coins size={16} className="text-violet-500" />
                         </div>
-                        <span className="text-xs text-[#3d405b]/40 font-medium">เหรียญในระบบ</span>
+                        <span className="text-xs text-[#3d405b]/40 font-medium">{t("kpi.systemCoins")}</span>
                     </div>
                     <p className="text-2xl font-bold text-[#3d405b]">
                         {kpi.totalRemainingCoins.toLocaleString()}
                     </p>
-                    <p className="text-xs text-[#3d405b]/40 mt-1">เหรียญคงเหลือ</p>
+                    <p className="text-xs text-[#3d405b]/40 mt-1">{t("kpi.remainingCoins")}</p>
                 </div>
             </div>
 
@@ -208,7 +213,7 @@ export default async function DashboardPage() {
                 <div className="bg-gradient-to-r from-amber-50 to-red-50 rounded-2xl p-6 border border-amber-200 mb-8">
                     <h2 className="font-semibold text-[#3d405b] text-lg flex items-center gap-2 mb-4">
                         <AlertTriangle size={20} className="text-amber-500" />
-                        ⚠️ สิ่งที่ต้องดูแล ({totalAlerts} รายการ)
+                        {t("alerts.title")} ({totalAlerts} {t("alerts.items")})
                     </h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -217,7 +222,7 @@ export default async function DashboardPage() {
                             <div className="bg-white/80 rounded-xl p-4 border border-red-200">
                                 <h3 className="text-sm font-semibold text-red-700 flex items-center gap-1.5 mb-3">
                                     <Clock size={14} />
-                                    ค้างคืนเกิน 3 วัน ({alerts.overdueMoreThan3Days.length})
+                                    {t("alerts.overdue")} ({alerts.overdueMoreThan3Days.length})
                                 </h3>
                                 <div className="space-y-2">
                                     {alerts.overdueMoreThan3Days.map((r) => (
@@ -227,7 +232,7 @@ export default async function DashboardPage() {
                                                 <p className="text-xs text-[#3d405b]/40">{r.books.join(", ")}</p>
                                             </div>
                                             <span className="text-xs font-semibold text-red-600 bg-red-100 px-2 py-1 rounded-full">
-                                                {r.daysPast} วัน
+                                                {r.daysPast} {t("alerts.daysUnit")}
                                             </span>
                                         </div>
                                     ))}
@@ -240,14 +245,14 @@ export default async function DashboardPage() {
                             <div className="bg-white/80 rounded-xl p-4 border border-amber-200">
                                 <h3 className="text-sm font-semibold text-amber-700 flex items-center gap-1.5 mb-3">
                                     <Coins size={14} />
-                                    เหรียญใกล้หมดอายุ ({alerts.expiringPackages.length})
+                                    {t("alerts.expiringCoins")} ({alerts.expiringPackages.length})
                                 </h3>
                                 <div className="space-y-2">
                                     {alerts.expiringPackages.map((p, i) => (
                                         <div key={i} className="flex justify-between items-center text-sm">
                                             <span className="text-[#3d405b]/80">{p.userName}</span>
                                             <span className="text-xs text-amber-600">
-                                                {p.remainingCoins} เหรียญ · หมด {formatDate(p.expiresAt)}
+                                                {p.remainingCoins} {t("alerts.coinsUnit")} · {t("alerts.expiresOn")} {formatDate(p.expiresAt)}
                                             </span>
                                         </div>
                                     ))}
@@ -260,7 +265,7 @@ export default async function DashboardPage() {
                             <div className="bg-white/80 rounded-xl p-4 border border-[#d1cce7]/30">
                                 <h3 className="text-sm font-semibold text-[#3d405b]/80 flex items-center gap-1.5 mb-3">
                                     <BookX size={14} />
-                                    หนังสือไม่มีคนยืม 30+ วัน ({alerts.deadStockBooks.length})
+                                    {t("alerts.deadStock")} ({alerts.deadStockBooks.length})
                                 </h3>
                                 <div className="space-y-1.5">
                                     {alerts.deadStockBooks.slice(0, 5).map((b, i) => (
@@ -271,7 +276,7 @@ export default async function DashboardPage() {
                                     ))}
                                     {alerts.deadStockBooks.length > 5 && (
                                         <p className="text-xs text-[#3d405b]/40">
-                                            +{alerts.deadStockBooks.length - 5} เล่ม
+                                            +{alerts.deadStockBooks.length - 5} {t("alerts.moreBooks")}
                                         </p>
                                     )}
                                 </div>
@@ -283,14 +288,14 @@ export default async function DashboardPage() {
                             <div className="bg-white/80 rounded-xl p-4 border border-[#d1cce7]/30">
                                 <h3 className="text-sm font-semibold text-[#3d405b]/80 flex items-center gap-1.5 mb-3">
                                     <Wallet size={14} />
-                                    สมาชิกเหรียญเหลือน้อย ({alerts.lowCoinUsers.length})
+                                    {t("alerts.lowCoinUsers")} ({alerts.lowCoinUsers.length})
                                 </h3>
                                 <div className="space-y-1.5">
                                     {alerts.lowCoinUsers.slice(0, 5).map((u, i) => (
                                         <div key={i} className="text-sm text-[#3d405b]/70 flex justify-between">
                                             <span>{u.userName}</span>
                                             <span className="text-xs text-amber-600 font-medium">
-                                                {u.remainingCoins} เหรียญ
+                                                {u.remainingCoins} {t("alerts.coinsUnit")}
                                             </span>
                                         </div>
                                     ))}
@@ -308,13 +313,13 @@ export default async function DashboardPage() {
                     <div className="p-5 border-b border-[#d1cce7]/20">
                         <h2 className="font-semibold text-[#3d405b] flex items-center gap-2">
                             <Flame size={18} className="text-orange-500" />
-                            🔥 Top 5 หนังสือยอดนิยม
+                            {t("topPerformance.topBooks")}
                         </h2>
                     </div>
                     <div className="divide-y divide-[#d1cce7]/15">
                         {topBooks.length === 0 ? (
                             <div className="p-6 text-center text-[#3d405b]/40 text-sm">
-                                ยังไม่มีข้อมูลการยืม
+                                {t("topPerformance.emptyBorrows")}
                             </div>
                         ) : (
                             topBooks.map((book, i) => (
@@ -332,7 +337,7 @@ export default async function DashboardPage() {
                                     <div className="flex-1">
                                         <p className="text-sm font-medium text-[#3d405b]/80">{book.title}</p>
                                         <p className="text-xs text-[#3d405b]/40">
-                                            ยืม {book.count} ครั้ง · ค่ายืม {book.coins} เหรียญ
+                                            {t("topPerformance.borrowedCount")} {book.count} {t("topPerformance.timesUnit")} · {t("topPerformance.fee")} {book.coins} {t("alerts.coinsUnit")}
                                         </p>
                                     </div>
                                 </div>
@@ -346,13 +351,13 @@ export default async function DashboardPage() {
                     <div className="p-5 border-b border-[#d1cce7]/20">
                         <h2 className="font-semibold text-[#3d405b] flex items-center gap-2">
                             <BookX size={18} className="text-[#3d405b]/40" />
-                            📉 หนังสือไม่มีคนยืม 30+ วัน
+                            {t("topPerformance.deadStock")}
                         </h2>
                     </div>
                     <div className="divide-y divide-[#d1cce7]/15">
                         {alerts.deadStockBooks.length === 0 ? (
                             <div className="p-6 text-center text-emerald-500 text-sm">
-                                ✅ ทุกเล่มมีคนยืมในช่วง 30 วัน
+                                {t("topPerformance.allBorrowed")}
                             </div>
                         ) : (
                             alerts.deadStockBooks.slice(0, 8).map((book, i) => (
@@ -379,23 +384,23 @@ export default async function DashboardPage() {
                 <div className="bg-white rounded-2xl p-5 border border-[#d1cce7]/20 shadow-sm">
                     <div className="flex items-center gap-2 mb-4">
                         <Users size={18} className="text-[#609279]" />
-                        <h3 className="font-semibold text-[#3d405b]">สมาชิกใหม่เดือนนี้</h3>
+                        <h3 className="font-semibold text-[#3d405b]">{t("customerInsights.newMembers")}</h3>
                     </div>
                     <p className="text-4xl font-bold text-[#609279]">
                         {customerInsights.newMembersThisMonth}
                     </p>
-                    <p className="text-xs text-[#3d405b]/40 mt-1">คน</p>
+                    <p className="text-xs text-[#3d405b]/40 mt-1">{t("customerInsights.peopleUnit")}</p>
                 </div>
 
                 {/* Top spenders */}
                 <div className="bg-white rounded-2xl p-5 border border-[#d1cce7]/20 shadow-sm">
                     <div className="flex items-center gap-2 mb-4">
                         <Crown size={18} className="text-amber-500" />
-                        <h3 className="font-semibold text-[#3d405b]">ลูกค้าใช้จ่ายสูงสุด</h3>
+                        <h3 className="font-semibold text-[#3d405b]">{t("customerInsights.topSpenders")}</h3>
                     </div>
                     <div className="space-y-3">
                         {customerInsights.topSpenders.length === 0 ? (
-                            <p className="text-sm text-[#3d405b]/40">ยังไม่มีข้อมูล</p>
+                            <p className="text-sm text-[#3d405b]/40">{t("customerInsights.emptyData")}</p>
                         ) : (
                             customerInsights.topSpenders.map((s, i) => (
                                 <div key={i} className="flex items-center justify-between">
@@ -419,12 +424,12 @@ export default async function DashboardPage() {
                 <div className="bg-white rounded-2xl p-5 border border-[#d1cce7]/20 shadow-sm">
                     <div className="flex items-center gap-2 mb-4">
                         <UserX size={18} className="text-red-400" />
-                        <h3 className="font-semibold text-[#3d405b]">ไม่มีกิจกรรม 60+ วัน</h3>
+                        <h3 className="font-semibold text-[#3d405b]">{t("customerInsights.inactive")}</h3>
                     </div>
                     <p className="text-4xl font-bold text-red-500">
                         {customerInsights.inactiveMembers.length}
                     </p>
-                    <p className="text-xs text-[#3d405b]/40 mt-1">คน</p>
+                    <p className="text-xs text-[#3d405b]/40 mt-1">{t("customerInsights.peopleUnit")}</p>
                     {customerInsights.inactiveMembers.length > 0 && (
                         <div className="mt-3 space-y-1">
                             {customerInsights.inactiveMembers.slice(0, 3).map((name, i) => (
@@ -432,7 +437,7 @@ export default async function DashboardPage() {
                             ))}
                             {customerInsights.inactiveMembers.length > 3 && (
                                 <p className="text-xs text-[#3d405b]/40">
-                                    +{customerInsights.inactiveMembers.length - 3} คน
+                                    +{customerInsights.inactiveMembers.length - 3} {t("alerts.moreUsers")}
                                 </p>
                             )}
                         </div>
@@ -445,35 +450,35 @@ export default async function DashboardPage() {
                 <div className="p-5 border-b border-[#d1cce7]/20">
                     <h2 className="font-semibold text-[#3d405b] text-lg flex items-center gap-2">
                         <Wallet size={18} className="text-emerald-500" />
-                        💰 สรุปการเงินเดือนนี้
+                        {t("financial.title")}
                     </h2>
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-[#d1cce7]/20">
                     <div className="p-5">
-                        <p className="text-xs text-[#3d405b]/40 font-medium mb-1">รายได้ (ขายเหรียญ)</p>
+                        <p className="text-xs text-[#3d405b]/40 font-medium mb-1">{t("financial.revenueLabel")}</p>
                         <p className="text-xl font-bold text-emerald-600">
                             ฿{formatMoney(financial.thisMonthRevenue)}
                         </p>
                     </div>
                     <div className="p-5">
-                        <p className="text-xs text-[#3d405b]/40 font-medium mb-1">เดือนก่อน</p>
+                        <p className="text-xs text-[#3d405b]/40 font-medium mb-1">{t("financial.lastMonth")}</p>
                         <p className="text-xl font-bold text-[#3d405b]/70">
                             ฿{formatMoney(financial.lastMonthRevenue)}
                         </p>
                     </div>
                     <div className="p-5">
-                        <p className="text-xs text-[#3d405b]/40 font-medium mb-1">เหรียญที่ขายรวม</p>
+                        <p className="text-xs text-[#3d405b]/40 font-medium mb-1">{t("financial.totalCoinsSold")}</p>
                         <p className="text-xl font-bold text-[#609279]">
                             {financial.coinsPurchased.toLocaleString()}
                         </p>
-                        <p className="text-xs text-[#3d405b]/40">เหรียญ</p>
+                        <p className="text-xs text-[#3d405b]/40">{t("alerts.coinsUnit")}</p>
                     </div>
                     <div className="p-5">
-                        <p className="text-xs text-[#3d405b]/40 font-medium mb-1">เหรียญที่ใช้ไป</p>
+                        <p className="text-xs text-[#3d405b]/40 font-medium mb-1">{t("financial.totalCoinsUsed")}</p>
                         <p className="text-xl font-bold text-amber-600">
                             {financial.coinsRedeemed.toLocaleString()}
                         </p>
-                        <p className="text-xs text-[#3d405b]/40">เหรียญ</p>
+                        <p className="text-xs text-[#3d405b]/40">{t("alerts.coinsUnit")}</p>
                     </div>
                 </div>
             </Card>

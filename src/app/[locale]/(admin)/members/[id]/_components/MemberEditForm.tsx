@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import Card from "@/components/ui/Card";
 import DateInput from "@/components/ui/DateInput";
 import AlertMessage from "@/components/ui/AlertMessage";
+import { useTranslations } from "next-intl";
 
 interface Child {
     id: string;
@@ -30,6 +31,8 @@ interface EditChild {
 }
 
 export default function MemberEditForm({ member }: MemberEditFormProps) {
+    const t = useTranslations("AdminMembers.detail.editForm");
+    const tc = useTranslations("Common");
     const [editing, setEditing] = useState(false);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
@@ -85,7 +88,7 @@ export default function MemberEditForm({ member }: MemberEditFormProps) {
         setLoading(false);
         if (result.error) showMsg(result.error);
         else {
-            showMsg("บันทึกสำเร็จ!");
+            showMsg(t("saveSuccess"));
             setEditing(false);
         }
     };
@@ -95,7 +98,7 @@ export default function MemberEditForm({ member }: MemberEditFormProps) {
         const result = await resetMemberPassword(member.id);
         setLoading(false);
         if (result.error) showMsg(result.error);
-        else showMsg(`รีเซ็ตรหัสผ่านสำเร็จ! รหัสใหม่: ${result.hint}`);
+        else showMsg(t("resetSuccess", { hint: result.hint || "" }));
     };
 
     if (!editing) {
@@ -104,24 +107,24 @@ export default function MemberEditForm({ member }: MemberEditFormProps) {
                 <button
                     onClick={() => setEditing(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#3d405b]/50 hover:text-[#609279] hover:bg-[#81b29a]/10 rounded-lg transition-colors"
-                    title="แก้ไขข้อมูล"
+                    title={t("editTitle")}
                 >
                     <Pencil size={12} />
-                    แก้ไข
+                    {t("edit")}
                 </button>
-                <AlertMessage type={message.includes("สำเร็จ") ? "success" : "error"} message={message} />
+                <AlertMessage type={(message.includes("สำเร็จ") || message.includes("success")) ? "success" : "error"} message={message} />
             </div>
         );
     }
 
     return (
         <Card className="mt-4">
-            <AlertMessage type={message.includes("สำเร็จ") ? "success" : "error"} message={message} />
-            <h3 className="font-semibold text-[#3d405b] mb-4">แก้ไขข้อมูลสมาชิก</h3>
+            <AlertMessage type={(message.includes("สำเร็จ") || message.includes("success")) ? "success" : "error"} message={message} />
+            <h3 className="font-semibold text-[#3d405b] mb-4">{t("editFormTitle")}</h3>
 
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">ชื่อผู้ปกครอง</label>
+                    <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("parentName")}</label>
                     <input
                         type="text"
                         value={parentName}
@@ -130,7 +133,7 @@ export default function MemberEditForm({ member }: MemberEditFormProps) {
                     />
                 </div>
                 <div>
-                    <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">เบอร์โทร</label>
+                    <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("phone")}</label>
                     <input
                         type="text"
                         value={phone}
@@ -143,13 +146,13 @@ export default function MemberEditForm({ member }: MemberEditFormProps) {
             {/* Children */}
             <div className="mt-4">
                 <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-medium text-[#3d405b]/60">เด็ก</label>
+                    <label className="text-xs font-medium text-[#3d405b]/60">{t("children")}</label>
                     <button
                         type="button"
                         onClick={addChild}
                         className="flex items-center gap-1 text-xs text-[#609279] hover:text-[#4e7a64]"
                     >
-                        <Plus size={12} /> เพิ่มเด็ก
+                        <Plus size={12} /> {t("addChild")}
                     </button>
                 </div>
                 <div className="space-y-2">
@@ -159,7 +162,7 @@ export default function MemberEditForm({ member }: MemberEditFormProps) {
                                 type="text"
                                 value={child.name}
                                 onChange={(e) => updateChild(idx, "name", e.target.value)}
-                                placeholder="ชื่อเด็ก"
+                                placeholder={t("childName")}
                                 className="flex-1 px-3 py-2 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20"
                             />
                             <DateInput
@@ -187,21 +190,21 @@ export default function MemberEditForm({ member }: MemberEditFormProps) {
                     className="flex items-center gap-1.5 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 px-3 py-2 rounded-lg disabled:opacity-50"
                 >
                     <RotateCcw size={12} />
-                    รีเซ็ตรหัสผ่าน (เป็น 4 ตัวท้ายเบอร์)
+                    {t("resetPassword")}
                 </button>
                 <div className="flex gap-2">
                     <button
                         onClick={resetForm}
                         className="flex items-center gap-1.5 px-4 py-2 text-sm text-[#3d405b]/50 hover:text-[#3d405b]"
                     >
-                        <X size={14} /> ยกเลิก
+                        <X size={14} /> {tc("cancel")}
                     </button>
                     <button
                         onClick={handleSave}
                         disabled={loading || !parentName || !phone}
                         className="flex items-center gap-1.5 px-4 py-2 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#4e7a64] disabled:opacity-50"
                     >
-                        <Check size={14} /> {loading ? "กำลังบันทึก..." : "บันทึก"}
+                        <Check size={14} /> {loading ? t("saving") : tc("save")}
                     </button>
                 </div>
             </div>

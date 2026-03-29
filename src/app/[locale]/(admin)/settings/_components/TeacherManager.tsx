@@ -10,6 +10,7 @@ import {
 import { Plus, Pencil, Trash2, Check, X, ToggleLeft, ToggleRight } from "lucide-react";
 import Card from "@/components/ui/Card";
 import AlertMessage from "@/components/ui/AlertMessage";
+import { useTranslations } from "next-intl";
 
 const COLOR_OPTIONS = [
     "#e07a5f", "#81b29a", "#a16b9f", "#f9b61a", "#ecb4ce",
@@ -27,6 +28,7 @@ interface TeacherData {
 }
 
 export default function TeacherManager({ teachers }: { teachers: TeacherData[] }) {
+    const t = useTranslations("AdminSettings.teachers");
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
     const [editId, setEditId] = useState<string | null>(null);
@@ -69,7 +71,7 @@ export default function TeacherManager({ teachers }: { teachers: TeacherData[] }
         setLoading(false);
         if (result.error) showMsg(result.error);
         else {
-            showMsg("เพิ่มครูสำเร็จ!");
+            showMsg(t("messages.addSuccess"));
             setShowAdd(false);
             setAddName(""); setAddNickname(""); setAddColor(""); setAddSort("");
         }
@@ -86,7 +88,7 @@ export default function TeacherManager({ teachers }: { teachers: TeacherData[] }
         const result = await updateTeacher(fd);
         setLoading(false);
         if (result.error) showMsg(result.error);
-        else { showMsg("อัปเดตสำเร็จ!"); setEditId(null); }
+        else { showMsg(t("messages.updateSuccess")); setEditId(null); }
     };
 
     const handleToggle = async (id: string) => {
@@ -94,7 +96,7 @@ export default function TeacherManager({ teachers }: { teachers: TeacherData[] }
         const result = await toggleTeacherActive(id);
         setLoading(false);
         if (result.error) showMsg(result.error);
-        else showMsg("อัปเดตสถานะสำเร็จ!");
+        else showMsg(t("messages.statusSuccess"));
     };
 
     const handleDelete = async (id: string) => {
@@ -103,7 +105,7 @@ export default function TeacherManager({ teachers }: { teachers: TeacherData[] }
         setLoading(false);
         setDeleteConfirmId(null);
         if (result.error) showMsg(result.error);
-        else showMsg("ลบสำเร็จ!");
+        else showMsg(t("messages.deleteSuccess"));
     };
 
     const ColorPicker = ({ selected, onSelect }: { selected: string; onSelect: (c: string) => void }) => (
@@ -122,7 +124,7 @@ export default function TeacherManager({ teachers }: { teachers: TeacherData[] }
 
     return (
         <div>
-            <AlertMessage type={message.includes("สำเร็จ") ? "success" : "error"} message={message} />
+            <AlertMessage type={message && !message.includes("error") && !message.includes("fail") && (message.includes("สำเร็จ") || message.includes("success")) ? "success" : "error"} message={message} />
 
             {/* Add button */}
             <div className="mb-4 flex justify-end">
@@ -131,37 +133,37 @@ export default function TeacherManager({ teachers }: { teachers: TeacherData[] }
                     className="flex items-center gap-2 px-4 py-2.5 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#4e7a64] transition-colors shadow-md shadow-[#81b29a]/30"
                 >
                     <Plus size={16} />
-                    เพิ่มครู
+                    {t("addBtn")}
                 </button>
             </div>
 
             {/* Add Form */}
             {showAdd && (
                 <Card className="mb-4">
-                    <h3 className="font-semibold text-[#3d405b] mb-4">เพิ่มครูใหม่</h3>
+                    <h3 className="font-semibold text-[#3d405b] mb-4">{t("addTitle")}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
-                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">ชื่อ-นามสกุล *</label>
+                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("nameLabel")}</label>
                             <input
                                 type="text"
                                 value={addName}
                                 onChange={(e) => setAddName(e.target.value)}
-                                placeholder="เช่น ครูหมิว"
+                                placeholder={t("namePh")}
                                 className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20 focus:border-[#81b29a]"
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">ชื่อเล่น</label>
+                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("nicknameLabel")}</label>
                             <input
                                 type="text"
                                 value={addNickname}
                                 onChange={(e) => setAddNickname(e.target.value)}
-                                placeholder="เช่น หมิว"
+                                placeholder={t("nicknamePh")}
                                 className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20 focus:border-[#81b29a]"
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">ลำดับ</label>
+                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("sortOrderLabel")}</label>
                             <input
                                 type="number"
                                 value={addSort}
@@ -173,7 +175,7 @@ export default function TeacherManager({ teachers }: { teachers: TeacherData[] }
                         </div>
                     </div>
                     <div className="mt-3">
-                        <label className="text-xs font-medium text-[#3d405b]/60 block mb-2">สี (แสดงใน Calendar)</label>
+                        <label className="text-xs font-medium text-[#3d405b]/60 block mb-2">{t("colorLabel")}</label>
                         <ColorPicker selected={addColor} onSelect={setAddColor} />
                     </div>
                     <div className="flex justify-end gap-2 mt-4">
@@ -181,14 +183,14 @@ export default function TeacherManager({ teachers }: { teachers: TeacherData[] }
                             onClick={() => setShowAdd(false)}
                             className="px-4 py-2 text-sm text-[#3d405b]/50 hover:text-[#3d405b] transition-colors"
                         >
-                            ยกเลิก
+                            {t("cancel")}
                         </button>
                         <button
                             onClick={handleAdd}
                             disabled={loading || !addName}
                             className="flex items-center gap-2 px-4 py-2 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#4e7a64] transition-colors disabled:opacity-50"
                         >
-                            <Check size={16} /> บันทึก
+                            <Check size={16} /> {t("save")}
                         </button>
                     </div>
                 </Card>
@@ -197,75 +199,75 @@ export default function TeacherManager({ teachers }: { teachers: TeacherData[] }
             {/* Teachers List */}
             <div className="space-y-2">
                 {teachers.length === 0 ? (
-                    <Card><p className="py-8 text-center text-[#3d405b]/40">ยังไม่มีข้อมูลครู</p></Card>
+                    <Card><p className="py-8 text-center text-[#3d405b]/40">{t("empty")}</p></Card>
                 ) : (
-                    teachers.map((t) => (
-                        <Card key={t.id} className={`${!t.isActive ? "opacity-50" : ""}`}>
-                            {editId === t.id ? (
+                    teachers.map((teacher) => (
+                        <Card key={teacher.id} className={`${!teacher.isActive ? "opacity-50" : ""}`}>
+                            {editId === teacher.id ? (
                                 <div className="space-y-3">
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                         <div>
-                                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">ชื่อ</label>
+                                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("nameTitle")}</label>
                                             <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)}
                                                 className="w-full px-2 py-1.5 border border-[#d1cce7]/30 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#81b29a]/30" />
                                         </div>
                                         <div>
-                                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">ชื่อเล่น</label>
+                                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("nicknameLabel")}</label>
                                             <input type="text" value={editNickname} onChange={(e) => setEditNickname(e.target.value)}
                                                 className="w-full px-2 py-1.5 border border-[#d1cce7]/30 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#81b29a]/30" />
                                         </div>
                                         <div>
-                                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">ลำดับ</label>
+                                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("sortOrderLabel")}</label>
                                             <input type="number" value={editSort} onChange={(e) => setEditSort(e.target.value)}
                                                 className="w-full px-2 py-1.5 border border-[#d1cce7]/30 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#81b29a]/30" />
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="text-xs font-medium text-[#3d405b]/60 block mb-2">สี</label>
+                                        <label className="text-xs font-medium text-[#3d405b]/60 block mb-2">{t("colorLabelShort")}</label>
                                         <ColorPicker selected={editColor} onSelect={setEditColor} />
                                     </div>
                                     <div className="flex gap-2">
-                                        <button onClick={() => handleUpdate(t.id)} disabled={loading}
-                                            className="px-3 py-1.5 text-xs bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 font-medium">บันทึก</button>
+                                        <button onClick={() => handleUpdate(teacher.id)} disabled={loading}
+                                            className="px-3 py-1.5 text-xs bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 font-medium">{t("save")}</button>
                                         <button onClick={() => setEditId(null)}
-                                            className="px-3 py-1.5 text-xs bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300">ยกเลิก</button>
+                                            className="px-3 py-1.5 text-xs bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300">{t("cancel")}</button>
                                     </div>
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-3">
                                     {/* Color dot */}
                                     <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
-                                        style={{ backgroundColor: t.color || "#81b29a" }}>
-                                        {(t.nickname || t.name).charAt(0)}
+                                        style={{ backgroundColor: teacher.color || "#81b29a" }}>
+                                        {(teacher.nickname || teacher.name).charAt(0)}
                                     </div>
                                     {/* Info */}
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-0.5">
-                                            <p className="font-medium text-[#3d405b]">{t.name}</p>
-                                            {t.nickname && <span className="text-xs text-[#3d405b]/40">({t.nickname})</span>}
-                                            <span className="text-xs text-[#3d405b]/30">#{t.sortOrder}</span>
+                                            <p className="font-medium text-[#3d405b]">{teacher.name}</p>
+                                            {teacher.nickname && <span className="text-xs text-[#3d405b]/40">({teacher.nickname})</span>}
+                                            <span className="text-xs text-[#3d405b]/30">#{teacher.sortOrder}</span>
                                         </div>
                                     </div>
                                     {/* Actions */}
                                     <div className="flex items-center gap-1 flex-shrink-0">
-                                        <button onClick={() => handleToggle(t.id)} disabled={loading} className="disabled:opacity-50"
-                                            title={t.isActive ? "ปิด" : "เปิด"}>
-                                            {t.isActive ? <ToggleRight size={24} className="text-emerald-500" /> : <ToggleLeft size={24} className="text-[#3d405b]/30" />}
+                                        <button onClick={() => handleToggle(teacher.id)} disabled={loading} className="disabled:opacity-50"
+                                            title={teacher.isActive ? t("off") : t("on")}>
+                                            {teacher.isActive ? <ToggleRight size={24} className="text-emerald-500" /> : <ToggleLeft size={24} className="text-[#3d405b]/30" />}
                                         </button>
-                                        <button onClick={() => startEdit(t)}
-                                            className="p-1.5 text-[#3d405b]/40 hover:text-[#609279] hover:bg-[#81b29a]/10 rounded-lg transition-colors" title="แก้ไข">
+                                        <button onClick={() => startEdit(teacher)}
+                                            className="p-1.5 text-[#3d405b]/40 hover:text-[#609279] hover:bg-[#81b29a]/10 rounded-lg transition-colors" title={t("edit")}>
                                             <Pencil size={14} />
                                         </button>
-                                        {deleteConfirmId === t.id ? (
+                                        {deleteConfirmId === teacher.id ? (
                                             <div className="flex items-center gap-1">
-                                                <button onClick={() => handleDelete(t.id)} disabled={loading}
-                                                    className="px-2 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50">ยืนยันลบ</button>
+                                                <button onClick={() => handleDelete(teacher.id)} disabled={loading}
+                                                    className="px-2 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50">{t("confirmDelete")}</button>
                                                 <button onClick={() => setDeleteConfirmId(null)}
-                                                    className="px-2 py-1 text-xs text-[#3d405b]/50 hover:bg-[#d1cce7]/15 rounded-lg">ยกเลิก</button>
+                                                    className="px-2 py-1 text-xs text-[#3d405b]/50 hover:bg-[#d1cce7]/15 rounded-lg">{t("cancel")}</button>
                                             </div>
                                         ) : (
-                                            <button onClick={() => setDeleteConfirmId(t.id)} disabled={loading}
-                                                className="p-1.5 text-[#3d405b]/40 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50" title="ลบ">
+                                            <button onClick={() => setDeleteConfirmId(teacher.id)} disabled={loading}
+                                                className="p-1.5 text-[#3d405b]/40 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50" title={t("delete")}>
                                                 <Trash2 size={14} />
                                             </button>
                                         )}

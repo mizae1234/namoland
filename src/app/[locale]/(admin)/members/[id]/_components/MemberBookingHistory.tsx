@@ -2,9 +2,10 @@
 
 import { useState, useTransition, useEffect } from "react";
 import { format } from "date-fns";
-import { th } from "date-fns/locale";
+import { th, enUS } from "date-fns/locale";
 import { CalendarCheck, Check, Clock, XCircle, Ban, RefreshCw, Coins } from "lucide-react";
 import Card from "@/components/ui/Card";
+import { useTranslations, useLocale } from "next-intl";
 
 type BookingRecord = {
     id: string;
@@ -21,18 +22,6 @@ type BookingRecord = {
     bookedByName: string;
 };
 
-const DAY_LABELS: Record<number, string> = {
-    0: "อาทิตย์", 1: "จันทร์", 2: "อังคาร", 3: "พุธ",
-    4: "พฤหัส", 5: "ศุกร์", 6: "เสาร์",
-};
-
-const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: React.ReactNode }> = {
-    CHECKED_IN: { label: "เข้าเรียนแล้ว", color: "text-emerald-700", bgColor: "bg-emerald-100", icon: <Check size={12} /> },
-    BOOKED: { label: "จองแล้ว", color: "text-amber-700", bgColor: "bg-amber-100", icon: <Clock size={12} /> },
-    CANCELLED: { label: "ยกเลิก", color: "text-red-600", bgColor: "bg-red-100", icon: <XCircle size={12} /> },
-    NO_SHOW: { label: "ไม่มาเรียน", color: "text-gray-600", bgColor: "bg-gray-100", icon: <Ban size={12} /> },
-};
-
 async function fetchBookings(userId: string): Promise<BookingRecord[]> {
     const res = await fetch(`/api/members/${userId}/bookings`);
     if (!res.ok) return [];
@@ -40,12 +29,21 @@ async function fetchBookings(userId: string): Promise<BookingRecord[]> {
 }
 
 export default function MemberBookingHistory({ userId, memberName }: { userId: string; memberName?: string }) {
+    const t = useTranslations("AdminMembers.detail.bookingHistory");
+    const locale = useLocale();
+    const dateLocale = locale === "en" ? enUS : th;
     const [bookings, setBookings] = useState<BookingRecord[]>([]);
     const [isPending, startTransition] = useTransition();
     const [loaded, setLoaded] = useState(false);
     const [filter, setFilter] = useState<string>("ALL");
 
-    // Auto-load on mount
+    const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: React.ReactNode }> = {
+        CHECKED_IN: { label: t("statusCheckedIn"), color: "text-emerald-700", bgColor: "bg-emerald-100", icon: <Check size={12} /> },
+        BOOKED: { label: t("statusBooked"), color: "text-amber-700", bgColor: "bg-amber-100", icon: <Clock size={12} /> },
+        CANCELLED: { label: t("statusCancelled"), color: "text-red-600", bgColor: "bg-red-100", icon: <XCircle size={12} /> },
+        NO_SHOW: { label: t("statusNoShow"), color: "text-gray-600", bgColor: "bg-gray-100", icon: <Ban size={12} /> },
+    };
+
     useEffect(() => {
         if (!loaded && !isPending) {
             loadBookings();
@@ -69,7 +67,6 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
         const wb = XLSX.utils.book_new();
         const ws: Record<string, unknown> = {};
 
-        // Styles
         const borderThin = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
         const headerStyle = { font: { bold: true, sz: 10 }, fill: { fgColor: { rgb: "D9D9D9" } }, border: borderThin, alignment: { horizontal: "center", vertical: "center" } };
         const normalStyle = { font: { sz: 10 }, border: borderThin };
@@ -82,32 +79,34 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
             NO_SHOW: { fgColor: { rgb: "E0E0E0" } },
         };
 
-        // Title
-        ws["A1"] = { v: `ประวัติการจองคลาส - ${memberName || "สมาชิก"}`, s: { font: { bold: true, sz: 12 } } };
+        ws["A1"] = { v: t("excelTitle", { name: memberName || t("excelMember") }), s: { font: { bold: true, sz: 12 } } };
 
-        // Headers
-        const headers = ["วันที่บันทึก", "คลาส", "ผู้เข้าเรียน", "วัน/เวลา", "สถานะ", "เหรียญ", "Check-in", "ผู้ทำรายการ"];
+        const headers = [
+            t("excelHeaders.date"), t("excelHeaders.class"), t("excelHeaders.student"),
+            t("excelHeaders.schedule"), t("excelHeaders.status"), t("excelHeaders.coins"),
+            t("excelHeaders.checkin"), t("excelHeaders.bookedBy")
+        ];
         const cols = ["A", "B", "C", "D", "E", "F", "G", "H"];
         headers.forEach((h, i) => {
             ws[`${cols[i]}3`] = { v: h, s: headerStyle };
         });
 
-        // Current filtered data
         const dataToExport = filter === "ALL" ? bookings : bookings.filter(b => b.status === filter);
 
         dataToExport.forEach((b, i) => {
             const r = i + 4;
             const st = STATUS_CONFIG[b.status] || STATUS_CONFIG.BOOKED;
             const statusStyle = { ...normalCenter, fill: statusColors[b.status] || { fgColor: { rgb: "FFFFFF" } } };
+            const style = normalStyle;
 
-            ws[`A${r}`] = { v: format(new Date(b.createdAt), "dd/MM/yyyy", { locale: th }), s: normalCenter };
-            ws[`B${r}`] = { v: b.className, s: normalStyle };
-            ws[`C${r}`] = { v: b.childName || "-", s: normalStyle };
-            ws[`D${r}`] = { v: `${DAY_LABELS[b.dayOfWeek]} ${b.startTime}-${b.endTime}`, s: normalStyle };
+            ws[`A${r}`] = { v: format(new Date(b.createdAt), "dd/MM/yyyy", { locale: dateLocale }), s: normalCenter };
+            ws[`B${r}`] = { v: b.className, s: style };
+            ws[`C${r}`] = { v: b.childName || "-", s: style };
+            ws[`D${r}`] = { v: `${t(`days.${b.dayOfWeek}`)} ${b.startTime}-${b.endTime}`, s: style };
             ws[`E${r}`] = { v: st.label, s: statusStyle };
             ws[`F${r}`] = { v: b.coinsCharged > 0 ? b.coinsCharged : "-", s: normalCenter };
-            ws[`G${r}`] = { v: b.checkedInAt ? format(new Date(b.checkedInAt), "HH:mm", { locale: th }) : "-", s: normalCenter };
-            ws[`H${r}`] = { v: b.bookedByName, s: normalStyle };
+            ws[`G${r}`] = { v: b.checkedInAt ? format(new Date(b.checkedInAt), "HH:mm", { locale: dateLocale }) : "-", s: normalCenter };
+            ws[`H${r}`] = { v: b.bookedByName, s: style };
         });
 
         ws["!ref"] = `A1:H${dataToExport.length + 3}`;
@@ -122,19 +121,26 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
 
     const filtered = filter === "ALL" ? bookings : bookings.filter(b => b.status === filter);
 
-    // Summary counts
     const total = bookings.length;
     const checkedIn = bookings.filter(b => b.status === "CHECKED_IN").length;
     const booked = bookings.filter(b => b.status === "BOOKED").length;
     const cancelled = bookings.filter(b => b.status === "CANCELLED").length;
     const totalCoins = bookings.reduce((s, b) => s + b.coinsCharged, 0);
 
+    const filterTabs: [string, string][] = [
+        ["ALL", t("filterAll")],
+        ["CHECKED_IN", t("filterCheckedIn")],
+        ["BOOKED", t("filterBooked")],
+        ["CANCELLED", t("filterCancelled")],
+        ["NO_SHOW", t("filterNoShow")],
+    ];
+
     return (
         <Card padding={false} className="mb-6">
             <div className="p-6 border-b border-[#d1cce7]/20 flex items-center justify-between">
                 <h2 className="font-semibold text-[#3d405b] flex items-center gap-2">
                     <CalendarCheck size={18} className="text-blue-500" />
-                    ประวัติการจองและเข้าคลาส
+                    {t("title")}
                 </h2>
                 <div className="flex gap-2">
                     <button
@@ -147,7 +153,7 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
                         ) : (
                             <RefreshCw size={14} />
                         )}
-                        {loaded ? "รีเฟรช" : "โหลดข้อมูล"}
+                        {loaded ? t("refresh") : t("loadData")}
                     </button>
                     
                     {loaded && bookings.length > 0 && (
@@ -165,47 +171,45 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
             {!loaded && (
                 <div className="p-8 text-center text-[#3d405b]/30 text-sm">
                     <CalendarCheck size={32} className="mx-auto mb-2 opacity-40" />
-                    <p>กดปุ่ม &quot;โหลดข้อมูล&quot; เพื่อดูประวัติ</p>
+                    <p>{t("loadHint")}</p>
                 </div>
             )}
 
             {loaded && bookings.length === 0 && (
                 <div className="p-8 text-center text-[#3d405b]/30 text-sm">
-                    <p>ยังไม่มีประวัติการจองคลาส</p>
+                    <p>{t("empty")}</p>
                 </div>
             )}
 
             {loaded && bookings.length > 0 && (
                 <>
-                    {/* Summary */}
                     <div className="grid grid-cols-5 gap-3 p-4 border-b border-[#d1cce7]/20">
                         <div className="bg-blue-50 rounded-xl p-3 text-center">
-                            <p className="text-xs text-blue-600/60 mb-1">ทั้งหมด</p>
+                            <p className="text-xs text-blue-600/60 mb-1">{t("summaryTotal")}</p>
                             <p className="text-lg font-bold text-blue-600">{total}</p>
                         </div>
                         <div className="bg-emerald-50 rounded-xl p-3 text-center">
-                            <p className="text-xs text-emerald-600/60 mb-1">เข้าเรียน</p>
+                            <p className="text-xs text-emerald-600/60 mb-1">{t("summaryCheckedIn")}</p>
                             <p className="text-lg font-bold text-emerald-600">{checkedIn}</p>
                         </div>
                         <div className="bg-amber-50 rounded-xl p-3 text-center">
-                            <p className="text-xs text-amber-600/60 mb-1">จองอยู่</p>
+                            <p className="text-xs text-amber-600/60 mb-1">{t("summaryBooked")}</p>
                             <p className="text-lg font-bold text-amber-600">{booked}</p>
                         </div>
                         <div className="bg-red-50 rounded-xl p-3 text-center">
-                            <p className="text-xs text-red-500/60 mb-1">ยกเลิก</p>
+                            <p className="text-xs text-red-500/60 mb-1">{t("summaryCancelled")}</p>
                             <p className="text-lg font-bold text-red-500">{cancelled}</p>
                         </div>
                         <div className="bg-[#f4f1de] rounded-xl p-3 text-center">
-                            <p className="text-xs text-[#3d405b]/40 mb-1">เหรียญใช้ไป</p>
+                            <p className="text-xs text-[#3d405b]/40 mb-1">{t("summaryCoins")}</p>
                             <p className="text-lg font-bold text-[#609279] flex items-center justify-center gap-1">
                                 <Coins size={14} /> {totalCoins}
                             </p>
                         </div>
                     </div>
 
-                    {/* Filter tabs */}
                     <div className="px-4 py-3 border-b border-[#d1cce7]/10 flex gap-1.5">
-                        {([["ALL", "ทั้งหมด"], ["CHECKED_IN", "เข้าเรียน"], ["BOOKED", "จองอยู่"], ["CANCELLED", "ยกเลิก"], ["NO_SHOW", "ไม่มา"]] as [string, string][]).map(([val, label]) => (
+                        {filterTabs.map(([val, label]) => (
                             <button
                                 key={val}
                                 onClick={() => setFilter(val)}
@@ -219,19 +223,18 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
                         ))}
                     </div>
 
-                    {/* Table */}
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="bg-[#f4f1de]/50 border-b border-[#d1cce7]/30">
-                                    <th className="text-left px-3 py-2.5 font-semibold text-[#3d405b]/70 text-xs">วันที่จอง</th>
-                                    <th className="text-left px-3 py-2.5 font-semibold text-[#3d405b]/70 text-xs">คลาส</th>
-                                    <th className="text-left px-3 py-2.5 font-semibold text-[#3d405b]/70 text-xs">ผู้เข้าเรียน</th>
-                                    <th className="text-left px-3 py-2.5 font-semibold text-[#3d405b]/70 text-xs">วัน/เวลา</th>
-                                    <th className="text-center px-3 py-2.5 font-semibold text-[#3d405b]/70 text-xs">สถานะ</th>
-                                    <th className="text-center px-3 py-2.5 font-semibold text-[#3d405b]/70 text-xs">เหรียญ</th>
-                                    <th className="text-left px-3 py-2.5 font-semibold text-[#3d405b]/70 text-xs">Check-in</th>
-                                    <th className="text-left px-3 py-2.5 font-semibold text-[#3d405b]/70 text-xs">จองโดย</th>
+                                    <th className="text-left px-3 py-2.5 font-semibold text-[#3d405b]/70 text-xs">{t("thBookingDate")}</th>
+                                    <th className="text-left px-3 py-2.5 font-semibold text-[#3d405b]/70 text-xs">{t("thClass")}</th>
+                                    <th className="text-left px-3 py-2.5 font-semibold text-[#3d405b]/70 text-xs">{t("thStudent")}</th>
+                                    <th className="text-left px-3 py-2.5 font-semibold text-[#3d405b]/70 text-xs">{t("thSchedule")}</th>
+                                    <th className="text-center px-3 py-2.5 font-semibold text-[#3d405b]/70 text-xs">{t("thStatus")}</th>
+                                    <th className="text-center px-3 py-2.5 font-semibold text-[#3d405b]/70 text-xs">{t("thCoins")}</th>
+                                    <th className="text-left px-3 py-2.5 font-semibold text-[#3d405b]/70 text-xs">{t("thCheckin")}</th>
+                                    <th className="text-left px-3 py-2.5 font-semibold text-[#3d405b]/70 text-xs">{t("thBookedBy")}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -240,7 +243,7 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
                                     return (
                                         <tr key={b.id} className="border-b border-[#d1cce7]/10 hover:bg-[#f4f1de]/20 transition-colors">
                                             <td className="px-3 py-2.5 text-[#3d405b]/70 whitespace-nowrap text-xs">
-                                                {format(new Date(b.createdAt), "d MMM yy", { locale: th })}
+                                                {format(new Date(b.createdAt), "d MMM yy", { locale: dateLocale })}
                                             </td>
                                             <td className="px-3 py-2.5 text-[#3d405b] font-medium text-xs max-w-[200px] truncate">
                                                 {b.className}
@@ -249,7 +252,7 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
                                                 {b.childName || "-"}
                                             </td>
                                             <td className="px-3 py-2.5 text-[#3d405b]/50 whitespace-nowrap text-xs">
-                                                {DAY_LABELS[b.dayOfWeek]} {b.startTime}-{b.endTime}
+                                                {t(`days.${b.dayOfWeek}`)} {b.startTime}-{b.endTime}
                                             </td>
                                             <td className="px-3 py-2.5 text-center">
                                                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${st.bgColor} ${st.color}`}>
@@ -267,7 +270,7 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
                                             </td>
                                             <td className="px-3 py-2.5 text-[#3d405b]/50 text-xs whitespace-nowrap">
                                                 {b.checkedInAt
-                                                    ? format(new Date(b.checkedInAt), "HH:mm", { locale: th })
+                                                    ? format(new Date(b.checkedInAt), "HH:mm", { locale: dateLocale })
                                                     : "—"
                                                 }
                                             </td>
@@ -282,7 +285,7 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
                     </div>
 
                     <div className="px-4 py-3 bg-[#f4f1de]/30 border-t border-[#d1cce7]/20 text-xs text-[#3d405b]/40">
-                        แสดง {filtered.length} จาก {total} รายการ
+                        {t("showing", { filtered: filtered.length, total })}
                     </div>
                 </>
             )}

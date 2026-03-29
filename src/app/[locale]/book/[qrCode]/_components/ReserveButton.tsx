@@ -4,8 +4,10 @@ import { useState } from "react";
 import { reserveBook } from "@/actions/borrow";
 import { ShoppingCart, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 export default function ReserveButton({ bookId }: { bookId: string }) {
+    const t = useTranslations("BookQrLanding.reserveBtn");
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
@@ -32,7 +34,7 @@ export default function ReserveButton({ bookId }: { bookId: string }) {
         return (
             <div className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-500 text-white font-medium rounded-xl">
                 <Check size={20} />
-                จองสำเร็จ! กรุณามารับหนังสือที่ Namoland
+                {t("success")}
             </div>
         );
     }
@@ -50,7 +52,7 @@ export default function ReserveButton({ bookId }: { bookId: string }) {
                 className="w-full flex items-center justify-center gap-2 py-3 bg-[#609279] hover:bg-[#609279] text-white font-medium rounded-xl transition-colors shadow-lg shadow-[#81b29a]/30 disabled:opacity-50"
             >
                 <ShoppingCart size={20} />
-                {loading ? "กำลังจอง..." : "จองยืมหนังสือ (หัก 6 เหรียญ)"}
+                {loading ? t("booking") : t("action")}
             </button>
         </div>
     );

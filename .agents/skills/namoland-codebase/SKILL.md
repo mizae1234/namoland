@@ -12,6 +12,7 @@ description: Complete reference for the Namoland Library Platform codebase — a
 | Framework | Next.js 16.1.6 (App Router) |
 | Language | TypeScript 5 |
 | UI | React 19, TailwindCSS 4 |
+| i18n | next-intl (th/en, 1104 keys, `messages/th.json` + `messages/en.json`) |
 | Database | PostgreSQL via Prisma 7.4.2 (`@prisma/adapter-pg`) |
 | Auth | NextAuth v5 (beta.30) with JWT strategy |
 | Icons | lucide-react |
@@ -27,23 +28,25 @@ description: Complete reference for the Namoland Library Platform codebase — a
 ```
 src/
 ├── actions/          # 14 server action files (~90 exported functions)
-├── app/
+├── app/[locale]/     # i18n-wrapped routes (th/en)
 │   ├── (admin)/      # Admin dashboard (21 pages, protected by middleware)
 │   ├── (user)/       # User portal (11 pages)
 │   ├── _components/  # Landing page components
-│   ├── api/          # 3 API routes
 │   ├── book/         # Public book detail via QR
-│   ├── login/        # Admin login
-│   ├── user/         # User login/register (not in route group)
-│   └── youtube/      # Public YouTube books page
+│   └── login/        # Admin login
+├── app/api/          # 3 API routes (outside locale)
 ├── components/
 │   ├── admin/        # Sidebar.tsx
 │   └── ui/           # AlertMessage, BackLink, Card, DateInput, Modal, PageHeader, StatusBadge
 ├── lib/              # 6 service files
 ├── types/            # next-auth.d.ts
-└── middleware.ts     # Route protection
+├── i18n/             # next-intl config (routing, request)
+└── middleware.ts     # Route protection + i18n routing
+messages/
+├── th.json           # Thai translations (1104 keys)
+└── en.json           # English translations (1104 keys)
 prisma/
-├── schema.prisma     # 15 models, 5 enums
+├── schema.prisma     # 15 models, 5 enums, 15 custom indexes
 └── seed.ts           # Database seeder
 ```
 
@@ -396,9 +399,41 @@ To prevent mathematical drift from Weighted Average Cost (WAC) calculations over
 3. **Error Handling** — Return `{ error: "message" }` or `{ success: true }`
 4. **bcrypt** — Dynamic import for ESM/CJS compatibility: `const bcryptModule = await import("bcryptjs")`
 5. **FormData** — All create/update actions accept FormData
-6. **Thai UI** — All user-facing error messages and labels in Thai
-7. **Prisma Transactions** — `prisma.$transaction([...ops])` for multi-step operations
-8. **QR Codes** — Auto-generated: `NML-XXXX` (members), `BOOK-XXXX` (books), `USR-XXXX` (self-registered)
+6. **Prisma Transactions** — `prisma.$transaction([...ops])` for multi-step operations
+7. **QR Codes** — Auto-generated: `NML-XXXX` (members), `BOOK-XXXX` (books), `USR-XXXX` (self-registered)
+
+---
+
+## i18n (Internationalization)
+
+- **Library**: `next-intl` with file-based routing (`src/i18n/routing.ts`)
+- **Supported locales**: `th` (default), `en`
+- **Translation files**: `messages/th.json`, `messages/en.json` (1104 keys each, must stay in sync)
+- **Namespaces**: `Common`, `Landing`, `AdminMembers`, `AdminBooks`, `AdminBorrows`, `AdminClasses`, `AdminCoins`, `AdminDashboard`, `AdminSettings`, `AdminReports`, `UserDashboard`, `UserBooks`, `UserBorrows`, `UserCoins`, `UserClasses`, etc.
+- **Client components**: Use `useTranslations("Namespace")` + `useLocale()`
+- **Server components**: Use `getTranslations("Namespace")`
+- **Date formatting**: Use `date-fns` locale — `const dateLocale = locale === "en" ? enUS : th`
+- **AlertMessage success detection**: Check both `message.includes("สำเร็จ") || message.includes("success")`
+- **Server action errors**: Still hardcoded Thai (technical debt — requires locale pass-through)
+
+---
+
+## Performance Optimizations
+
+### Database Indexes (15 custom `@@index` entries)
+- `User`: `[phone]`, `[qrCode]`
+- `BorrowRecord`: `[userId]`, `[status]`, `[code]`
+- `CoinPackage`: `[userId]`, `[isExpired, remainingCoins]`
+- `CoinTransaction`: `[packageId]`
+- `ClassBooking`: `[classEntryId]`, `[userId]`
+- `TopUpRequest`: `[userId]`, `[status]`
+- `Book`: `[qrCode]`, `[isActive, isAvailable]`
+
+### Query Optimizations
+- **Pagination**: `getBorrows` uses database-level `skip`/`take` instead of in-memory `slice`
+- **Take limits**: `getMembers`, `getMemberById`, `getBooks`, `getAllTopUps` have `take` limits
+- **DB-level filtering**: Book status filtering uses Prisma `where` clauses (not JS `.filter()`)
+- **Parallelization**: Admin Dashboard + User Home use `Promise.all` for concurrent data fetching
 
 ---
 

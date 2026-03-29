@@ -4,6 +4,7 @@ import { useState } from "react";
 import { updateShopInfo } from "@/actions/shop";
 import { Save, Store, Building2 } from "lucide-react";
 import Card from "@/components/ui/Card";
+import { useTranslations } from "next-intl";
 
 interface ShopInfoProps {
     shopInfo: {
@@ -17,6 +18,7 @@ interface ShopInfoProps {
 }
 
 export default function ShopInfoForm({ shopInfo }: ShopInfoProps) {
+    const t = useTranslations("AdminSettings.shopInfo");
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
 
@@ -31,7 +33,7 @@ export default function ShopInfoForm({ shopInfo }: ShopInfoProps) {
         if (result.error) {
             setMessage(result.error);
         } else {
-            setMessage("บันทึกสำเร็จ");
+            setMessage(t("saveSuccess"));
         }
         setLoading(false);
         setTimeout(() => setMessage(""), 3000);
@@ -43,16 +45,16 @@ export default function ShopInfoForm({ shopInfo }: ShopInfoProps) {
             <Card>
                 <div className="flex items-center gap-2 mb-4">
                     <Store size={18} className="text-[#609279]" />
-                    <h2 className="font-semibold text-[#3d405b]">ข้อมูลร้าน</h2>
+                    <h2 className="font-semibold text-[#3d405b]">{t("shopSection")}</h2>
                 </div>
                 <div className="space-y-4">
                     <div>
-                        <label className="text-sm text-[#3d405b]/70 mb-1 block">ชื่อร้าน</label>
+                        <label className="text-sm text-[#3d405b]/70 mb-1 block">{t("shopNameLabel")}</label>
                         <input
                             name="shopName"
                             defaultValue={shopInfo.shopName}
                             className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20 focus:border-[#81b29a] text-sm"
-                            placeholder="ชื่อร้าน"
+                            placeholder={t("shopNamePh")}
                         />
                     </div>
                 </div>
@@ -62,45 +64,45 @@ export default function ShopInfoForm({ shopInfo }: ShopInfoProps) {
             <Card>
                 <div className="flex items-center gap-2 mb-4">
                     <Building2 size={18} className="text-emerald-500" />
-                    <h2 className="font-semibold text-[#3d405b]">บัญชีธนาคาร</h2>
+                    <h2 className="font-semibold text-[#3d405b]">{t("bankSection")}</h2>
                 </div>
-                <p className="text-xs text-[#3d405b]/40 mb-4">ข้อมูลนี้จะแสดงให้ user เห็นตอนเติมเหรียญ</p>
+                <p className="text-xs text-[#3d405b]/40 mb-4">{t("bankDesc")}</p>
                 <div className="space-y-4">
                     <div>
-                        <label className="text-sm text-[#3d405b]/70 mb-1 block">ชื่อธนาคาร</label>
+                        <label className="text-sm text-[#3d405b]/70 mb-1 block">{t("bankNameLabel")}</label>
                         <input
                             name="bankName"
                             defaultValue={shopInfo.bankName || ""}
                             className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20 focus:border-[#81b29a] text-sm"
-                            placeholder="เช่น ธนาคารกสิกรไทย"
+                            placeholder={t("bankNamePh")}
                         />
                     </div>
                     <div>
-                        <label className="text-sm text-[#3d405b]/70 mb-1 block">เลขบัญชี</label>
+                        <label className="text-sm text-[#3d405b]/70 mb-1 block">{t("accountNoLabel")}</label>
                         <input
                             name="accountNumber"
                             defaultValue={shopInfo.accountNumber || ""}
                             className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20 focus:border-[#81b29a] text-sm"
-                            placeholder="xxx-x-xxxxx-x"
+                            placeholder={t("accountNoPh")}
                         />
                     </div>
                     <div>
-                        <label className="text-sm text-[#3d405b]/70 mb-1 block">ชื่อบัญชี</label>
+                        <label className="text-sm text-[#3d405b]/70 mb-1 block">{t("accountNameLabel")}</label>
                         <input
                             name="accountName"
                             defaultValue={shopInfo.accountName || ""}
                             className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20 focus:border-[#81b29a] text-sm"
-                            placeholder="ชื่อเจ้าของบัญชี"
+                            placeholder={t("accountNamePh")}
                         />
                     </div>
                     <div>
-                        <label className="text-sm text-[#3d405b]/70 mb-1 block">หมายเหตุ</label>
+                        <label className="text-sm text-[#3d405b]/70 mb-1 block">{t("noteLabel")}</label>
                         <textarea
                             name="note"
                             defaultValue={shopInfo.note || ""}
                             rows={2}
                             className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20 focus:border-[#81b29a] text-sm resize-none"
-                            placeholder="เช่น โอนแล้วแจ้งทาง LINE"
+                            placeholder={t("notePh")}
                         />
                     </div>
                 </div>
@@ -108,7 +110,7 @@ export default function ShopInfoForm({ shopInfo }: ShopInfoProps) {
 
             {/* Save Button */}
             {message && (
-                <div className={`p-3 rounded-xl text-sm text-center ${message === "บันทึกสำเร็จ" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}`}>
+                <div className={`p-3 rounded-xl text-sm text-center ${message === t("saveSuccess") ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}`}>
                     {message}
                 </div>
             )}
@@ -118,7 +120,7 @@ export default function ShopInfoForm({ shopInfo }: ShopInfoProps) {
                 className="w-full flex items-center justify-center gap-2 py-3 bg-[#609279] hover:bg-[#609279] text-white font-medium rounded-xl transition-colors disabled:opacity-50"
             >
                 <Save size={18} />
-                {loading ? "กำลังบันทึก..." : "บันทึก"}
+                {loading ? t("savingBtn") : t("saveBtn")}
             </button>
         </form>
     );

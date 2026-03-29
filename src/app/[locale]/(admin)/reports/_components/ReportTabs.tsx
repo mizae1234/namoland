@@ -7,6 +7,7 @@ import { Coins, CalendarDays, User } from "lucide-react";
 import OutstandingCoinTable from "./OutstandingCoinTable";
 import ClassAttendanceReport from "./ClassAttendanceReport";
 import MemberCoinReport from "./MemberCoinReport";
+import { useTranslations } from "next-intl";
 
 type Tab = "coin" | "attendance" | "member";
 
@@ -18,11 +19,12 @@ export default function ReportTabs({
     attendanceData: AttendanceReportData;
 }) {
     const [activeTab, setActiveTab] = useState<Tab>("coin");
+    const t = useTranslations("AdminReports");
 
     const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
-        { key: "coin", label: "Outstanding Coin", icon: <Coins size={16} /> },
-        { key: "attendance", label: "สรุปเข้าคลาส", icon: <CalendarDays size={16} /> },
-        { key: "member", label: "รายงานรายบุคคล", icon: <User size={16} /> },
+        { key: "coin", label: t("tabs.coin"), icon: <Coins size={16} /> },
+        { key: "attendance", label: t("tabs.attendance"), icon: <CalendarDays size={16} /> },
+        { key: "member", label: t("tabs.member"), icon: <User size={16} /> },
     ];
 
     return (
@@ -51,10 +53,10 @@ export default function ReportTabs({
                     <div className="mb-6">
                         <h1 className="text-2xl font-bold text-[#3d405b] flex items-center gap-3">
                             <Coins size={24} className="text-amber-500" />
-                            Outstanding Coin
+                            {t("tabs.coin")}
                         </h1>
                         <p className="text-[#3d405b]/50 mt-1">
-                            สรุปยอดเหรียญคงเหลือในระบบ แยกตามเดือน
+                            {t("descriptions.coin")}
                         </p>
                     </div>
                     <OutstandingCoinTable initialData={coinData} />
@@ -66,10 +68,10 @@ export default function ReportTabs({
                     <div className="mb-6">
                         <h1 className="text-2xl font-bold text-[#3d405b] flex items-center gap-3">
                             <CalendarDays size={24} className="text-[#609279]" />
-                            สรุปการเข้าคลาส
+                            {t("tabs.attendance")}
                         </h1>
                         <p className="text-[#3d405b]/50 mt-1">
-                            รายงานการจองและเข้าเรียนคลาส พร้อมรายละเอียด
+                            {t("descriptions.attendance")}
                         </p>
                     </div>
                     <ClassAttendanceReport initialData={attendanceData} />
@@ -81,10 +83,10 @@ export default function ReportTabs({
                     <div className="mb-6">
                         <h1 className="text-2xl font-bold text-[#3d405b] flex items-center gap-3">
                             <User size={24} className="text-violet-500" />
-                            รายงานรายบุคคล
+                            {t("tabs.member")}
                         </h1>
                         <p className="text-[#3d405b]/50 mt-1">
-                            ดูรายการเหรียญเข้า (ซื้อ) และออก (ใช้) ของสมาชิกแต่ละคน
+                            {t("descriptions.member")}
                         </p>
                     </div>
                     <MemberCoinReport />

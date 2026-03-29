@@ -33,6 +33,8 @@ model ExpiryLog {
   note          String?
   performedBy   String
   createdAt     DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model Child {
@@ -91,6 +93,8 @@ model TopUpRequest {
   processedAt   DateTime?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+
+  @@index([userId, status])
 }
 
 enum TopUpStatus {
@@ -120,6 +124,9 @@ model CoinPackage {
   transactions  CoinTransaction[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  @@index([userId, isExpired])
+  @@index([purchaseDate])
 }
 
 model CoinTransaction {
@@ -135,6 +142,9 @@ model CoinTransaction {
   processedById  String
   processedBy    AdminUser       @relation(fields: [processedById], references: [id])
   createdAt     DateTime         @default(now())
+
+  @@index([packageId, createdAt])
+  @@index([createdAt])
 }
 
 enum CoinTransactionType {
@@ -189,6 +199,10 @@ model BorrowRecord {
   note           String?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
+
+  @@index([userId, status])
+  @@index([borrowDate])
+  @@index([status])
 }
 
 enum BorrowStatus {
@@ -210,6 +224,9 @@ model BorrowItem {
   damageNote    String?
   returned      Boolean   @default(false)
   returnedAt    DateTime?
+
+  @@index([bookId])
+  @@index([borrowRecordId])
 }
 
 model PackageConfig {
@@ -281,6 +298,9 @@ model ClassBooking {
   bookedBy      AdminUser     @relation(fields: [bookedById], references: [id])
   checkedInAt   DateTime?
   createdAt     DateTime      @default(now())
+
+  @@index([userId, status])
+  @@index([classEntryId])
 }
 
 enum BookingStatus {

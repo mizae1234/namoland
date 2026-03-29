@@ -4,6 +4,7 @@ import { User, QrCode } from "lucide-react";
 import UserLogout from "./UserLogout";
 import ProfileEditForm from "./ProfileEditForm";
 import { getTranslations } from "next-intl/server";
+import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 
 export default async function UserProfilePage() {
     const t = await getTranslations("UserProfile");
@@ -19,7 +20,9 @@ export default async function UserProfilePage() {
 
     return (
         <div className="p-4">
-            <h1 className="text-xl font-bold text-[#3d405b] mb-4">{t("title")}</h1>
+            <div className="flex justify-between items-center mb-4">
+                <h1 className="text-xl font-bold text-[#3d405b]">{t("title")}</h1>
+            </div>
 
             {/* Avatar & QR */}
             <div className="bg-white rounded-2xl p-6 border border-[#d1cce7]/20 mb-4">
@@ -36,6 +39,15 @@ export default async function UserProfilePage() {
                     <QrCode size={16} className="text-[#3d405b]/40" />
                     <span className="text-sm text-[#3d405b]/70 font-mono">{user.qrCode}</span>
                 </div>
+            </div>
+
+            {/* Language Setting Row */}
+            <div className="bg-white rounded-2xl p-4 border border-[#d1cce7]/20 mb-4 flex items-center justify-between">
+                <div>
+                    <h3 className="font-semibold text-[#3d405b] text-sm">ภาษา / Language</h3>
+                    <p className="text-xs text-[#3d405b]/50 mt-0.5">เลือกภาษาที่ต้องการใช้</p>
+                </div>
+                <LanguageSwitcher />
             </div>
 
             {/* Editable Profile + Password */}

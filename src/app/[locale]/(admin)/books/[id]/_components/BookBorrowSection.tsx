@@ -6,6 +6,7 @@ import { createBorrow } from "@/actions/borrow";
 import { useRouter } from "next/navigation";
 import { Search, User, BookOpen } from "lucide-react";
 import { BORROW_DEPOSIT_COINS } from "@/lib/constants";
+import { useTranslations } from "next-intl";
 
 type Member = {
     id: string;
@@ -15,6 +16,7 @@ type Member = {
 };
 
 export default function BookBorrowSection({ bookId, bookTitle, rentalCost }: { bookId: string; bookTitle: string; rentalCost: number }) {
+    const t = useTranslations("AdminBooks.detail.borrow");
     const router = useRouter();
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<Member[]>([]);
@@ -59,7 +61,7 @@ export default function BookBorrowSection({ bookId, bookTitle, rentalCost }: { b
             setError(result.error);
             setSubmitting(false);
         } else {
-            setSuccess("ยืมหนังสือสำเร็จ!");
+            setSuccess(t("success"));
             setTimeout(() => router.push("/borrows"), 1500);
         }
     };
@@ -68,16 +70,16 @@ export default function BookBorrowSection({ bookId, bookTitle, rentalCost }: { b
         <div className="mt-6 bg-white rounded-2xl border border-emerald-200 shadow-sm p-6">
             <div className="flex items-center gap-2 mb-4">
                 <BookOpen size={18} className="text-[#609279]" />
-                <h2 className="text-lg font-semibold text-[#3d405b]">ให้ยืมหนังสือเล่มนี้</h2>
+                <h2 className="text-lg font-semibold text-[#3d405b]">{t("title")}</h2>
             </div>
 
             {/* Cost Preview */}
             <div className="bg-[#81b29a]/10 rounded-xl p-3 mb-4 border border-[#81b29a]/20 text-sm text-[#609279]">
-                <span>ค่ามัดจำ: {BORROW_DEPOSIT_COINS} เหรียญ</span>
+                <span>{t("deposit", { amount: BORROW_DEPOSIT_COINS })}</span>
                 <span className="mx-2">·</span>
-                <span>ค่าเช่า: {rentalCost} เหรียญ</span>
+                <span>{t("rental", { amount: rentalCost })}</span>
                 <span className="mx-2">·</span>
-                <span className="font-bold">รวม: {requiredCoins} เหรียญ</span>
+                <span className="font-bold">{t("total", { amount: requiredCoins })}</span>
             </div>
 
             {/* Member Search */}
@@ -89,13 +91,13 @@ export default function BookBorrowSection({ bookId, bookTitle, rentalCost }: { b
                             type="text"
                             value={query}
                             onChange={(e) => handleSearch(e.target.value)}
-                            placeholder="ค้นหาสมาชิก (ชื่อ หรือ เบอร์โทร)"
+                            placeholder={t("searchPlaceholder")}
                             className="w-full pl-10 pr-4 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] outline-none text-sm"
                         />
                     </div>
 
                     {searching && (
-                        <div className="text-center py-3 text-[#3d405b]/40 text-sm">กำลังค้นหา...</div>
+                        <div className="text-center py-3 text-[#3d405b]/40 text-sm">{t("searching")}</div>
                     )}
 
                     {results.length > 0 && (
@@ -117,7 +119,7 @@ export default function BookBorrowSection({ bookId, bookTitle, rentalCost }: { b
                                         ? "bg-emerald-100 text-emerald-700"
                                         : "bg-red-100 text-red-600"
                                         }`}>
-                                        {m.totalCoins} เหรียญ
+                                        {m.totalCoins} {t("coins")}
                                     </span>
                                 </button>
                             ))}
@@ -125,7 +127,7 @@ export default function BookBorrowSection({ bookId, bookTitle, rentalCost }: { b
                     )}
 
                     {query.length >= 1 && !searching && results.length === 0 && (
-                        <p className="text-sm text-[#3d405b]/40 text-center py-3">ไม่พบสมาชิก</p>
+                        <p className="text-sm text-[#3d405b]/40 text-center py-3">{t("noResults")}</p>
                     )}
                 </div>
             ) : (
@@ -140,7 +142,7 @@ export default function BookBorrowSection({ bookId, bookTitle, rentalCost }: { b
                             <p className="text-xs text-[#3d405b]/40">{selectedMember.phone}</p>
                         </div>
                         <div className="text-right">
-                            <p className="text-xs text-[#3d405b]/40">เหรียญคงเหลือ</p>
+                            <p className="text-xs text-[#3d405b]/40">{t("remainingCoins")}</p>
                             <p className={`font-bold ${selectedMember.totalCoins >= requiredCoins ? "text-emerald-600" : "text-red-500"}`}>
                                 {selectedMember.totalCoins}
                             </p>
@@ -172,10 +174,10 @@ export default function BookBorrowSection({ bookId, bookTitle, rentalCost }: { b
                             className="flex-1 py-2.5 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#4a7a5f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {submitting
-                                ? "กำลังบันทึก..."
+                                ? t("submitting")
                                 : selectedMember.totalCoins < requiredCoins
-                                    ? `เหรียญไม่เพียงพอ (ต้องการ ${requiredCoins})`
-                                    : `ยืนยันยืม "${bookTitle}" (หัก ${requiredCoins} เหรียญ)`}
+                                    ? t("insufficientCoins", { amount: requiredCoins })
+                                    : t("confirmBorrow", { title: bookTitle, amount: requiredCoins })}
                         </button>
                     </div>
                 </div>

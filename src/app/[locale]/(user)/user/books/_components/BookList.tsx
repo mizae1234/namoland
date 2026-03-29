@@ -18,11 +18,7 @@ interface Book {
 
 type Filter = "ALL" | "AVAILABLE" | "BORROWED";
 
-const FILTERS: { value: Filter; label: string }[] = [
-    { value: "ALL", label: "ทั้งหมด" },
-    { value: "AVAILABLE", label: "ว่าง" },
-    { value: "BORROWED", label: "ถูกยืม" },
-];
+const FILTERS: Filter[] = ["ALL", "AVAILABLE", "BORROWED"];
 
 export default function BookList({ initialBooks, initialHasMore }: { initialBooks: Book[]; initialHasMore: boolean }) {
     const t = useTranslations("UserBooks");
@@ -86,14 +82,14 @@ export default function BookList({ initialBooks, initialHasMore }: { initialBook
             <div className="flex gap-2 mb-4">
                 {FILTERS.map((f) => (
                     <button
-                        key={f.value}
-                        onClick={() => setFilter(f.value)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${filter === f.value
+                        key={f}
+                        onClick={() => setFilter(f)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${filter === f
                                 ? "bg-gradient-to-r from-[#609279] to-[#a16b9f] text-white shadow-sm"
                                 : "bg-white border border-[#d1cce7]/30 text-[#3d405b]/50 hover:text-[#3d405b]/70"
                             }`}
                     >
-                        {t(`filters.${f.value}`)} ({counts[f.value]})
+                        {t(`filters.${f}`)} ({counts[f]})
                     </button>
                 ))}
             </div>

@@ -6,17 +6,19 @@ import Image from "next/image";
 import { auth } from "@/lib/auth";
 import ReserveButton from "./_components/ReserveButton";
 import UserNav from "@/app/[locale]/(user)/UserNav";
+import { getTranslations } from "next-intl/server";
 
 export default async function BookLandingPage({
     params,
 }: {
-    params: Promise<{ qrCode: string }>;
+    params: Promise<{ qrCode: string; locale: string }>;
 }) {
     const { qrCode } = await params;
     const book = await getBookByQrCodePublic(qrCode);
 
     if (!book || !book.isActive) notFound();
 
+    const t = await getTranslations("BookQrLanding");
     const session = await auth();
     const isLoggedIn = !!session?.user;
     const isUser = session?.user?.type === "USER";
@@ -54,14 +56,14 @@ export default async function BookLandingPage({
                     {/* Status */}
                     <div className="mb-6 p-3 rounded-xl bg-[#f4f1de]/50 border border-[#d1cce7]/20">
                         <div className="flex items-center justify-between">
-                            <span className="text-sm text-[#3d405b]/50">สถานะ</span>
+                            <span className="text-sm text-[#3d405b]/50">{t("statusLabel")}</span>
                             <span
                                 className={`text-xs px-2.5 py-1 rounded-full font-medium ${book.isAvailable
                                     ? "bg-emerald-100 text-emerald-700"
                                     : "bg-amber-100 text-amber-700"
                                     }`}
                             >
-                                {book.isAvailable ? "ว่าง" : "ถูกยืม"}
+                                {book.isAvailable ? t("available") : t("borrowed")}
                             </span>
                         </div>
                     </div>
@@ -77,7 +79,7 @@ export default async function BookLandingPage({
                                 className="w-full flex items-center justify-center gap-2 py-3 bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl transition-colors shadow-lg shadow-red-200"
                             >
                                 <Youtube size={20} />
-                                ดู YouTube
+                                {t("youtubeBtn")}
                             </a>
                         )}
 
@@ -91,13 +93,13 @@ export default async function BookLandingPage({
                                     className="w-full flex items-center justify-center gap-2 py-3 bg-[#609279] hover:bg-[#609279] text-white font-medium rounded-xl transition-colors shadow-lg shadow-[#81b29a]/30"
                                 >
                                     <ShoppingCart size={20} />
-                                    เข้าสู่ระบบเพื่อจองยืม
+                                    {t("loginToReserveBtn")}
                                 </Link>
                             )
                         ) : (
                             <div className="w-full flex items-center justify-center gap-2 py-3 bg-[#d1cce7]/25 text-[#3d405b]/50 font-medium rounded-xl cursor-not-allowed">
                                 <ShoppingCart size={20} />
-                                หนังสือถูกยืมอยู่
+                                {t("unavailableBtn")}
                             </div>
                         )}
                     </div>
@@ -105,7 +107,7 @@ export default async function BookLandingPage({
 
                 {/* Footer */}
                 <p className="text-center text-xs text-[#3d405b]/40 mt-6">
-                    © 2026 Namoland. ห้องสมุดนโมแลนด์
+                    {t("footer")}
                 </p>
             </div>
             {isLoggedIn && isUser && <UserNav />}

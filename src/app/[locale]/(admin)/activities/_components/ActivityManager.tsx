@@ -14,6 +14,7 @@ import Card from "@/components/ui/Card";
 import AlertMessage from "@/components/ui/AlertMessage";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 const ICON_OPTIONS = [
     "🎨", "🎭", "🎪", "🧩", "🎯", "🎲", "🎵", "🎶",
@@ -36,6 +37,7 @@ interface ActivityData {
 
 export default function ActivityManager({ activities }: { activities: ActivityData[] }) {
     const router = useRouter();
+    const t = useTranslations("AdminActivities");
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
     const [editId, setEditId] = useState<string | null>(null);
@@ -90,7 +92,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
         setLoading(false);
         if (result.error) showMsg(result.error);
         else {
-            showMsg("อัปเดตสำเร็จ!");
+            showMsg(t("successUpdate"));
             setEditId(null);
             setShowEditIconPicker(false);
         }
@@ -108,7 +110,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
         setLoading(false);
         if (result.error) showMsg(result.error);
         else {
-            showMsg("เพิ่มกิจกรรมสำเร็จ!");
+            showMsg(t("successAdd"));
             setShowAdd(false);
             setAddName("");
             setAddDescription("");
@@ -124,7 +126,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
         const result = await toggleActivityActive(id);
         setLoading(false);
         if (result.error) showMsg(result.error);
-        else showMsg("อัปเดตสถานะสำเร็จ!");
+        else showMsg(t("successToggleStatus"));
     };
 
     const handleToggleLanding = async (id: string) => {
@@ -132,7 +134,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
         const result = await toggleShowOnLanding(id);
         setLoading(false);
         if (result.error) showMsg(result.error);
-        else showMsg("อัปเดตการแสดงผลสำเร็จ!");
+        else showMsg(t("successToggleLanding"));
     };
 
     const handleDelete = async (id: string) => {
@@ -141,7 +143,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
         setLoading(false);
         setDeleteConfirmId(null);
         if (result.error) showMsg(result.error);
-        else showMsg("ลบสำเร็จ!");
+        else showMsg(t("successDelete"));
     };
 
     const handleSeed = async () => {
@@ -149,7 +151,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
         const result = await seedActivityConfigs();
         setLoading(false);
         if (result.error) showMsg(result.error);
-        else showMsg("สร้างกิจกรรมเริ่มต้นสำเร็จ!");
+        else showMsg(t("successSeed"));
     };
 
     const handleIconUpload = async (activityId: string, file: File) => {
@@ -164,11 +166,11 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
             if (data.error) {
                 showMsg(data.error);
             } else {
-                showMsg("อัพโหลดไอคอนสำเร็จ!");
+                showMsg(t("successUploadIcon"));
                 router.refresh();
             }
         } catch {
-            showMsg("อัพโหลดไม่สำเร็จ");
+            showMsg(t("errorUpload"));
         }
         setUploadingId(null);
     };
@@ -181,11 +183,11 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
             if (data.error) {
                 showMsg(data.error);
             } else {
-                showMsg("ลบไอคอนสำเร็จ!");
+                showMsg(t("successRemoveIcon"));
                 router.refresh();
             }
         } catch {
-            showMsg("ลบไม่สำเร็จ");
+            showMsg(t("errorRemoveIcon"));
         }
         setUploadingId(null);
     };
@@ -207,7 +209,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                 onClick={() => setShow(!show)}
                 className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20 focus:border-[#81b29a] bg-white text-center"
             >
-                {selected || "เลือก Emoji"}
+                {selected || t("selectEmoji")}
             </button>
             {show && (
                 <div className="absolute z-20 top-full mt-1 bg-white border border-[#d1cce7]/30 rounded-xl shadow-lg p-2 grid grid-cols-8 gap-1 w-[280px]">
@@ -227,7 +229,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                         onClick={() => { onSelect(""); setShow(false); }}
                         className="col-span-8 mt-1 text-xs text-[#3d405b]/40 hover:text-red-500 transition-colors"
                     >
-                        ล้าง Emoji
+                        {t("clearEmoji")}
                     </button>
                 </div>
             )}
@@ -237,7 +239,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
     return (
         <div>
             <AlertMessage
-                type={message.includes("สำเร็จ") ? "success" : "error"}
+                type={(message.includes("สำเร็จ") || message.includes("success")) ? "success" : "error"}
                 message={message}
             />
 
@@ -259,47 +261,46 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
             {/* Seed button — only if no activities */}
             {activities.length === 0 && (
                 <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
-                    <p className="text-amber-800 font-medium mb-3">ยังไม่มีกิจกรรม</p>
-                    <p className="text-sm text-amber-600 mb-4">คุณสามารถสร้างกิจกรรมเริ่มต้น 11 รายการ หรือเพิ่มเอง</p>
+                    <p className="text-amber-800 font-medium mb-3">{t("noActivities")}</p>
+                    <p className="text-sm text-amber-600 mb-4">{t("seedInstruction")}</p>
                     <button
                         onClick={handleSeed}
                         disabled={loading}
                         className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 text-white rounded-xl text-sm font-medium hover:bg-amber-600 transition-colors disabled:opacity-50"
                     >
                         <Download size={16} />
-                        สร้างกิจกรรมเริ่มต้น
+                        {t("seedBtn")}
                     </button>
                 </div>
             )}
 
-            {/* Add button */}
             <div className="mb-4 flex justify-end">
                 <button
                     onClick={() => setShowAdd(!showAdd)}
                     className="flex items-center gap-2 px-4 py-2.5 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#4e7a64] transition-colors shadow-md shadow-[#81b29a]/30"
                 >
                     <Plus size={16} />
-                    เพิ่มกิจกรรม
+                    {t("addBtn")}
                 </button>
             </div>
 
             {/* Add Form */}
             {showAdd && (
                 <Card className="mb-4">
-                    <h3 className="font-semibold text-[#3d405b] mb-4">เพิ่มกิจกรรมใหม่</h3>
+                    <h3 className="font-semibold text-[#3d405b] mb-4">{t("addTitle")}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                         <div>
-                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">ชื่อกิจกรรม</label>
+                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("nameLabel")}</label>
                             <input
                                 type="text"
                                 value={addName}
                                 onChange={(e) => setAddName(e.target.value)}
-                                placeholder="เช่น Free Play (1 ชม.)"
+                                placeholder={t("namePlaceholder")}
                                 className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20 focus:border-[#81b29a]"
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">Emoji ไอคอน</label>
+                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("emojiLabel")}</label>
                             <IconPicker
                                 selected={addIcon}
                                 onSelect={setAddIcon}
@@ -308,7 +309,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">จำนวนเหรียญ</label>
+                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("coinsLabel")}</label>
                             <input
                                 type="number"
                                 value={addCoins}
@@ -319,7 +320,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">ลำดับ</label>
+                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("sortLabel")}</label>
                             <input
                                 type="number"
                                 value={addSort}
@@ -331,11 +332,11 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                         </div>
                     </div>
                     <div className="mt-3">
-                        <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">รายละเอียด (แสดงใน Landing Page)</label>
+                        <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("descLabel")}</label>
                         <textarea
                             value={addDescription}
                             onChange={(e) => setAddDescription(e.target.value)}
-                            placeholder="อธิบายกิจกรรมสั้นๆ เช่น เล่นอิสระในห้องกิจกรรมพร้อมอุปกรณ์ครบครัน"
+                            placeholder={t("descPlaceholder")}
                             rows={2}
                             className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20 focus:border-[#81b29a] resize-none"
                         />
@@ -345,7 +346,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                             onClick={() => { setShowAdd(false); setShowAddIconPicker(false); }}
                             className="px-4 py-2 text-sm text-[#3d405b]/50 hover:text-[#3d405b] transition-colors"
                         >
-                            ยกเลิก
+                            {t("cancelBtn")}
                         </button>
                         <button
                             onClick={handleAdd}
@@ -353,7 +354,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                             className="flex items-center gap-2 px-4 py-2 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#4e7a64] transition-colors disabled:opacity-50"
                         >
                             <Check size={16} />
-                            บันทึก
+                            {t("saveBtn")}
                         </button>
                     </div>
                 </Card>
@@ -363,7 +364,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
             <div className="space-y-2">
                 {activities.length === 0 ? (
                     <Card>
-                        <p className="py-8 text-center text-[#3d405b]/40">ยังไม่มีกิจกรรม</p>
+                        <p className="py-8 text-center text-[#3d405b]/40">{t("noActivities")}</p>
                     </Card>
                 ) : (
                     activities.map((activity) => (
@@ -376,7 +377,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                                 <div className="space-y-3">
                                     <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                                         <div>
-                                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">ชื่อ</label>
+                                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("nameColumn")}</label>
                                             <input
                                                 type="text"
                                                 value={editName}
@@ -385,7 +386,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">Emoji ไอคอน</label>
+                                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("emojiLabel")}</label>
                                             <IconPicker
                                                 selected={editIcon}
                                                 onSelect={setEditIcon}
@@ -394,7 +395,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">เหรียญ</label>
+                                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("coinsColumn")}</label>
                                             <input
                                                 type="number"
                                                 value={editCoins}
@@ -403,7 +404,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">ลำดับ</label>
+                                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("sortLabel")}</label>
                                             <input
                                                 type="number"
                                                 value={editSort}
@@ -413,11 +414,11 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">รายละเอียด</label>
+                                        <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("descColumn")}</label>
                                         <textarea
                                             value={editDescription}
                                             onChange={(e) => setEditDescription(e.target.value)}
-                                            placeholder="อธิบายกิจกรรมสั้นๆ..."
+                                            placeholder={t("descPlaceholderShort")}
                                             rows={2}
                                             className="w-full px-2 py-1.5 border border-[#d1cce7]/30 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#81b29a]/30 resize-none"
                                         />
@@ -428,13 +429,13 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                                             disabled={loading}
                                             className="px-3 py-1.5 text-xs bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 font-medium"
                                         >
-                                            บันทึก
+                                            {t("saveBtn")}
                                         </button>
                                         <button
                                             onClick={cancelEdit}
                                             className="px-3 py-1.5 text-xs bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300"
                                         >
-                                            ยกเลิก
+                                            {t("cancelBtn")}
                                         </button>
                                     </div>
                                 </div>
@@ -460,12 +461,12 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                                         <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                                             <p className="font-medium text-[#3d405b]">{activity.name}</p>
                                             <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                                                {activity.coins > 0 ? `${activity.coins} เหรียญ` : "กำหนดเอง"}
+                                                {activity.coins > 0 ? t("coinSuffix", { coins: activity.coins }) : t("customCoins")}
                                             </span>
                                             <span className="text-xs text-[#3d405b]/30">#{activity.sortOrder}</span>
                                             {activity.showOnLanding && (
                                                 <span className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full font-medium">
-                                                    🌐 Landing
+                                                    {t("landingBadge")}
                                                 </span>
                                             )}
                                         </div>
@@ -484,7 +485,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                                             }}
                                             disabled={loading || uploadingId === activity.id}
                                             className="p-1.5 text-[#3d405b]/40 hover:text-violet-500 hover:bg-violet-50 rounded-lg transition-colors disabled:opacity-50"
-                                            title={activity.iconImageUrl ? "เปลี่ยนรูปไอคอน" : "อัพโหลดรูปไอคอน"}
+                                            title={activity.iconImageUrl ? t("changeIconTooltip") : t("uploadIconTooltip")}
                                         >
                                             {uploadingId === activity.id ? (
                                                 <div className="w-3.5 h-3.5 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
@@ -500,7 +501,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                                                 onClick={() => handleRemoveIcon(activity.id)}
                                                 disabled={loading || uploadingId === activity.id}
                                                 className="p-1.5 text-[#3d405b]/40 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                                                title="ลบรูปไอคอน"
+                                                title={t("removeIconTooltip")}
                                             >
                                                 <X size={14} />
                                             </button>
@@ -513,16 +514,15 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                                                 ? "text-blue-500 hover:bg-blue-50"
                                                 : "text-[#3d405b]/30 hover:text-blue-400 hover:bg-blue-50"
                                                 }`}
-                                            title={activity.showOnLanding ? "ซ่อนจาก Landing" : "แสดงบน Landing"}
+                                            title={activity.showOnLanding ? t("hideLandingTooltip") : t("showLandingTooltip")}
                                         >
                                             <Globe size={14} />
                                         </button>
-                                        {/* Toggle active */}
                                         <button
                                             onClick={() => handleToggle(activity.id)}
                                             disabled={loading}
                                             className="disabled:opacity-50"
-                                            title={activity.isActive ? "ปิดกิจกรรม" : "เปิดกิจกรรม"}
+                                            title={activity.isActive ? t("disableTooltip") : t("enableTooltip")}
                                         >
                                             {activity.isActive ? (
                                                 <ToggleRight size={24} className="text-emerald-500" />
@@ -533,7 +533,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                                         <button
                                             onClick={() => startEdit(activity)}
                                             className="p-1.5 text-[#3d405b]/40 hover:text-[#609279] hover:bg-[#81b29a]/10 rounded-lg transition-colors"
-                                            title="แก้ไข"
+                                            title={t("editTooltip")}
                                         >
                                             <Pencil size={14} />
                                         </button>
@@ -544,13 +544,13 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                                                     disabled={loading}
                                                     className="px-2 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
                                                 >
-                                                    ยืนยันลบ
+                                                    {t("confirmDelete")}
                                                 </button>
                                                 <button
                                                     onClick={() => setDeleteConfirmId(null)}
                                                     className="px-2 py-1 text-xs text-[#3d405b]/50 hover:bg-[#d1cce7]/15 rounded-lg transition-colors"
                                                 >
-                                                    ยกเลิก
+                                                    {t("cancelBtn")}
                                                 </button>
                                             </div>
                                         ) : (
@@ -558,7 +558,7 @@ export default function ActivityManager({ activities }: { activities: ActivityDa
                                                 onClick={() => setDeleteConfirmId(activity.id)}
                                                 disabled={loading}
                                                 className="p-1.5 text-[#3d405b]/40 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                                                title="ลบ"
+                                                title={t("deleteTooltip")}
                                             >
                                                 <Trash2 size={14} />
                                             </button>

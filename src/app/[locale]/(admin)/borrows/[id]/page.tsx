@@ -9,8 +9,13 @@ import Card from "@/components/ui/Card";
 import ConfirmReserveButton from "../_components/ConfirmReserveButton";
 import ReturnBookForm from "../_components/ReturnBookForm";
 import { calculateLateFee } from "@/lib/utils";
+import { getTranslations, getLocale } from "next-intl/server";
 
 export default async function BorrowDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const t = await getTranslations("AdminBorrows.detail");
+    const localeStr = await getLocale();
+    const isThai = localeStr === "th";
+
     const { id } = await params;
 
     const record = await prisma.borrowRecord.findUnique({
@@ -46,13 +51,13 @@ export default async function BorrowDetailPage({ params }: { params: Promise<{ i
             {/* Back */}
             <Link href="/borrows" className="flex items-center gap-1.5 text-[#3d405b]/50 text-sm mb-4 hover:text-[#3d405b]/70 transition-colors">
                 <ArrowLeft size={16} />
-                กลับรายการยืม-คืน
+                {t("backToList")}
             </Link>
 
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h1 className="text-xl font-bold text-[#3d405b]">รายละเอียดการยืม</h1>
+                    <h1 className="text-xl font-bold text-[#3d405b]">{t("title")}</h1>
                     <p className="text-sm text-[#3d405b]/40 font-mono mt-1">{record.code}</p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -68,20 +73,20 @@ export default async function BorrowDetailPage({ params }: { params: Promise<{ i
                 <Card>
                     <h3 className="font-semibold text-[#3d405b] flex items-center gap-2 mb-4">
                         <User size={16} className="text-[#609279]" />
-                        ข้อมูลผู้ยืม
+                        {t("borrowerInfo.title")}
                     </h3>
                     <div className="space-y-3 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-[#3d405b]/50">ชื่อผู้ปกครอง</span>
+                            <span className="text-[#3d405b]/50">{t("borrowerInfo.parentName")}</span>
                             <span className="font-medium text-[#3d405b]">{record.user.parentName}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-[#3d405b]/50">เบอร์โทร</span>
+                            <span className="text-[#3d405b]/50">{t("borrowerInfo.phone")}</span>
                             <span className="font-medium text-[#3d405b]">{record.user.phone}</span>
                         </div>
                         {record.user.children.length > 0 && (
                             <div className="flex justify-between">
-                                <span className="text-[#3d405b]/50">บุตร</span>
+                                <span className="text-[#3d405b]/50">{t("borrowerInfo.children")}</span>
                                 <span className="font-medium text-[#3d405b]">
                                     {record.user.children.map(c => c.name).join(", ")}
                                 </span>
@@ -94,32 +99,32 @@ export default async function BorrowDetailPage({ params }: { params: Promise<{ i
                 <Card>
                     <h3 className="font-semibold text-[#3d405b] flex items-center gap-2 mb-4">
                         <Calendar size={16} className="text-[#a16b9f]" />
-                        วันที่
+                        {t("dateInfo.title")}
                     </h3>
                     <div className="space-y-3 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-[#3d405b]/50">วันยืม</span>
+                            <span className="text-[#3d405b]/50">{t("dateInfo.borrowDate")}</span>
                             <span className="font-medium text-[#3d405b]">
-                                {format(new Date(record.borrowDate), "d MMMM yyyy", { locale: th })}
+                                {format(new Date(record.borrowDate), "d MMMM yyyy", { locale: isThai ? th : undefined })}
                             </span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-[#3d405b]/50">กำหนดคืน</span>
+                            <span className="text-[#3d405b]/50">{t("dateInfo.dueDate")}</span>
                             <span className="font-medium text-[#3d405b]">
-                                {format(new Date(record.dueDate), "d MMMM yyyy", { locale: th })}
+                                {format(new Date(record.dueDate), "d MMMM yyyy", { locale: isThai ? th : undefined })}
                             </span>
                         </div>
                         {record.returnDate && (
                             <div className="flex justify-between">
-                                <span className="text-[#3d405b]/50">คืนวันที่</span>
+                                <span className="text-[#3d405b]/50">{t("dateInfo.returnDate")}</span>
                                 <span className="font-medium text-emerald-600">
-                                    {format(new Date(record.returnDate), "d MMMM yyyy", { locale: th })}
+                                    {format(new Date(record.returnDate), "d MMMM yyyy", { locale: isThai ? th : undefined })}
                                 </span>
                             </div>
                         )}
                         {record.processedBy && (
                             <div className="flex justify-between">
-                                <span className="text-[#3d405b]/50">ดำเนินการโดย</span>
+                                <span className="text-[#3d405b]/50">{t("dateInfo.processedBy")}</span>
                                 <span className="font-medium text-[#3d405b]">{record.processedBy.name}</span>
                             </div>
                         )}
@@ -130,7 +135,7 @@ export default async function BorrowDetailPage({ params }: { params: Promise<{ i
                 <Card>
                     <h3 className="font-semibold text-[#3d405b] flex items-center gap-2 mb-4">
                         <BookOpen size={16} className="text-[#609279]" />
-                        หนังสือที่ยืม ({record.items.length} เล่ม)
+                        {t("booksInfo.title", { count: record.items.length })}
                     </h3>
                     <div className="space-y-3">
                         {record.items.map((item) => (
@@ -144,7 +149,7 @@ export default async function BorrowDetailPage({ params }: { params: Promise<{ i
                                 <div className="flex items-center gap-1.5">
                                     {item.returned && (
                                         <span className="text-xs bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full">
-                                            คืนแล้ว
+                                            {t("coinsInfo.depositReturned").replace("✓ ", "")}
                                         </span>
                                     )}
                                     {item.isDamaged && (
@@ -162,40 +167,40 @@ export default async function BorrowDetailPage({ params }: { params: Promise<{ i
                 <Card>
                     <h3 className="font-semibold text-[#3d405b] flex items-center gap-2 mb-4">
                         <Coins size={16} className="text-[#a16b9f]" />
-                        เหรียญ
+                        {t("coinsInfo.title")}
                     </h3>
                     <div className="space-y-3 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-[#3d405b]/50">ค่ายืม</span>
-                            <span className="font-medium text-[#609279]">{record.rentalCoins} เหรียญ</span>
+                            <span className="text-[#3d405b]/50">{t("coinsInfo.rental")}</span>
+                            <span className="font-medium text-[#609279]">{record.rentalCoins}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-[#3d405b]/50">ค่ามัดจำ</span>
-                            <span className="font-medium text-[#a16b9f]">{record.depositCoins} เหรียญ</span>
+                            <span className="text-[#3d405b]/50">{t("coinsInfo.deposit")}</span>
+                            <span className="font-medium text-[#a16b9f]">{record.depositCoins}</span>
                         </div>
                         {record.lateFeeCoins > 0 && (
                             <div className="flex justify-between">
-                                <span className="text-[#3d405b]/50">ค่าปรับช้า</span>
-                                <span className="font-medium text-red-500">{record.lateFeeCoins} เหรียญ</span>
+                                <span className="text-[#3d405b]/50">{t("coinsInfo.lateFee")}</span>
+                                <span className="font-medium text-red-500">{record.lateFeeCoins}</span>
                             </div>
                         )}
                         {record.damageFeeCoins > 0 && (
                             <div className="flex justify-between">
-                                <span className="text-[#3d405b]/50">ค่าเสียหาย</span>
-                                <span className="font-medium text-red-500">{record.damageFeeCoins} เหรียญ</span>
+                                <span className="text-[#3d405b]/50">{t("coinsInfo.damageFee")}</span>
+                                <span className="font-medium text-red-500">{record.damageFeeCoins}</span>
                             </div>
                         )}
                         <div className="border-t border-[#d1cce7]/20 pt-2 flex justify-between font-semibold">
-                            <span className="text-[#3d405b]">รวม</span>
+                            <span className="text-[#3d405b]">{t("coinsInfo.total")}</span>
                             <span className="text-[#3d405b]">
-                                {record.rentalCoins + record.depositCoins + record.lateFeeCoins + record.damageFeeCoins} เหรียญ
+                                {record.rentalCoins + record.depositCoins + record.lateFeeCoins + record.damageFeeCoins}
                             </span>
                         </div>
                         {record.depositReturned && (
-                            <p className="text-xs text-emerald-600">✓ คืนมัดจำแล้ว</p>
+                            <p className="text-xs text-emerald-600">{t("coinsInfo.depositReturned")}</p>
                         )}
                         {record.depositForfeited && (
-                            <p className="text-xs text-red-500">✗ ยึดมัดจำ</p>
+                            <p className="text-xs text-red-500">{t("coinsInfo.depositForfeited")}</p>
                         )}
                     </div>
                 </Card>
@@ -206,7 +211,7 @@ export default async function BorrowDetailPage({ params }: { params: Promise<{ i
                 <Card className="mt-4">
                     <h3 className="font-semibold text-[#3d405b] flex items-center gap-2 mb-2">
                         <Clock size={16} className="text-[#3d405b]/40" />
-                        หมายเหตุ
+                        {t("note.title")}
                     </h3>
                     <p className="text-sm text-[#3d405b]/60">{record.note}</p>
                 </Card>

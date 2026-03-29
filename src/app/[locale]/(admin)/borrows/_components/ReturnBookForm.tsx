@@ -5,6 +5,7 @@ import { returnBooks } from "@/actions/borrow";
 import { useRouter } from "next/navigation";
 import { RotateCcw, Loader2, AlertTriangle, CheckCircle2, Check } from "lucide-react";
 import Card from "@/components/ui/Card";
+import { useTranslations } from "next-intl";
 
 interface BookItem {
     id: string;
@@ -27,6 +28,7 @@ interface ReturnBookFormProps {
 }
 
 export default function ReturnBookForm({ borrowId, items, depositCoins, hasOtherBorrows, lateFeePreview }: ReturnBookFormProps) {
+    const t = useTranslations("AdminBorrows.returnForm");
     const router = useRouter();
     const [showForm, setShowForm] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -90,23 +92,23 @@ export default function ReturnBookForm({ borrowId, items, depositCoins, hasOther
                 <div className="text-center py-4">
                     <CheckCircle2 size={32} className="mx-auto mb-2 text-emerald-600" />
                     <p className="font-bold text-emerald-700 text-lg">
-                        คืนหนังสือสำเร็จ! ({result.returnedCount} เล่ม)
+                        {t("successTitle", { count: result.returnedCount ?? 0 })}
                     </p>
                     <div className="mt-3 space-y-1 text-sm text-emerald-600">
-                        {result.remainingCount! > 0 && (
-                            <p className="text-amber-600">ยังเหลืออีก {result.remainingCount} เล่มที่ยังไม่คืน</p>
+                        {(result.remainingCount ?? 0) > 0 && (
+                            <p className="text-amber-600">{t("remaining", { count: result.remainingCount ?? 0 })}</p>
                         )}
-                        {result.lateFee! > 0 && <p>ค่าปรับช้า: {result.lateFee} เหรียญ</p>}
-                        {result.damageFee! > 0 && <p>ค่าเสียหาย: {result.damageFee} เหรียญ</p>}
+                        {(result.lateFee ?? 0) > 0 && <p>{t("lateFee", { fee: result.lateFee ?? 0 })}</p>}
+                        {(result.damageFee ?? 0) > 0 && <p>{t("damageFee", { fee: result.damageFee ?? 0 })}</p>}
                         {result.forfeitDeposit ? (
-                            <p className="text-red-600 font-medium">ยึดมัดจำ {depositCoins} เหรียญ</p>
-                        ) : result.depositReturned! > 0 ? (
-                            <p>คืนมัดจำ: {result.depositReturned} เหรียญ</p>
+                            <p className="text-red-600 font-medium">{t("forfeitDeposit", { fee: depositCoins })}</p>
+                        ) : (result.depositReturned ?? 0) > 0 ? (
+                            <p>{t("depositReturned", { fee: result.depositReturned ?? 0 })}</p>
                         ) : depositCoins > 0 && result.isFullReturn ? (
-                            <p className="text-amber-600">ยังไม่คืนมัดจำ (ยังมีหนังสือยืมค้างอยู่)</p>
+                            <p className="text-amber-600">{t("depositPending")}</p>
                         ) : null}
                     </div>
-                    <p className="text-xs text-emerald-500 mt-3">กำลังรีเฟรชหน้า...</p>
+                    <p className="text-xs text-emerald-500 mt-3">{t("refreshing")}</p>
                 </div>
             </Card>
         );
@@ -118,7 +120,7 @@ export default function ReturnBookForm({ borrowId, items, depositCoins, hasOther
                 <div className="text-center py-4">
                     <AlertTriangle size={32} className="mx-auto mb-2 text-red-500" />
                     <p className="font-bold text-red-600">{result.error}</p>
-                    <button onClick={() => setResult(null)} className="text-sm text-red-500 underline mt-2">ลองอีกครั้ง</button>
+                    <button onClick={() => setResult(null)} className="text-sm text-red-500 underline mt-2">{t("tryAgain")}</button>
                 </div>
             </Card>
         );
@@ -135,7 +137,7 @@ export default function ReturnBookForm({ borrowId, items, depositCoins, hasOther
                 className="mt-4 w-full py-3 bg-[#609279] text-white font-semibold rounded-xl shadow-md shadow-[#609279]/20 hover:bg-[#81b29a] transition-colors flex items-center justify-center gap-2"
             >
                 <RotateCcw size={18} />
-                คืนหนังสือ
+                {t("openFormBtn")}
             </button>
         );
     }
@@ -147,7 +149,7 @@ export default function ReturnBookForm({ borrowId, items, depositCoins, hasOther
         <Card className="mt-4">
             <h3 className="font-bold text-[#3d405b] mb-4 flex items-center gap-2">
                 <RotateCcw size={16} className="text-[#609279]" />
-                คืนหนังสือ
+                {t("formTitle")}
             </h3>
 
             {/* Late fee warning */}
@@ -157,19 +159,19 @@ export default function ReturnBookForm({ borrowId, items, depositCoins, hasOther
                         <AlertTriangle size={16} className={lateFeePreview.forfeitDeposit ? "text-red-500 mt-0.5" : "text-amber-500 mt-0.5"} />
                         <div>
                             <p className={`text-sm font-medium ${lateFeePreview.forfeitDeposit ? "text-red-600" : "text-amber-600"}`}>
-                                คืนช้า {lateFeePreview.lateDays} วัน
+                                {t("lateNotice", { days: lateFeePreview.lateDays })}
                             </p>
                             {lateFeePreview.forfeitDeposit ? (
                                 <p className="text-xs text-red-500 mt-0.5">
-                                    เกิน 30 วัน → ยึดเงินมัดจำ {depositCoins} เหรียญ
+                                    {t("lateForfeit", { fee: depositCoins })}
                                 </p>
                             ) : lateFeePreview.feeCoins > 0 ? (
                                 <p className="text-xs text-amber-500 mt-0.5">
-                                    ค่าปรับ: {lateFeePreview.feeCoins} เหรียญ (จะคิดเมื่อคืนครบ)
+                                    {t("lateFeeNotice", { fee: lateFeePreview.feeCoins })}
                                 </p>
                             ) : (
                                 <p className="text-xs text-emerald-500 mt-0.5">
-                                    ไม่เกิน 5 วัน — ไม่มีค่าปรับ
+                                    {t("noFeeNotice")}
                                 </p>
                             )}
                         </div>
@@ -179,13 +181,13 @@ export default function ReturnBookForm({ borrowId, items, depositCoins, hasOther
 
             {!isLate && (
                 <div className="rounded-xl p-3 mb-4 bg-emerald-50">
-                    <p className="text-sm text-emerald-600 font-medium">✓ คืนตรงเวลา — ไม่มีค่าปรับ</p>
+                    <p className="text-sm text-emerald-600 font-medium">{t("onTime")}</p>
                 </div>
             )}
 
             {/* Select all / deselect all */}
             <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-medium text-[#3d405b]/60">เลือกหนังสือที่ต้องการคืน:</p>
+                <p className="text-xs font-medium text-[#3d405b]/60">{t("selectBooks")}</p>
                 <button
                     type="button"
                     onClick={() => {
@@ -197,7 +199,7 @@ export default function ReturnBookForm({ borrowId, items, depositCoins, hasOther
                     }}
                     className="text-xs text-[#609279] hover:underline"
                 >
-                    {isAllSelected ? "ยกเลิกทั้งหมด" : "เลือกทั้งหมด"}
+                    {isAllSelected ? t("deselectAll") : t("selectAll")}
                 </button>
             </div>
 
@@ -243,7 +245,7 @@ export default function ReturnBookForm({ borrowId, items, depositCoins, hasOther
                                             onChange={() => toggleDamage(item.id)}
                                             className="w-3.5 h-3.5 rounded border-red-300 text-red-500 focus:ring-red-200"
                                         />
-                                        <span className="text-xs text-red-500">ชำรุด</span>
+                                        <span className="text-xs text-red-500">{t("damagedToggle")}</span>
                                     </label>
                                 )}
                             </div>
@@ -251,7 +253,7 @@ export default function ReturnBookForm({ borrowId, items, depositCoins, hasOther
                             {/* Damage fee input */}
                             {isSelected && isDamaged && (
                                 <div className="mt-2 ml-9 flex items-center gap-2">
-                                    <label className="text-xs text-red-500">ค่าเสียหาย:</label>
+                                    <label className="text-xs text-red-500">{t("damageFeeInput")}</label>
                                     <input
                                         type="number"
                                         value={damagedItems.get(item.id) ?? 1}
@@ -259,7 +261,7 @@ export default function ReturnBookForm({ borrowId, items, depositCoins, hasOther
                                         min="0"
                                         className="w-20 px-2 py-1 border border-red-200 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400"
                                     />
-                                    <span className="text-xs text-red-400">เหรียญ</span>
+                                    <span className="text-xs text-red-400">{t("coins")}</span>
                                 </div>
                             )}
                         </div>
@@ -269,7 +271,7 @@ export default function ReturnBookForm({ borrowId, items, depositCoins, hasOther
                 {/* Show already returned items */}
                 {items.filter(i => i.returned).length > 0 && (
                     <div className="mt-2 pt-2 border-t border-[#d1cce7]/20">
-                        <p className="text-xs text-[#3d405b]/40 mb-1">คืนแล้ว:</p>
+                        <p className="text-xs text-[#3d405b]/40 mb-1">{t("alreadyReturned")}</p>
                         {items.filter(i => i.returned).map(item => (
                             <div key={item.id} className="flex items-center gap-2 p-2 text-sm text-[#3d405b]/40">
                                 <CheckCircle2 size={14} className="text-emerald-400" />
@@ -282,38 +284,38 @@ export default function ReturnBookForm({ borrowId, items, depositCoins, hasOther
 
             {/* Summary */}
             <div className="bg-[#f4f1de]/50 rounded-xl p-3 mb-4 space-y-2 text-sm">
-                <p className="font-medium text-[#3d405b]">สรุป: คืน {selectedItems.size} / {unreturned.length} เล่ม</p>
+                <p className="font-medium text-[#3d405b]">{t("summary", { selected: selectedItems.size, total: unreturned.length })}</p>
                 {!isAllSelected && (
                     <p className="text-xs text-amber-600">
-                        ⚠ คืนเพียงบางเล่ม — ค่าปรับและมัดจำจะคิดเมื่อคืนครบทุกเล่ม
+                        {t("partialReturnNotice")}
                     </p>
                 )}
                 {isAllSelected && lateFeePreview.feeCoins > 0 && !lateFeePreview.forfeitDeposit && (
                     <div className="flex justify-between text-amber-600">
-                        <span>ค่าปรับช้า ({lateFeePreview.lateDays} วัน)</span>
-                        <span className="font-medium">{lateFeePreview.feeCoins} เหรียญ</span>
+                        <span>{t("lateFeeLabel", { days: lateFeePreview.lateDays })}</span>
+                        <span className="font-medium">{lateFeePreview.feeCoins} {t("coins")}</span>
                     </div>
                 )}
                 {totalDamageFee > 0 && (
                     <div className="flex justify-between text-red-600">
-                        <span>ค่าเสียหาย</span>
-                        <span className="font-medium">{totalDamageFee} เหรียญ</span>
+                        <span>{t("damageFeeLabel")}</span>
+                        <span className="font-medium">{totalDamageFee} {t("coins")}</span>
                     </div>
                 )}
                 {isAllSelected && (lateFeePreview.forfeitDeposit ? (
                     <div className="flex justify-between text-red-600 font-medium">
-                        <span>ยึดมัดจำ</span>
-                        <span>{depositCoins} เหรียญ</span>
+                        <span>{t("forfeitLabel")}</span>
+                        <span>{depositCoins} {t("coins")}</span>
                     </div>
                 ) : hasOtherBorrows ? (
                     <div className="flex justify-between text-amber-600">
-                        <span>มัดจำ</span>
-                        <span className="font-medium text-xs">ยังไม่คืน (ยังมีหนังสือยืมค้าง)</span>
+                        <span>{t("depositLabel")}</span>
+                        <span className="font-medium text-xs">{t("depositPendingLabel")}</span>
                     </div>
                 ) : (
                     <div className="flex justify-between text-emerald-600">
-                        <span>คืนมัดจำ</span>
-                        <span className="font-medium">{depositCoins} เหรียญ</span>
+                        <span>{t("depositReturnedLabel")}</span>
+                        <span className="font-medium">{depositCoins} {t("coins")}</span>
                     </div>
                 ))}
             </div>
@@ -321,13 +323,13 @@ export default function ReturnBookForm({ borrowId, items, depositCoins, hasOther
             {/* Late fee tiers reference */}
             <details className="mb-4">
                 <summary className="text-xs text-[#3d405b]/40 cursor-pointer hover:text-[#3d405b]/60">
-                    อัตราค่าปรับ
+                    {t("ratesHeader")}
                 </summary>
                 <div className="mt-2 text-xs text-[#3d405b]/50 space-y-1 pl-3">
-                    <p>• ≤ 5 วัน — ไม่มีค่าปรับ</p>
-                    <p>• 6–15 วัน — 1 เหรียญ</p>
-                    <p>• 16–30 วัน — 2 เหรียญ</p>
-                    <p>• เกิน 30 วัน — ยึดเงินมัดจำ</p>
+                    <p>{t("rate1")}</p>
+                    <p>{t("rate2")}</p>
+                    <p>{t("rate3")}</p>
+                    <p>{t("rate4")}</p>
                 </div>
             </details>
 
@@ -338,7 +340,7 @@ export default function ReturnBookForm({ borrowId, items, depositCoins, hasOther
                     disabled={loading}
                     className="flex-1 py-2.5 border border-[#d1cce7]/30 rounded-xl text-sm font-medium text-[#3d405b]/60 hover:bg-[#f4f1de]/50 transition-colors disabled:opacity-50"
                 >
-                    ยกเลิก
+                    {t("cancel")}
                 </button>
                 <button
                     onClick={handleReturn}
@@ -350,7 +352,7 @@ export default function ReturnBookForm({ borrowId, items, depositCoins, hasOther
                     ) : (
                         <>
                             <RotateCcw size={14} />
-                            ยืนยันคืน {selectedItems.size} เล่ม
+                            {t("confirmReturn", { count: selectedItems.size })}
                         </>
                     )}
                 </button>

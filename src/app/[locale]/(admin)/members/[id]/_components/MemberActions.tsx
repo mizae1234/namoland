@@ -5,11 +5,12 @@ import { purchasePackage, spendCoins, extendExpiry, deductCoins, adjustCoinsUp }
 import { Coins, ShoppingCart, Banknote, CreditCard, CalendarPlus, MinusCircle, PlusCircle, BookOpen } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { th } from "date-fns/locale";
+import { th, enUS } from "date-fns/locale";
 import AlertMessage from "@/components/ui/AlertMessage";
 import Card from "@/components/ui/Card";
 import Modal from "@/components/ui/Modal";
 import DateInput from "@/components/ui/DateInput";
+import { useTranslations, useLocale } from "next-intl";
 
 interface PackageOption {
     type: string;
@@ -42,6 +43,9 @@ interface MemberActionsProps {
 }
 
 export default function MemberActions({ member, packages, activities }: MemberActionsProps) {
+    const t = useTranslations("AdminMembers.detail.actions");
+    const locale = useLocale();
+    const dateLocale = locale === "en" ? enUS : th;
     const [showBuy, setShowBuy] = useState(false);
     const [showUse, setShowUse] = useState(false);
     const [showExtend, setShowExtend] = useState(false);
@@ -75,7 +79,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
     const [customCoins, setCustomCoins] = useState("");
     const [customPrice, setCustomPrice] = useState("");
 
-    // Extend state — date picker
+    // Extend state
     const currentOverride = member.coinExpiryOverride ? new Date(member.coinExpiryOverride) : null;
     const [extendDate, setExtendDate] = useState(() => {
         if (currentOverride) return format(currentOverride, "yyyy-MM-dd");
@@ -100,7 +104,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
 
     const handleSelectCustom = () => {
         setShowCustom(true);
-        setSelectedPkg({ type: "CUSTOM", label: "กำหนดเอง", price: customPrice || "0", coins: parseInt(customCoins) || 0, bonus: "-" });
+        setSelectedPkg({ type: "CUSTOM", label: t("customLabel"), price: customPrice || "0", coins: parseInt(customCoins) || 0, bonus: "-" });
         setPaymentMethod("CASH");
         setNote("");
     };
@@ -128,7 +132,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
         setLoading(false);
         if (result.error) setMessage(result.error);
         else {
-            setMessage("ซื้อเหรียญสำเร็จ!");
+            setMessage(t("buySuccess"));
             setSelectedPkg(null);
             setShowBuy(false);
             setTimeout(() => setMessage(""), 3000);
@@ -152,7 +156,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
         setLoading(false);
         if (result.error) setMessage(result.error);
         else {
-            setMessage("ใช้เหรียญสำเร็จ!");
+            setMessage(t("useSuccess"));
             setShowUse(false);
             setPendingUse(null);
             setTimeout(() => setMessage(""), 3000);
@@ -170,7 +174,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
         setLoading(false);
         if (result.error) setMessage(result.error);
         else {
-            setMessage("ขยายเวลาสำเร็จ!");
+            setMessage(t("extendSuccess"));
             setShowExtend(false);
             setExtendNote("");
             setTimeout(() => setMessage(""), 3000);
@@ -188,7 +192,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
         setLoading(false);
         if (result.error) setMessage(result.error);
         else {
-            setMessage("ปรับลดเหรียญสำเร็จ!");
+            setMessage(t("deductSuccess"));
             setShowDeduct(false);
             setDeductAmount("");
             setDeductReason("");
@@ -207,7 +211,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
         setLoading(false);
         if (result.error) setMessage(result.error);
         else {
-            setMessage("ปรับเพิ่มเหรียญสำเร็จ!");
+            setMessage(t("adjustUpSuccess"));
             setShowAdjustUp(false);
             setAddAmount("");
             setAddReason("");
@@ -219,7 +223,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
     return (
         <div className="mb-6">
             <AlertMessage
-                type={message.includes("สำเร็จ") ? "success" : "error"}
+                type={(message.includes("สำเร็จ") || message.includes("success")) ? "success" : "error"}
                 message={message}
             />
 
@@ -229,49 +233,49 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                     className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-medium hover:bg-emerald-600 transition-colors shadow-md shadow-emerald-200"
                 >
                     <ShoppingCart size={16} />
-                    ซื้อเหรียญ
+                    {t("buyCoins")}
                 </button>
                 <button
                     onClick={() => { closeAll(); setShowUse(!showUse); }}
                     className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 text-white rounded-xl text-sm font-medium hover:bg-amber-600 transition-colors shadow-md shadow-amber-200"
                 >
                     <Coins size={16} />
-                    ใช้เหรียญ
+                    {t("useCoins")}
                 </button>
                 <button
                     onClick={() => { closeAll(); setShowExtend(!showExtend); }}
                     className="flex items-center gap-2 px-4 py-2.5 bg-[#a16b9f] text-white rounded-xl text-sm font-medium hover:bg-[#8a5a88] transition-colors shadow-md shadow-[#a16b9f]/30"
                 >
                     <CalendarPlus size={16} />
-                    ขยายเวลา
+                    {t("extendExpiry")}
                 </button>
                 <button
                     onClick={() => { closeAll(); setShowAdjustUp(!showAdjustUp); }}
                     className="flex items-center gap-2 px-4 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-medium hover:bg-blue-600 transition-colors shadow-md shadow-blue-200"
                 >
                     <PlusCircle size={16} />
-                    ปรับเพิ่มเหรียญ
+                    {t("adjustUp")}
                 </button>
                 <button
                     onClick={() => { closeAll(); setShowDeduct(!showDeduct); }}
                     className="flex items-center gap-2 px-4 py-2.5 bg-red-500 text-white rounded-xl text-sm font-medium hover:bg-red-600 transition-colors shadow-md shadow-red-200"
                 >
                     <MinusCircle size={16} />
-                    ปรับลดเหรียญ
+                    {t("adjustDown")}
                 </button>
                 <Link
                     href={`/borrows/new/${member.id}`}
                     className="flex items-center gap-2 px-4 py-2.5 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#4a7a5f] transition-colors shadow-md shadow-[#81b29a]/30"
                 >
                     <BookOpen size={16} />
-                    ยืมหนังสือ
+                    {t("borrowBooks")}
                 </Link>
             </div>
 
             {/* Buy Package */}
             {showBuy && (
                 <Card className="mb-4">
-                    <h3 className="font-semibold text-[#3d405b] mb-4">เลือกแพ็คเกจเหรียญ</h3>
+                    <h3 className="font-semibold text-[#3d405b] mb-4">{t("selectPackage")}</h3>
                     <div className="grid grid-cols-2 gap-3">
                         {packages.map((pkg) => (
                             <button
@@ -281,7 +285,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                                 className="p-4 border-2 border-[#d1cce7]/30 rounded-xl hover:border-[#81b29a] hover:bg-[#81b29a]/10 transition-all text-left disabled:opacity-50"
                             >
                                 <p className="font-bold text-[#3d405b]">{pkg.label}</p>
-                                <p className="text-sm text-[#3d405b]/50">{pkg.price} บาท</p>
+                                <p className="text-sm text-[#3d405b]/50">{pkg.price} {t("baht")}</p>
                                 {pkg.bonus !== "-" && (
                                     <p className="text-xs text-emerald-500 mt-1">{pkg.bonus}</p>
                                 )}
@@ -292,31 +296,31 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                             disabled={loading}
                             className="p-4 border-2 border-dashed border-[#a16b9f]/30 rounded-xl hover:border-[#a16b9f] hover:bg-[#a16b9f]/10 transition-all text-left disabled:opacity-50 col-span-2"
                         >
-                            <p className="font-bold text-[#a16b9f]">✏️ กำหนดเอง</p>
-                            <p className="text-xs text-[#3d405b]/40">ใส่จำนวนเหรียญและราคาเอง</p>
+                            <p className="font-bold text-[#a16b9f]">✏️ {t("customLabel")}</p>
+                            <p className="text-xs text-[#3d405b]/40">{t("customDesc")}</p>
                         </button>
                     </div>
                     {showCustom && (
                         <div className="mt-4 space-y-3 bg-[#a16b9f]/5 rounded-xl p-4">
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="text-xs font-medium text-[#3d405b] block mb-1">จำนวนเหรียญ</label>
+                                    <label className="text-xs font-medium text-[#3d405b] block mb-1">{t("coinsAmount")}</label>
                                     <input
                                         type="number"
                                         value={customCoins}
                                         onChange={(e) => setCustomCoins(e.target.value)}
-                                        placeholder="เช่น 15"
+                                        placeholder="15"
                                         min="1"
                                         className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#a16b9f]/20 focus:border-[#a16b9f]"
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs font-medium text-[#3d405b] block mb-1">ราคา (บาท)</label>
+                                    <label className="text-xs font-medium text-[#3d405b] block mb-1">{t("priceLabel")}</label>
                                     <input
                                         type="number"
                                         value={customPrice}
                                         onChange={(e) => setCustomPrice(e.target.value)}
-                                        placeholder="เช่น 2500"
+                                        placeholder="2500"
                                         min="0"
                                         className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#a16b9f]/20 focus:border-[#a16b9f]"
                                     />
@@ -324,7 +328,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                             </div>
                             {customCoins && customPrice && (
                                 <p className="text-xs text-[#a16b9f] font-medium">
-                                    ✓ {customCoins} เหรียญ · {Number(customPrice).toLocaleString()} บาท
+                                    ✓ {customCoins} {t("coinsUnit")} · {Number(customPrice).toLocaleString()} {t("baht")}
                                 </p>
                             )}
                         </div>
@@ -336,8 +340,8 @@ export default function MemberActions({ member, packages, activities }: MemberAc
             <Modal
                 open={!!selectedPkg && !showCustom || (showCustom && !!customCoins && !!customPrice)}
                 onClose={() => { setSelectedPkg(null); setShowCustom(false); }}
-                title="ยืนยันซื้อเหรียญ"
-                confirmLabel="ยืนยันซื้อ"
+                title={t("confirmBuy")}
+                confirmLabel={t("confirmBuyBtn")}
                 onConfirm={handleConfirmBuy}
                 loading={loading}
             >
@@ -345,14 +349,14 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                     <div className="space-y-4">
                         <div className="bg-[#f4f1de]/50 rounded-xl p-3">
                             <p className="font-bold text-[#3d405b]">
-                                {showCustom ? `กำหนดเอง · ${customCoins} เหรียญ` : selectedPkg?.label}
+                                {showCustom ? `${t("customLabel")} · ${customCoins} ${t("coinsUnit")}` : selectedPkg?.label}
                             </p>
                             <p className="text-sm text-[#3d405b]/50">
-                                {showCustom ? Number(customPrice).toLocaleString() : selectedPkg?.price} บาท
+                                {showCustom ? Number(customPrice).toLocaleString() : selectedPkg?.price} {t("baht")}
                             </p>
                         </div>
                         <div>
-                            <label className="text-sm font-medium text-[#3d405b] block mb-2">ชำระเงินแบบ</label>
+                            <label className="text-sm font-medium text-[#3d405b] block mb-2">{t("paymentMethod")}</label>
                             <div className="flex gap-2">
                                 <button
                                     type="button"
@@ -363,7 +367,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                                         }`}
                                 >
                                     <Banknote size={16} />
-                                    เงินสด
+                                    {t("cash")}
                                 </button>
                                 <button
                                     type="button"
@@ -374,13 +378,13 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                                         }`}
                                 >
                                     <CreditCard size={16} />
-                                    เงินโอน
+                                    {t("transfer")}
                                 </button>
                             </div>
                         </div>
                         <div>
                             <label className="text-sm font-medium text-[#3d405b] block mb-2">
-                                วันที่ซื้อ <span className="font-normal text-[#3d405b]/40">(สามารถเลือกวันย้อนหลังได้)</span>
+                                {t("purchaseDate")} <span className="font-normal text-[#3d405b]/40">({t("purchaseDateHint")})</span>
                             </label>
                             <input
                                 type="date"
@@ -391,19 +395,19 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                             />
                             {purchaseDate !== format(new Date(), "yyyy-MM-dd") && (
                                 <p className="text-xs text-amber-600 mt-1 font-medium">
-                                    ⏳ จะบันทึกเป็นวันที่ {format(new Date(purchaseDate + "T00:00:00"), "d MMMM yyyy", { locale: th })}
+                                    ⏳ {t("purchaseDatePreview", { date: format(new Date(purchaseDate + "T00:00:00"), "d MMMM yyyy", { locale: dateLocale }) })}
                                 </p>
                             )}
                         </div>
                         <div>
                             <label className="text-sm font-medium text-[#3d405b] block mb-2">
-                                หมายเหตุ <span className="font-normal text-[#3d405b]/40">(ไม่บังคับ)</span>
+                                {t("noteLabel")} <span className="font-normal text-[#3d405b]/40">({t("noteOptional")})</span>
                             </label>
                             <input
                                 type="text"
                                 value={note}
                                 onChange={(e) => setNote(e.target.value)}
-                                placeholder="เช่น รับสลิปแล้ว, ชำระพร้อมค่าเรียน..."
+                                placeholder={t("notePlaceholder")}
                                 className="w-full px-3 py-2.5 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20 focus:border-[#81b29a]"
                             />
                         </div>
@@ -414,30 +418,29 @@ export default function MemberActions({ member, packages, activities }: MemberAc
             {/* Use Coins */}
             {showUse && (
                 <Card className="mb-4">
-                    <h3 className="font-semibold text-[#3d405b] mb-4">ใช้เหรียญ — เลือกกิจกรรม</h3>
+                    <h3 className="font-semibold text-[#3d405b] mb-4">{t("useTitle")}</h3>
                     {activePackages.length === 0 ? (
-                        <p className="text-sm text-[#3d405b]/40">ไม่มีเหรียญคงเหลือ</p>
+                        <p className="text-sm text-[#3d405b]/40">{t("noCoins")}</p>
                     ) : pendingUse ? (
-                        /* Confirm Step */
                         <div className="space-y-4">
                             <div className="bg-amber-50 rounded-xl p-4">
-                                <p className="text-sm font-medium text-amber-700">ยืนยันการใช้เหรียญ</p>
+                                <p className="text-sm font-medium text-amber-700">{t("confirmUse")}</p>
                                 <p className="text-lg font-bold text-[#3d405b] mt-1">{pendingUse.label}</p>
-                                <p className="text-sm text-amber-600 mt-1">จะหัก {pendingUse.coins} เหรียญ</p>
+                                <p className="text-sm text-amber-600 mt-1">{t("willDeduct", { coins: pendingUse.coins })}</p>
                             </div>
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => setPendingUse(null)}
                                     className="flex-1 py-2.5 border border-[#d1cce7]/30 rounded-xl text-sm text-[#3d405b]/50 hover:bg-[#f4f1de]"
                                 >
-                                    เปลี่ยนกิจกรรม
+                                    {t("changeActivity")}
                                 </button>
                                 <button
                                     onClick={handleConfirmUse}
                                     disabled={loading}
                                     className="flex-1 py-2.5 bg-amber-500 text-white rounded-xl text-sm font-medium hover:bg-amber-600 disabled:opacity-50"
                                 >
-                                    {loading ? "กำลังดำเนินการ..." : "ยืนยันใช้เหรียญ"}
+                                    {loading ? t("processing") : t("confirmUseBtn")}
                                 </button>
                             </div>
                         </div>
@@ -451,18 +454,17 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                                     className="w-full flex items-center justify-between p-3 border border-[#d1cce7]/30 rounded-xl hover:border-[#81b29a] hover:bg-[#81b29a]/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                                 >
                                     <span className="text-sm text-[#3d405b]/80">{act.name}</span>
-                                    <span className="text-sm font-semibold text-amber-600">{act.coins} เหรียญ</span>
+                                    <span className="text-sm font-semibold text-amber-600">{act.coins} {t("coinsUnit")}</span>
                                 </button>
                             ))}
 
-                            {/* Custom Activity */}
                             {!customActivity ? (
                                 <button
                                     onClick={() => setCustomActivity(true)}
                                     className="w-full flex items-center justify-between p-3 border border-dashed border-[#d1cce7]/40 rounded-xl hover:border-[#81b29a] hover:bg-[#81b29a]/5 transition-all"
                                 >
-                                    <span className="text-sm text-[#3d405b]/50">รายการอื่นๆ...</span>
-                                    <span className="text-xs text-[#3d405b]/30">กำหนดเอง</span>
+                                    <span className="text-sm text-[#3d405b]/50">{t("otherActivity")}</span>
+                                    <span className="text-xs text-[#3d405b]/30">{t("custom")}</span>
                                 </button>
                             ) : (
                                 <div className="p-3 border border-[#81b29a] bg-[#81b29a]/5 rounded-xl space-y-3">
@@ -470,14 +472,14 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                                         type="text"
                                         value={customActivityName}
                                         onChange={(e) => setCustomActivityName(e.target.value)}
-                                        placeholder="ชื่อกิจกรรม/รายการ"
+                                        placeholder={t("activityName")}
                                         className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20"
                                     />
                                     <input
                                         type="number"
                                         value={customActivityCoins}
                                         onChange={(e) => setCustomActivityCoins(e.target.value)}
-                                        placeholder="จำนวนเหรียญ"
+                                        placeholder={t("coinsAmount")}
                                         min="1"
                                         className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20"
                                     />
@@ -486,14 +488,14 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                                             onClick={() => { setCustomActivity(false); setCustomActivityName(""); setCustomActivityCoins(""); }}
                                             className="flex-1 py-2 text-sm text-[#3d405b]/50 hover:text-[#3d405b]"
                                         >
-                                            ยกเลิก
+                                            {t("~Common.cancel")}
                                         </button>
                                         <button
-                                            onClick={() => handleSelectActivity({ label: customActivityName || "อื่นๆ", coins: parseInt(customActivityCoins) || 1, hours: 0 })}
+                                            onClick={() => handleSelectActivity({ label: customActivityName || t("otherActivity"), coins: parseInt(customActivityCoins) || 1, hours: 0 })}
                                             disabled={!customActivityCoins || parseInt(customActivityCoins) <= 0}
                                             className="flex-1 py-2 bg-[#609279] text-white rounded-lg text-sm font-medium hover:bg-[#4e7a64] disabled:opacity-50"
                                         >
-                                            เลือก
+                                            {t("select")}
                                         </button>
                                     </div>
                                 </div>
@@ -503,32 +505,30 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                 </Card>
             )}
 
-            {/* Extend Expiry — Member Level */}
+            {/* Extend Expiry */}
             {showExtend && (
                 <Card className="mb-4">
-                    <h3 className="font-semibold text-[#3d405b] mb-2">ขยายเวลาหมดอายุ</h3>
+                    <h3 className="font-semibold text-[#3d405b] mb-2">{t("extendTitle")}</h3>
                     <p className="text-xs text-[#3d405b]/40 mb-4">
-                        ตั้งวันหมดอายุรวมสำหรับสมาชิกคนนี้ — ทุกแพ็คเกจจะหมดพร้อมกัน
+                        {t("extendDesc")}
                     </p>
 
                     {activePackages.length === 0 ? (
-                        <p className="text-sm text-[#3d405b]/40">ไม่มีแพ็คเกจที่ active</p>
+                        <p className="text-sm text-[#3d405b]/40">{t("noActivePackages")}</p>
                     ) : (
                         <div className="space-y-4">
-                            {/* Current expiry info */}
                             {currentOverride && (
                                 <div className="bg-[#a16b9f]/5 rounded-xl p-3">
-                                    <p className="text-xs text-[#3d405b]/40 mb-1">วันหมดอายุปัจจุบัน (ที่ตั้งไว้)</p>
+                                    <p className="text-xs text-[#3d405b]/40 mb-1">{t("currentExpiry")}</p>
                                     <p className="text-sm font-bold text-[#a16b9f]">
-                                        {format(currentOverride, "d MMMM yyyy", { locale: th })}
+                                        {format(currentOverride, "d MMMM yyyy", { locale: dateLocale })}
                                     </p>
                                 </div>
                             )}
 
-                            {/* Date picker */}
                             <div>
                                 <label className="text-sm font-medium text-[#3d405b] block mb-2">
-                                    เลือกวันหมดอายุใหม่
+                                    {t("newExpiryDate")}
                                 </label>
                                 <DateInput
                                     value={extendDate}
@@ -538,12 +538,11 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                                 />
                             </div>
 
-                            {/* Quick presets */}
                             <div className="flex gap-2 flex-wrap">
                                 {[
-                                    { label: "+30 วัน", days: 30 },
-                                    { label: "+60 วัน", days: 60 },
-                                    { label: "+90 วัน", days: 90 },
+                                    { label: t("days30"), days: 30 },
+                                    { label: t("days60"), days: 60 },
+                                    { label: t("days90"), days: 90 },
                                 ].map((opt) => (
                                     <button
                                         key={opt.days}
@@ -561,36 +560,33 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                                 ))}
                             </div>
 
-                            {/* Preview */}
                             {extendDate && (
                                 <div className="bg-emerald-50 rounded-xl p-3 text-sm">
                                     <p className="text-emerald-600 font-medium">
-                                        ✓ เหรียญทั้งหมดจะหมดอายุวันที่ {format(new Date(extendDate), "d MMMM yyyy", { locale: th })}
+                                        ✓ {t("expiryPreview", { date: format(new Date(extendDate), "d MMMM yyyy", { locale: dateLocale }) })}
                                     </p>
                                 </div>
                             )}
 
-                            {/* Note */}
                             <div>
                                 <label className="text-sm font-medium text-[#3d405b] block mb-2">
-                                    หมายเหตุ <span className="font-normal text-[#3d405b]/40">(ไม่บังคับ)</span>
+                                    {t("noteLabel")} <span className="font-normal text-[#3d405b]/40">({t("noteOptional")})</span>
                                 </label>
                                 <input
                                     type="text"
                                     value={extendNote}
                                     onChange={(e) => setExtendNote(e.target.value)}
-                                    placeholder="เหตุผลที่ขยายเวลา..."
+                                    placeholder={t("extendReason")}
                                     className="w-full px-3 py-2.5 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#a16b9f]/20 focus:border-[#a16b9f]"
                                 />
                             </div>
 
-                            {/* Confirm */}
                             <button
                                 onClick={handleExtend}
                                 disabled={loading || !extendDate}
                                 className="w-full py-2.5 bg-[#a16b9f] text-white rounded-xl text-sm font-medium hover:bg-[#8a5a88] transition-colors disabled:opacity-50"
                             >
-                                {loading ? "กำลังดำเนินการ..." : "ยืนยันตั้งวันหมดอายุ"}
+                                {loading ? t("processing") : t("confirmExtend")}
                             </button>
                         </div>
                     )}
@@ -600,41 +596,41 @@ export default function MemberActions({ member, packages, activities }: MemberAc
             {/* Adjust Up Coins */}
             {showAdjustUp && (
                 <Card className="mb-4">
-                    <h3 className="font-semibold text-[#3d405b] mb-2">ปรับเพิ่มเหรียญ</h3>
+                    <h3 className="font-semibold text-[#3d405b] mb-2">{t("adjustUpTitle")}</h3>
                     <p className="text-xs text-[#3d405b]/40 mb-4">
-                        ระบุจำนวนเหรียญที่ต้องการเพิ่ม และเหตุผล — ระบบจะเพิ่มเข้าแพ็คเกจเก่าสุดที่ active
+                        {t("adjustUpDesc")}
                     </p>
                     <div className="space-y-4">
                         <div>
-                            <label className="text-sm font-medium text-[#3d405b] block mb-2">จำนวนเหรียญที่จะเพิ่ม</label>
+                            <label className="text-sm font-medium text-[#3d405b] block mb-2">{t("addCoinsLabel")}</label>
                             <input
                                 type="number"
                                 value={addAmount}
                                 onChange={(e) => setAddAmount(e.target.value)}
-                                placeholder="เช่น 5"
+                                placeholder="5"
                                 min="1"
                                 className="w-full px-3 py-2.5 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
                             />
                         </div>
                         <div>
                             <label className="text-sm font-medium text-[#3d405b] block mb-2">
-                                เหตุผล <span className="font-normal text-[#3d405b]/40">(ไม่บังคับ)</span>
+                                {t("reasonLabel")} <span className="font-normal text-[#3d405b]/40">({t("noteOptional")})</span>
                             </label>
                             <input
                                 type="text"
                                 value={addReason}
                                 onChange={(e) => setAddReason(e.target.value)}
-                                placeholder="เช่น ชดเชยเหรียญ, โปรโมชั่นพิเศษ..."
+                                placeholder={t("addPlaceholder")}
                                 className="w-full px-3 py-2.5 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
                             />
                         </div>
                         {addAmount && parseInt(addAmount) > 0 && (
                             <div className="bg-blue-50 rounded-xl p-3 text-sm">
                                 <p className="text-blue-600 font-medium">
-                                    ✓ จะเพิ่ม {addAmount} เหรียญ ให้สมาชิกคนนี้
+                                    ✓ {t("addPreview", { amount: addAmount })}
                                 </p>
                                 {addReason && (
-                                    <p className="text-xs text-blue-400 mt-1">เหตุผล: {addReason}</p>
+                                    <p className="text-xs text-blue-400 mt-1">{t("reasonPrefix", { reason: addReason })}</p>
                                 )}
                             </div>
                         )}
@@ -643,7 +639,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                             disabled={loading || !addAmount || parseInt(addAmount) <= 0}
                             className="w-full py-2.5 bg-blue-500 text-white rounded-xl text-sm font-medium hover:bg-blue-600 transition-colors disabled:opacity-50"
                         >
-                            {loading ? "กำลังดำเนินการ..." : "ยืนยันเพิ่มเหรียญ"}
+                            {loading ? t("processing") : t("confirmAdd")}
                         </button>
                     </div>
                 </Card>
@@ -652,70 +648,65 @@ export default function MemberActions({ member, packages, activities }: MemberAc
             {/* Deduct Coins */}
             {showDeduct && (
                 <Card className="mb-4">
-                    <h3 className="font-semibold text-[#3d405b] mb-2">ปรับลดเหรียญ</h3>
+                    <h3 className="font-semibold text-[#3d405b] mb-2">{t("deductTitle")}</h3>
                     <p className="text-xs text-[#3d405b]/40 mb-4">
-                        ระบุจำนวนเหรียญที่ต้องการตัดออก และเหตุผล — ระบบจะตัดจากแพ็คเกจเก่าสุดก่อนอัตโนมัติ
+                        {t("deductDesc")}
                     </p>
 
                     {activePackages.length === 0 ? (
-                        <p className="text-sm text-[#3d405b]/40">ไม่มีเหรียญคงเหลือ</p>
+                        <p className="text-sm text-[#3d405b]/40">{t("noCoins")}</p>
                     ) : (
                         <div className="space-y-4">
-                            {/* Current balance */}
                             <div className="bg-[#f4f1de]/50 rounded-xl p-3">
-                                <p className="text-xs text-[#3d405b]/40 mb-1">เหรียญคงเหลือ</p>
+                                <p className="text-xs text-[#3d405b]/40 mb-1">{t("remainingCoins")}</p>
                                 <p className="text-lg font-bold text-emerald-600">
-                                    {activePackages.reduce((s, p) => s + p.remainingCoins, 0)} เหรียญ
+                                    {activePackages.reduce((s, p) => s + p.remainingCoins, 0)} {t("coinsUnit")}
                                 </p>
                             </div>
 
-                            {/* Amount */}
                             <div>
-                                <label className="text-sm font-medium text-[#3d405b] block mb-2">จำนวนเหรียญที่จะตัด</label>
+                                <label className="text-sm font-medium text-[#3d405b] block mb-2">{t("deductLabel")}</label>
                                 <input
                                     type="number"
                                     value={deductAmount}
                                     onChange={(e) => setDeductAmount(e.target.value)}
-                                    placeholder="เช่น 3"
+                                    placeholder="3"
                                     min="1"
                                     max={activePackages.reduce((s, p) => s + p.remainingCoins, 0)}
                                     className="w-full px-3 py-2.5 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400"
                                 />
                             </div>
 
-                            {/* Reason */}
                             <div>
                                 <label className="text-sm font-medium text-[#3d405b] block mb-2">
-                                    เหตุผล <span className="font-normal text-[#3d405b]/40">(ไม่บังคับ)</span>
+                                    {t("reasonLabel")} <span className="font-normal text-[#3d405b]/40">({t("noteOptional")})</span>
                                 </label>
                                 <input
                                     type="text"
                                     value={deductReason}
                                     onChange={(e) => setDeductReason(e.target.value)}
-                                    placeholder="เช่น แก้ไขยอดเหรียญ, คืนค่าเรียนผิด..."
+                                    placeholder={t("deductPlaceholder")}
                                     className="w-full px-3 py-2.5 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400"
                                 />
                             </div>
 
-                            {/* Preview */}
                             {deductAmount && parseInt(deductAmount) > 0 && (
                                 <div className="bg-red-50 rounded-xl p-3 text-sm">
                                     <p className="text-red-600 font-medium">
-                                        ⚠️ จะตัด {deductAmount} เหรียญ จากสมาชิกคนนี้
+                                        ⚠️ {t("deductPreview", { amount: deductAmount })}
                                     </p>
                                     {deductReason && (
-                                        <p className="text-xs text-red-400 mt-1">เหตุผล: {deductReason}</p>
+                                        <p className="text-xs text-red-400 mt-1">{t("reasonPrefix", { reason: deductReason })}</p>
                                     )}
                                 </div>
                             )}
 
-                            {/* Confirm */}
                             <button
                                 onClick={handleDeduct}
                                 disabled={loading || !deductAmount || parseInt(deductAmount) <= 0}
                                 className="w-full py-2.5 bg-red-500 text-white rounded-xl text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50"
                             >
-                                {loading ? "กำลังดำเนินการ..." : "ยืนยันตัดเหรียญ"}
+                                {loading ? t("processing") : t("confirmDeduct")}
                             </button>
                         </div>
                     )}

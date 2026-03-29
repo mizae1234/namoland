@@ -1,18 +1,22 @@
 import { getExpiringPackages, getAllTopUps } from "@/actions/coin";
 import { Coins, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
-import { th } from "date-fns/locale";
+import { th, enUS } from "date-fns/locale";
+import { getTranslations, getLocale } from "next-intl/server";
 import ExpiryActions from "./_components/ExpiryActions";
 import Card from "@/components/ui/Card";
 import TopUpActions from "./top-ups/_components/TopUpActions";
 
-const STATUS_MAP: Record<string, { label: string; className: string }> = {
-    PENDING: { label: "รอดำเนินการ", className: "bg-amber-100 text-amber-700" },
-    APPROVED: { label: "อนุมัติแล้ว", className: "bg-emerald-100 text-emerald-700" },
-    REJECTED: { label: "ปฏิเสธ", className: "bg-red-100 text-red-700" },
-};
-
 export default async function CoinsPage() {
+    const locale = await getLocale();
+    const isThai = locale === "th";
+    const t = await getTranslations("AdminCoins");
+
+    const STATUS_MAP: Record<string, { label: string; className: string }> = {
+        PENDING: { label: t("statusPending"), className: "bg-amber-100 text-amber-700" },
+        APPROVED: { label: t("statusApproved"), className: "bg-emerald-100 text-emerald-700" },
+        REJECTED: { label: t("statusRejected"), className: "bg-red-100 text-red-700" },
+    };
     const [expiring, topUps] = await Promise.all([
         getExpiringPackages(),
         getAllTopUps(),
@@ -24,8 +28,8 @@ export default async function CoinsPage() {
     return (
         <div>
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-[#3d405b]">จัดการเหรียญ</h1>
-                <p className="text-[#3d405b]/50 mt-1">คำขอเติมเหรียญ และเหรียญใกล้หมดอายุ</p>
+                <h1 className="text-2xl font-bold text-[#3d405b]">{t("title")}</h1>
+                <p className="text-[#3d405b]/50 mt-1">{t("subtitle")}</p>
             </div>
 
             {/* Pending Top-Up Requests */}
@@ -33,10 +37,10 @@ export default async function CoinsPage() {
                 <div className="p-6 border-b border-[#d1cce7]/20 flex items-center justify-between">
                     <h2 className="font-semibold text-[#3d405b] flex items-center gap-2">
                         <Coins size={18} className="text-amber-500" />
-                        คำขอเติมเหรียญ
+                        {t("topUpRequests")}
                         {pending.length > 0 && (
                             <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
-                                {pending.length} รายการรอ
+                                {t("pendingItems", { count: pending.length })}
                             </span>
                         )}
                     </h2>
@@ -44,7 +48,7 @@ export default async function CoinsPage() {
                 <div className="divide-y divide-[#d1cce7]/15">
                     {pending.length === 0 ? (
                         <div className="p-6 text-center text-[#3d405b]/40 text-sm">
-                            ไม่มีคำขอเติมเหรียญที่รอดำเนินการ
+                            {t("noPendingRequests")}
                         </div>
                     ) : (
                         pending.map((req) => (
@@ -53,9 +57,9 @@ export default async function CoinsPage() {
                                     <div className="min-w-0">
                                         <p className="font-medium text-[#3d405b]/80 text-sm">{req.user.parentName}</p>
                                         <div className="flex items-center gap-3 text-xs text-[#3d405b]/40 mt-0.5">
-                                            <span className="font-semibold text-amber-600">{req.coins} เหรียญ</span>
+                                            <span className="font-semibold text-amber-600">{req.coins} {t("coinsLabel")}</span>
                                             <span>฿{Number(req.amount).toLocaleString()}</span>
-                                            <span>{format(new Date(req.createdAt), "d MMM yy HH:mm", { locale: th })}</span>
+                                            <span>{format(new Date(req.createdAt), isThai ? "d MMM yy HH:mm" : "MMM d, yy HH:mm", { locale: isThai ? th : enUS })}</span>
                                         </div>
                                         {req.slipNote && (
                                             <p className="text-xs text-[#3d405b]/40 mt-0.5">💬 {req.slipNote}</p>
@@ -75,7 +79,7 @@ export default async function CoinsPage() {
                     <details>
                         <summary className="p-6 cursor-pointer hover:bg-[#f4f1de]/30 transition-colors">
                             <span className="font-semibold text-[#3d405b] text-sm">
-                                ประวัติคำขอเติมเหรียญ ({others.length} รายการ)
+                                {t("historyTopUps", { count: others.length })}
                             </span>
                         </summary>
                         <div className="divide-y divide-[#d1cce7]/15 border-t border-[#d1cce7]/20">
@@ -87,9 +91,9 @@ export default async function CoinsPage() {
                                             <div>
                                                 <p className="text-sm font-medium text-[#3d405b]/70">{req.user.parentName}</p>
                                                 <div className="flex items-center gap-3 text-xs text-[#3d405b]/40 mt-0.5">
-                                                    <span>{req.coins} เหรียญ</span>
+                                                    <span>{req.coins} {t("coinsLabel")}</span>
                                                     <span>฿{Number(req.amount).toLocaleString()}</span>
-                                                    <span>{format(new Date(req.createdAt), "d MMM yy HH:mm", { locale: th })}</span>
+                                                    <span>{format(new Date(req.createdAt), isThai ? "d MMM yy HH:mm" : "MMM d, yy HH:mm", { locale: isThai ? th : enUS })}</span>
                                                 </div>
                                             </div>
                                             <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${status.className}`}>
@@ -113,9 +117,9 @@ export default async function CoinsPage() {
                     <AlertTriangle size={20} className="text-amber-500 mt-0.5" />
                     <div>
                         <p className="font-medium text-amber-800">
-                            มี {expiring.length} แพ็คเกจใกล้หมดอายุภายใน 7 วัน
+                            {t("expiringAlertTitle", { count: expiring.length })}
                         </p>
-                        <p className="text-sm text-amber-600">กรุณาตรวจสอบและดำเนินการ</p>
+                        <p className="text-sm text-amber-600">{t("expiringAlertSubtitle")}</p>
                     </div>
                 </div>
             )}
@@ -125,13 +129,13 @@ export default async function CoinsPage() {
                 <div className="p-6 border-b border-[#d1cce7]/20">
                     <h2 className="font-semibold text-[#3d405b] flex items-center gap-2">
                         <Coins size={18} className="text-amber-500" />
-                        เหรียญใกล้หมดอายุ
+                        {t("expiringCoinsTitle")}
                     </h2>
                 </div>
                 <div className="divide-y divide-[#d1cce7]/15">
                     {expiring.length === 0 ? (
                         <div className="p-6 text-center text-[#3d405b]/40 text-sm">
-                            ไม่มีเหรียญใกล้หมดอายุ
+                            {t("noExpiringCoins")}
                         </div>
                     ) : (
                         expiring.map((pkg) => (
@@ -141,11 +145,11 @@ export default async function CoinsPage() {
                                         <p className="font-medium text-[#3d405b]/80">{pkg.user.parentName}</p>
                                         <p className="text-sm text-[#3d405b]/50">{pkg.user.phone}</p>
                                         <p className="text-xs text-[#3d405b]/40 mt-1">
-                                            คงเหลือ: <span className="font-semibold text-amber-600">{pkg.remainingCoins} เหรียญ</span>
-                                            {" · "}หมดอายุ:{" "}
+                                            {t("remainingCoins")} <span className="font-semibold text-amber-600">{pkg.remainingCoins} {t("coinsLabel")}</span>
+                                            {" · "}{t("expiresAt")}{" "}
                                             {pkg.expiresAt && (
                                                 <span className="text-red-500 font-medium">
-                                                    {format(new Date(pkg.expiresAt), "d MMM yyyy", { locale: th })}
+                                                    {format(new Date(pkg.expiresAt), isThai ? "d MMM yyyy" : "MMM d, yyyy", { locale: isThai ? th : enUS })}
                                                 </span>
                                             )}
                                         </p>

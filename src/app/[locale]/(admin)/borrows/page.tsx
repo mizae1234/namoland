@@ -8,6 +8,7 @@ import ConfirmReserveButton from "./_components/ConfirmReserveButton";
 import PageHeader from "@/components/ui/PageHeader";
 import Card from "@/components/ui/Card";
 import StatusBadge from "@/components/ui/StatusBadge";
+import { getTranslations, getLocale } from "next-intl/server";
 
 const PAGE_SIZE = 15;
 
@@ -29,6 +30,10 @@ export default async function BorrowsPage({
 }: {
     searchParams: Promise<{ search?: string; from?: string; to?: string; page?: string }>;
 }) {
+    const t = await getTranslations("AdminBorrows");
+    const localeStr = await getLocale();
+    const isThai = localeStr === "th";
+
     const params = await searchParams;
 
     // Default date range: 1 month
@@ -40,21 +45,21 @@ export default async function BorrowsPage({
     const to = params.to || defaultTo;
     const currentPage = Math.max(1, parseInt(params.page || "1"));
 
-    const allBorrows = await getBorrows({
+    const { records: borrows, totalCount: totalRecords } = await getBorrows({
         search: params.search,
         from,
         to,
+        page: currentPage,
+        pageSize: PAGE_SIZE,
     });
 
     // Pre-compute which RESERVED users already have active deposit (shared service)
-    const reservedUserIds = [...new Set(allBorrows.filter(b => b.status === "RESERVED").map(b => b.userId))];
+    const reservedUserIds = [...new Set(borrows.filter(b => b.status === "RESERVED").map(b => b.userId))];
     const usersWithDeposit = await getUsersWithActiveDeposit(reservedUserIds);
 
     // Pagination
-    const totalRecords = allBorrows.length;
     const totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
     const safePage = Math.min(currentPage, totalPages);
-    const borrows = allBorrows.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
     // Build pagination URL helper
     const buildPageUrl = (page: number) => {
@@ -69,10 +74,10 @@ export default async function BorrowsPage({
     return (
         <div>
             <PageHeader
-                title="ยืม-คืนหนังสือ"
-                subtitle="จัดการรายการยืม-คืนทั้งหมด"
+                title={t("title")}
+                subtitle={t("subtitle")}
                 actionHref="/borrows/scan"
-                actionLabel="สแกน QR"
+                actionLabel={t("scanQr")}
                 actionIcon={<QrCode size={18} />}
             />
 
@@ -86,8 +91,8 @@ export default async function BorrowsPage({
             {/* Results count */}
             <div className="flex items-center justify-between mb-3">
                 <p className="text-sm text-[#3d405b]/40">
-                    พบ {totalRecords} รายการ
-                    {totalPages > 1 && ` · หน้า ${safePage}/${totalPages}`}
+                    {t("resultsCount", { count: totalRecords })}
+                    {totalPages > 1 && ` · ${t("pageInfo", { current: safePage, total: totalPages })}`}
                 </p>
             </div>
 
@@ -96,13 +101,13 @@ export default async function BorrowsPage({
                     <table className="w-full min-w-[900px]">
                         <thead>
                             <tr className="bg-[#f4f1de]/50 border-b border-[#d1cce7]/20">
-                                <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase whitespace-nowrap">รหัส</th>
-                                <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase whitespace-nowrap">ผู้ยืม</th>
-                                <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase whitespace-nowrap">หนังสือ</th>
-                                <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase whitespace-nowrap">วันยืม</th>
-                                <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase whitespace-nowrap">กำหนดคืน</th>
-                                <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase whitespace-nowrap">คืนวันที่</th>
-                                <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase whitespace-nowrap">สถานะ</th>
+                                <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase whitespace-nowrap">{t("table.code")}</th>
+                                <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase whitespace-nowrap">{t("table.borrower")}</th>
+                                <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase whitespace-nowrap">{t("table.book")}</th>
+                                <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase whitespace-nowrap">{t("table.borrowDate")}</th>
+                                <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase whitespace-nowrap">{t("table.dueDate")}</th>
+                                <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase whitespace-nowrap">{t("table.returnDate")}</th>
+                                <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase whitespace-nowrap">{t("table.status")}</th>
                                 <th className="text-right px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase whitespace-nowrap"></th>
                             </tr>
                         </thead>
@@ -111,7 +116,7 @@ export default async function BorrowsPage({
                                 <tr>
                                     <td colSpan={8} className="px-6 py-12 text-center text-[#3d405b]/40">
                                         <ArrowLeftRight size={32} className="mx-auto mb-2 opacity-50" />
-                                        ไม่พบรายการยืมในช่วงเวลาที่เลือก
+                                        {t("table.empty")}
                                     </td>
                                 </tr>
                             ) : (
@@ -130,14 +135,14 @@ export default async function BorrowsPage({
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-sm text-[#3d405b]/50 whitespace-nowrap">
-                                                {format(new Date(b.borrowDate), "d MMM yy", { locale: th })}
+                                                {format(new Date(b.borrowDate), "d MMM yy", { locale: isThai ? th : undefined })}
                                             </td>
                                             <td className="px-6 py-4 text-sm text-[#3d405b]/50 whitespace-nowrap">
-                                                {format(new Date(b.dueDate), "d MMM yy", { locale: th })}
+                                                {format(new Date(b.dueDate), "d MMM yy", { locale: isThai ? th : undefined })}
                                             </td>
                                             <td className="px-6 py-4 text-sm text-[#3d405b]/50 whitespace-nowrap">
                                                 {b.returnDate
-                                                    ? format(new Date(b.returnDate), "d MMM yy", { locale: th })
+                                                    ? format(new Date(b.returnDate), "d MMM yy", { locale: isThai ? th : undefined })
                                                     : <span className="text-[#3d405b]/30">—</span>
                                                 }
                                             </td>
@@ -153,7 +158,7 @@ export default async function BorrowsPage({
                                                         href={`/borrows/${b.id}`}
                                                         className="text-sm text-[#609279] hover:text-[#81b29a] font-medium"
                                                     >
-                                                        ดู →
+                                                        {t("table.view")}
                                                     </Link>
                                                 </div>
                                             </td>
@@ -175,12 +180,12 @@ export default async function BorrowsPage({
                             className="flex items-center gap-1 px-3 py-2 text-sm text-[#3d405b]/60 bg-white border border-[#d1cce7]/30 rounded-xl hover:bg-[#f4f1de]/50 transition-colors"
                         >
                             <ChevronLeft size={14} />
-                            ก่อนหน้า
+                            {t("pagination.previous")}
                         </Link>
                     ) : (
                         <span className="flex items-center gap-1 px-3 py-2 text-sm text-[#3d405b]/20 border border-[#d1cce7]/15 rounded-xl cursor-not-allowed">
                             <ChevronLeft size={14} />
-                            ก่อนหน้า
+                            {t("pagination.previous")}
                         </span>
                     )}
 
@@ -208,12 +213,12 @@ export default async function BorrowsPage({
                             href={buildPageUrl(safePage + 1)}
                             className="flex items-center gap-1 px-3 py-2 text-sm text-[#3d405b]/60 bg-white border border-[#d1cce7]/30 rounded-xl hover:bg-[#f4f1de]/50 transition-colors"
                         >
-                            ถัดไป
+                            {t("pagination.next")}
                             <ChevronRight size={14} />
                         </Link>
                     ) : (
                         <span className="flex items-center gap-1 px-3 py-2 text-sm text-[#3d405b]/20 border border-[#d1cce7]/15 rounded-xl cursor-not-allowed">
-                            ถัดไป
+                            {t("pagination.next")}
                             <ChevronRight size={14} />
                         </span>
                     )}

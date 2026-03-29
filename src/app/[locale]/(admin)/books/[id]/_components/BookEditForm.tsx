@@ -10,6 +10,7 @@ import AlertMessage from "@/components/ui/AlertMessage";
 import Card from "@/components/ui/Card";
 import StatusBadge from "@/components/ui/StatusBadge";
 import PrintQrButton from "./PrintQrButton";
+import { useTranslations, useLocale } from "next-intl";
 
 type BookData = {
     id: string;
@@ -38,6 +39,10 @@ type BookData = {
 };
 
 export default function BookEditForm({ book }: { book: BookData }) {
+    const t = useTranslations("AdminBooks.detail");
+    const localeStr = useLocale();
+    const isThai = localeStr === "th";
+
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -66,13 +71,13 @@ export default function BookEditForm({ book }: { book: BookData }) {
                 body: formData,
             });
 
-            if (!res.ok) throw new Error("อัพโหลดไม่สำเร็จ");
+            if (!res.ok) throw new Error(t("form.uploadError"));
 
             router.refresh();
-            setSuccess("อัพโหลดรูปภาพสำเร็จ");
+            setSuccess(t("form.uploadSuccess"));
             setTimeout(() => setSuccess(""), 2000);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาด");
+            setError(err instanceof Error ? err.message : t("form.errorMsg"));
         } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = "";
@@ -85,10 +90,10 @@ export default function BookEditForm({ book }: { book: BookData }) {
             const res = await fetch(`/api/upload?type=bookCover&bookId=${book.id}`, {
                 method: "DELETE",
             });
-            if (!res.ok) throw new Error("ลบไม่สำเร็จ");
+            if (!res.ok) throw new Error(t("form.deleteError"));
             router.refresh();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาด");
+            setError(err instanceof Error ? err.message : t("form.errorMsg"));
         } finally {
             setUploading(false);
         }
@@ -106,7 +111,7 @@ export default function BookEditForm({ book }: { book: BookData }) {
         if (result.error) {
             setError(result.error);
         } else {
-            setSuccess("บันทึกสำเร็จ!");
+            setSuccess(t("form.saveSuccess"));
             setTimeout(() => setSuccess(""), 2000);
         }
         setLoading(false);
@@ -133,12 +138,12 @@ export default function BookEditForm({ book }: { book: BookData }) {
 
     return (
         <div className="max-w-2xl">
-            <BackLink href="/books" label="กลับไปหน้าหนังสือ" />
+            <BackLink href="/books" label={t("backToBooks")} />
 
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-[#3d405b]">
-                        แก้ไขหนังสือ
+                        {t("editBook")}
                     </h1>
                     <p className="text-sm text-[#3d405b]/40 font-mono mt-1">
                         {book.qrCode}
@@ -148,7 +153,7 @@ export default function BookEditForm({ book }: { book: BookData }) {
                     <PrintQrButton qrCode={book.qrCode} title={book.title} />
                     {!isActive && (
                         <span className="text-xs px-3 py-1.5 rounded-full font-medium bg-[#d1cce7]/25 text-[#3d405b]/70">
-                            ปิดใช้งาน
+                            {t("status.inactive")}
                         </span>
                     )}
                     <span
@@ -157,7 +162,7 @@ export default function BookEditForm({ book }: { book: BookData }) {
                             : "bg-emerald-100 text-emerald-700"
                             }`}
                     >
-                        {isBorrowed ? "ถูกยืม" : "ว่าง"}
+                        {isBorrowed ? t("status.borrowed") : t("status.available")}
                     </span>
                 </div>
             </div>
@@ -172,7 +177,7 @@ export default function BookEditForm({ book }: { book: BookData }) {
                 {/* Book Cover Image Upload */}
                 <div>
                     <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">
-                        รูปภาพหน้าปก
+                        {t("form.coverImage")}
                     </label>
                     <div className="flex gap-4 items-start">
                         <div className="relative w-32 h-40 rounded-xl overflow-hidden border-2 border-dashed border-[#d1cce7]/50 bg-[#f4f1de]/30 flex flex-col items-center justify-center flex-shrink-0">
@@ -199,12 +204,12 @@ export default function BookEditForm({ book }: { book: BookData }) {
                             ) : (
                                 <div className="text-center p-4">
                                     <ImageIcon size={24} className="text-[#3d405b]/20 mx-auto mb-1" />
-                                    <span className="text-[10px] text-[#3d405b]/40">ไม่มีรูปภาพ</span>
+                                    <span className="text-[10px] text-[#3d405b]/40">{t("form.noImage")}</span>
                                 </div>
                             )}
                             {uploading && (
                                 <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                                    <span className="text-xs font-medium text-[#609279] animate-pulse">กำลังโหลด...</span>
+                                    <span className="text-xs font-medium text-[#609279] animate-pulse">{t("form.loading")}</span>
                                 </div>
                             )}
                         </div>
@@ -223,11 +228,11 @@ export default function BookEditForm({ book }: { book: BookData }) {
                                 className="inline-flex items-center gap-2 px-4 py-2 bg-[#f4f1de]/50 hover:bg-[#d1cce7]/20 border border-[#d1cce7]/30 text-[#3d405b]/70 text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
                             >
                                 <Upload size={16} />
-                                {book.coverImage ? "เปลี่ยนรูป" : "อัพโหลดรูปภาพ"}
+                                {book.coverImage ? t("form.changeImage") : t("form.uploadImage")}
                             </button>
-                            <p className="text-xs text-[#3d405b]/40 mt-2">
-                                รองรับไฟล์ JPEG, PNG, WebP ขนาดไม่เกิน 5MB<br />
-                                แนะนำภาพสัดส่วนแนวตั้ง (Portrait)
+                            <p className="text-xs text-[#3d405b]/40 mt-2 whitespace-pre-line">
+                                {t("form.imageHelpText")}<br />
+                                {t("form.imageHelpDesc")}
                             </p>
                         </div>
                     </div>
@@ -235,7 +240,7 @@ export default function BookEditForm({ book }: { book: BookData }) {
 
                 <div>
                     <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">
-                        ชื่อหนังสือ *
+                        {t("form.title")}
                     </label>
                     <input
                         name="title"
@@ -259,27 +264,27 @@ export default function BookEditForm({ book }: { book: BookData }) {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">
-                            หมวดหมู่
+                            {t("form.category")}
                         </label>
                         <input
                             name="category"
                             type="text"
                             defaultValue={book.category || ""}
                             className="w-full px-4 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm"
-                            placeholder="เช่น นิทาน, วิทยาศาสตร์"
+                            placeholder={t("form.categoryPlaceholder")}
                         />
                     </div>
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">
-                        ช่วงอายุ
+                        {t("form.ageRange")}
                     </label>
                     <input
                         name="ageRange"
                         type="text"
                         defaultValue={book.ageRange || ""}
                         className="w-full px-4 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm"
-                        placeholder="เช่น 3-6 ปี"
+                        placeholder={t("form.ageRangePlaceholder")}
                     />
                 </div>
                 <div>
@@ -298,7 +303,7 @@ export default function BookEditForm({ book }: { book: BookData }) {
                 {/* Rental Cost */}
                 <div>
                     <label className="block text-sm font-medium text-[#3d405b]/70 mb-1.5">
-                        ค่ายืม (เหรียญ)
+                        {t("form.rentalCost")}
                     </label>
                     <input
                         name="rentalCost"
@@ -313,9 +318,9 @@ export default function BookEditForm({ book }: { book: BookData }) {
                 {/* Active/Inactive Toggle */}
                 <div className="flex items-center justify-between p-4 rounded-xl bg-[#f4f1de]/50 border border-[#d1cce7]/20">
                     <div>
-                        <p className="text-sm font-medium text-[#3d405b]/80">สถานะหนังสือ</p>
+                        <p className="text-sm font-medium text-[#3d405b]/80">{t("form.bookStatus")}</p>
                         <p className="text-xs text-[#3d405b]/40 mt-0.5">
-                            {isActive ? "เปิดใช้งาน — แสดงในระบบ" : "ปิดใช้งาน — ซ่อนจากระบบ"}
+                            {isActive ? t("status.activeDesc") : t("status.inactiveDesc")}
                         </p>
                     </div>
                     <input type="hidden" name="isActive" value={isActive ? "true" : "false"} />
@@ -335,7 +340,7 @@ export default function BookEditForm({ book }: { book: BookData }) {
                         className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#609279] hover:bg-[#609279] text-white font-medium rounded-xl transition-colors shadow-lg shadow-[#81b29a]/30 disabled:opacity-50"
                     >
                         <Save size={18} />
-                        {loading ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
+                        {loading ? t("form.saving") : t("form.save")}
                     </button>
                     <button
                         type="button"
@@ -352,11 +357,11 @@ export default function BookEditForm({ book }: { book: BookData }) {
                 <div className="flex items-center gap-2 mb-4">
                     <Clock size={18} className="text-[#3d405b]/40" />
                     <h2 className="text-lg font-semibold text-[#3d405b]">
-                        ประวัติการยืม ({book.borrowItems.length})
+                        {t("borrowHistory.title", { count: book.borrowItems.length })}
                     </h2>
                 </div>
                 {book.borrowItems.length === 0 ? (
-                    <p className="text-sm text-[#3d405b]/40 text-center py-4">ยังไม่มีประวัติการยืม</p>
+                    <p className="text-sm text-[#3d405b]/40 text-center py-4">{t("borrowHistory.empty")}</p>
                 ) : (
                     <div className="space-y-3">
                         {book.borrowItems.map((bi) => {
@@ -382,12 +387,12 @@ export default function BookEditForm({ book }: { book: BookData }) {
                                         <StatusBadge status={bi.borrowRecord.status} />
                                     </div>
                                     <div className="flex gap-4 text-xs text-[#3d405b]/50">
-                                        <span>📅 ยืม: {fmt(borrowDate)}</span>
-                                        <span>⏰ กำหนดคืน: {fmt(dueDate)}</span>
-                                        {returnDate && <span>✅ คืนจริง: {fmt(returnDate)}</span>}
+                                        <span>📅 {t("borrowHistory.borrowedOn")} {fmt(borrowDate)}</span>
+                                        <span>⏰ {t("borrowHistory.dueOn")} {fmt(dueDate)}</span>
+                                        {returnDate && <span>✅ {t("borrowHistory.returnedOn")} {fmt(returnDate)}</span>}
                                     </div>
                                     {bi.isDamaged && (
-                                        <p className="text-xs text-red-500 mt-1">⚠️ หนังสือเสียหาย</p>
+                                        <p className="text-xs text-red-500 mt-1">{t("borrowHistory.damaged")}</p>
                                     )}
                                 </div>
                             );
@@ -405,26 +410,25 @@ export default function BookEditForm({ book }: { book: BookData }) {
                                 <AlertTriangle size={20} className="text-red-600" />
                             </div>
                             <h3 className="text-lg font-semibold text-[#3d405b]">
-                                ยืนยันการลบ
+                                {t("deleteModal.title")}
                             </h3>
                         </div>
-                        <p className="text-sm text-[#3d405b]/50 mb-6">
-                            ต้องการลบหนังสือ &quot;{book.title}&quot; ใช่หรือไม่?
-                            การกระทำนี้ไม่สามารถย้อนกลับได้
+                        <p className="text-sm text-[#3d405b]/50 mb-6 whitespace-pre-line">
+                            {t("deleteModal.desc", { title: book.title })}
                         </p>
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setShowDeleteConfirm(false)}
                                 className="flex-1 py-2.5 bg-[#d1cce7]/15 hover:bg-[#d1cce7]/25 text-[#3d405b]/80 font-medium rounded-xl transition-colors text-sm"
                             >
-                                ยกเลิก
+                                {t("deleteModal.cancel")}
                             </button>
                             <button
                                 onClick={handleDelete}
                                 disabled={deleting}
                                 className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl transition-colors text-sm disabled:opacity-50"
                             >
-                                {deleting ? "กำลังลบ..." : "ลบหนังสือ"}
+                                {deleting ? t("deleteModal.deleting") : t("deleteModal.confirm")}
                             </button>
                         </div>
                     </div>

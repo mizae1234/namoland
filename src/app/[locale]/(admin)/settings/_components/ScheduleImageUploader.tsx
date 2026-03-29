@@ -5,6 +5,7 @@ import { Upload, Trash2, ImageIcon, Loader2, Save, CheckCircle } from "lucide-re
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import AlertMessage from "@/components/ui/AlertMessage";
+import { useTranslations } from "next-intl";
 
 interface ScheduleImageUploaderProps {
     currentImageUrl: string | null;
@@ -16,9 +17,10 @@ interface ScheduleImageUploaderProps {
 export default function ScheduleImageUploader({
     currentImageUrl,
     type = "monthly",
-    title = "ตารางกิจกรรมประจำเดือน",
-    description = "อัพโหลดรูปตารางกิจกรรมสำหรับแสดงใน Landing Page",
+    title,
+    description,
 }: ScheduleImageUploaderProps) {
+    const t = useTranslations("AdminSettings.scheduleUpload");
     const router = useRouter();
     const [savedUrl, setSavedUrl] = useState(currentImageUrl);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -41,11 +43,11 @@ export default function ScheduleImageUploader({
         // Client-side validation
         const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
         if (!allowedTypes.includes(file.type)) {
-            showMsg("รองรับเฉพาะไฟล์ JPEG, PNG, WebP");
+            showMsg(t("messages.fileTypeErr"));
             return;
         }
         if (file.size > 5 * 1024 * 1024) {
-            showMsg("ไฟล์ต้องไม่เกิน 5MB");
+            showMsg(t("messages.fileSizeErr"));
             return;
         }
 
@@ -68,17 +70,17 @@ export default function ScheduleImageUploader({
             const data = await res.json();
 
             if (!res.ok || data.error) {
-                showMsg(data.error || "บันทึกไม่สำเร็จ");
+                showMsg(data.error || t("messages.saveErr"));
             } else {
                 setSavedUrl(data.url);
                 setPreviewUrl(null);
                 setPendingFile(null);
-                showMsg("บันทึกสำเร็จ!");
+                showMsg(t("messages.saveSuccess"));
                 router.refresh();
             }
         } catch (err) {
             console.error("Save error:", err);
-            showMsg("เกิดข้อผิดพลาด กรุณาลองใหม่");
+            showMsg(t("messages.genericErr"));
         }
         setUploading(false);
     };
@@ -90,22 +92,22 @@ export default function ScheduleImageUploader({
     };
 
     const handleRemove = async () => {
-        if (!confirm(`ต้องการลบรูป${title}?`)) return;
+        if (!confirm(t("messages.confirmDelete", { title: title || "" }))) return;
         setUploading(true);
         try {
             const res = await fetch(`/api/upload?type=${type}`, { method: "DELETE" });
             const data = await res.json();
             if (!res.ok || data.error) {
-                showMsg(data.error || "ลบไม่สำเร็จ");
+                showMsg(data.error || t("messages.deleteErr"));
             } else {
                 setSavedUrl(null);
                 setPreviewUrl(null);
                 setPendingFile(null);
-                showMsg("ลบรูปสำเร็จ!");
+                showMsg(t("messages.deleteSuccess"));
                 router.refresh();
             }
         } catch {
-            showMsg("เกิดข้อผิดพลาด กรุณาลองใหม่");
+            showMsg(t("messages.genericErr"));
         }
         setUploading(false);
     };
@@ -121,7 +123,7 @@ export default function ScheduleImageUploader({
             </p>
 
             <AlertMessage
-                type={message.includes("สำเร็จ") ? "success" : "error"}
+                type={message && !message.includes("error") && !message.includes("fail") && (message.includes("สำเร็จ") || message.includes("success")) ? "success" : "error"}
                 message={message}
             />
 
@@ -132,7 +134,7 @@ export default function ScheduleImageUploader({
                         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2">
                             <Save size={16} className="text-amber-500" />
                             <p className="text-sm text-amber-600 font-medium">
-                                เลือกรูปใหม่แล้ว — กด &quot;บันทึก&quot; เพื่อยืนยัน
+                                {t("pendingMsg")}
                             </p>
                         </div>
                     )}
@@ -142,7 +144,7 @@ export default function ScheduleImageUploader({
                         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-2">
                             <CheckCircle size={16} className="text-emerald-500" />
                             <p className="text-sm text-emerald-600 font-medium">
-                                รูปที่ใช้งานอยู่
+                                {t("savedMsg")}
                             </p>
                         </div>
                     )}
@@ -151,7 +153,7 @@ export default function ScheduleImageUploader({
                     <div className="relative border border-[#d1cce7]/20 rounded-xl overflow-hidden">
                         <Image
                             src={displayUrl}
-                            alt={title}
+                            alt={title || "Schedule Image"}
                             width={800}
                             height={600}
                             className="w-full h-auto object-contain"
@@ -173,21 +175,21 @@ export default function ScheduleImageUploader({
                                     ) : (
                                         <Save size={16} />
                                     )}
-                                    {uploading ? "กำลังบันทึก..." : "บันทึก"}
+                                    {uploading ? t("savingBtn") : t("saveBtn")}
                                 </button>
                                 <button
                                     onClick={handleCancelPreview}
                                     disabled={uploading}
                                     className="px-4 py-3 border border-[#d1cce7]/30 text-[#3d405b]/50 rounded-xl text-sm hover:bg-[#f4f1de] transition-colors disabled:opacity-50"
                                 >
-                                    ยกเลิก
+                                    {t("cancelBtn")}
                                 </button>
                             </>
                         ) : (
                             <>
                                 <label className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#4e7a64] transition-colors cursor-pointer">
                                     <Upload size={16} />
-                                    เปลี่ยนรูป
+                                    {t("changeBtn")}
                                     <input
                                         type="file"
                                         accept="image/jpeg,image/png,image/webp"
@@ -202,7 +204,7 @@ export default function ScheduleImageUploader({
                                     className="px-4 py-2.5 bg-red-50 text-red-500 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-50 flex items-center gap-2"
                                 >
                                     <Trash2 size={16} />
-                                    ลบรูป
+                                    {t("removeBtn")}
                                 </button>
                             </>
                         )}
@@ -213,9 +215,9 @@ export default function ScheduleImageUploader({
                     <Upload size={40} className="text-[#3d405b]/20" />
                     <div className="text-center">
                         <p className="text-sm font-medium text-[#3d405b]/60">
-                            คลิกเพื่อเลือกรูป{title}
+                            {t("uploadPrompt", { title: title || "" })}
                         </p>
-                        <p className="text-xs text-[#3d405b]/30 mt-1">JPEG, PNG, WebP · ไม่เกิน 5MB</p>
+                        <p className="text-xs text-[#3d405b]/30 mt-1">{t("uploadHint")}</p>
                     </div>
                     <input
                         type="file"

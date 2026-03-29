@@ -11,21 +11,22 @@ import TeacherManager from "./TeacherManager";
 import ScheduleList from "../../classes/_components/ScheduleList";
 import AdminUsersManager from "./AdminUsersManager";
 import ScheduleImageUploader from "./ScheduleImageUploader";
+import { useTranslations } from "next-intl";
 
 interface TabConfig {
     key: string;
-    label: string;
+    labelKey: string;
     icon: React.ComponentType<{ size?: number; className?: string }>;
 }
 
 const TABS: TabConfig[] = [
-    { key: "shop", label: "ข้อมูลร้าน", icon: Store },
-    { key: "packages", label: "แพ็คเกจเหรียญ", icon: Package },
-    { key: "activities", label: "กิจกรรม", icon: CalendarDays },
-    { key: "teachers", label: "ครูผู้สอน", icon: GraduationCap },
-    { key: "classes", label: "ตารางคลาส", icon: Calendar },
-    { key: "schedule", label: "ตารางกิจกรรม", icon: ImageIcon },
-    { key: "users", label: "จัดการผู้ใช้", icon: UserCog },
+    { key: "shop", labelKey: "shop", icon: Store },
+    { key: "packages", labelKey: "packages", icon: Package },
+    { key: "activities", labelKey: "activities", icon: CalendarDays },
+    { key: "teachers", labelKey: "teachers", icon: GraduationCap },
+    { key: "classes", labelKey: "classes", icon: Calendar },
+    { key: "schedule", labelKey: "schedule", icon: ImageIcon },
+    { key: "users", labelKey: "users", icon: UserCog },
 ];
 
 interface SettingsTabsProps {
@@ -104,6 +105,7 @@ export default function SettingsTabs({
     const router = useRouter();
     const searchParams = useSearchParams();
     const tabParam = searchParams.get("tab");
+    const t = useTranslations("AdminSettings");
     const [activeTab, setActiveTab] = useState(
         TABS.some((t) => t.key === tabParam) ? tabParam! : "shop"
     );
@@ -144,7 +146,7 @@ export default function SettingsTabs({
                                 size={16}
                                 className={isActive ? "text-[#609279]" : "text-[#3d405b]/30"}
                             />
-                            {tab.label}
+                            {t(`tabs.${tab.labelKey}`)}
                         </button>
                     );
                 })}
@@ -162,14 +164,14 @@ export default function SettingsTabs({
                         <ScheduleImageUploader
                             currentImageUrl={shopInfo.scheduleImageUrl}
                             type="monthly"
-                            title="ตารางกิจกรรมประจำเดือน"
-                            description="รูปตารางกิจกรรมรายเดือนสำหรับแสดงใน Landing Page (ด้านซ้าย)"
+                            title={t("scheduleTab.monthlyTitle")}
+                            description={t("scheduleTab.monthlyDesc")}
                         />
                         <ScheduleImageUploader
                             currentImageUrl={shopInfo.weeklyScheduleImageUrl}
                             type="weekly"
-                            title="ตารางกิจกรรมประจำสัปดาห์"
-                            description="รูปตารางกิจกรรมรายสัปดาห์สำหรับแสดงใน Landing Page (ด้านขวา)"
+                            title={t("scheduleTab.weeklyTitle")}
+                            description={t("scheduleTab.weeklyDesc")}
                         />
                     </div>
                 )}

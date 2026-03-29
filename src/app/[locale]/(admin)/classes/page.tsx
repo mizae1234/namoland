@@ -1,8 +1,10 @@
 import { getClassSchedulesWithEntries } from "@/actions/classSchedule";
 import ScheduleList from "./_components/ScheduleList";
 import PageHeader from "@/components/ui/PageHeader";
+import { getTranslations } from "next-intl/server";
 
 export default async function ClassesPage() {
+    const t = await getTranslations("AdminClasses");
     const rawSchedules = await getClassSchedulesWithEntries();
     const schedules = rawSchedules.map((s) => ({
         id: s.id,
@@ -22,8 +24,8 @@ export default async function ClassesPage() {
     return (
         <div>
             <PageHeader
-                title="ตารางคลาส"
-                subtitle="ดูตารางคลาสและจองให้สมาชิก"
+                title={t("title")}
+                subtitle={t("subtitle")}
             />
             <ScheduleList schedules={schedules} mode="booking" />
         </div>

@@ -4,22 +4,24 @@ import { Users, ChevronRight, Coins } from "lucide-react";
 import MemberSearch from "./_components/MemberSearch";
 import PageHeader from "@/components/ui/PageHeader";
 import Card from "@/components/ui/Card";
+import { getTranslations } from "next-intl/server";
 
 export default async function MembersPage({
     searchParams,
 }: {
     searchParams: Promise<{ search?: string }>;
 }) {
+    const t = await getTranslations("AdminMembers");
     const params = await searchParams;
     const members = await getMembers(params.search);
 
     return (
         <div>
             <PageHeader
-                title="สมาชิก"
-                subtitle="จัดการข้อมูลสมาชิกทั้งหมด"
+                title={t("title")}
+                subtitle={t("subtitle")}
                 actionHref="/members/new"
-                actionLabel="เพิ่มสมาชิก"
+                actionLabel={t("addMember")}
             />
 
             <MemberSearch defaultValue={params.search} />
@@ -29,11 +31,11 @@ export default async function MembersPage({
                 <table className="w-full">
                     <thead>
                         <tr className="bg-[#f4f1de]/50 border-b border-[#d1cce7]/20">
-                            <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase">เด็ก</th>
-                            <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase">ผู้ปกครอง</th>
-                            <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase">เบอร์โทร</th>
-                            <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase">เหรียญคงเหลือ</th>
-                            <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase">ยืมหนังสือ</th>
+                            <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase">{t("table.child")}</th>
+                            <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase">{t("table.parent")}</th>
+                            <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase">{t("table.phone")}</th>
+                            <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase">{t("table.remainingCoins")}</th>
+                            <th className="text-left px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase">{t("table.borrowing")}</th>
                             <th className="text-right px-6 py-3 text-xs font-semibold text-[#3d405b]/50 uppercase"></th>
                         </tr>
                     </thead>
@@ -42,7 +44,7 @@ export default async function MembersPage({
                             <tr>
                                 <td colSpan={6} className="px-6 py-12 text-center text-[#3d405b]/40">
                                     <Users size={32} className="mx-auto mb-2 opacity-50" />
-                                    ยังไม่มีสมาชิก
+                                    {t("table.empty")}
                                 </td>
                             </tr>
                         ) : (
@@ -67,15 +69,15 @@ export default async function MembersPage({
                                         </td>
                                         <td className="px-6 py-4 text-sm text-[#3d405b]/70">{m.phone}</td>
                                         <td className="px-6 py-4">
-                                            <span className="text-sm font-semibold text-emerald-600">{totalCoins} เหรียญ</span>
+                                            <span className="text-sm font-semibold text-emerald-600">{totalCoins} {t("table.coinsUnit")}</span>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-[#3d405b]/70">{m._count.borrowRecords} ครั้ง</td>
+                                        <td className="px-6 py-4 text-sm text-[#3d405b]/70">{m._count.borrowRecords} {t("table.timesUnit")}</td>
                                         <td className="px-6 py-4 text-right">
                                             <Link
                                                 href={`/members/${m.id}`}
                                                 className="text-sm text-[#609279] hover:text-[#609279] font-medium"
                                             >
-                                                ดูรายละเอียด →
+                                                {t("table.viewDetails")}
                                             </Link>
                                         </td>
                                     </tr>
@@ -92,7 +94,7 @@ export default async function MembersPage({
                     <Card>
                         <div className="text-center py-8 text-[#3d405b]/40">
                             <Users size={32} className="mx-auto mb-2 opacity-50" />
-                            <p>ยังไม่มีสมาชิก</p>
+                            <p>{t("table.empty")}</p>
                         </div>
                     </Card>
                 ) : (
@@ -120,9 +122,9 @@ export default async function MembersPage({
                                             <div className="flex items-center gap-4 text-xs text-[#3d405b]/50">
                                                 <span className="flex items-center gap-1">
                                                     <Coins size={12} className="text-emerald-500" />
-                                                    <span className="font-semibold text-emerald-600">{totalCoins}</span> เหรียญ
+                                                    <span className="font-semibold text-emerald-600">{totalCoins}</span> {t("table.coinsUnit")}
                                                 </span>
-                                                <span>ยืม {m._count.borrowRecords} ครั้ง</span>
+                                                <span>{t("table.borrowing")} {m._count.borrowRecords} {t("table.timesUnit")}</span>
                                             </div>
                                         </div>
                                         <ChevronRight size={20} className="text-[#3d405b]/20 flex-shrink-0 ml-2" />

@@ -7,6 +7,7 @@ import { Plus, Trash2, Calendar, Copy, Sparkles, ChevronLeft, ChevronRight, Cloc
 import Card from "@/components/ui/Card";
 import AlertMessage from "@/components/ui/AlertMessage";
 import Link from "next/link";
+import { useTranslations, useLocale } from "next-intl";
 
 interface EntryData {
     id: string;
@@ -29,8 +30,13 @@ const MONTH_NAMES_TH = [
     "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
     "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
 ];
+const MONTH_NAMES_EN = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+];
 
-const DAY_HEADERS = ["จ", "อ", "พ", "พฤ", "ศ", "ส", "อา"];
+const DAY_HEADERS_TH = ["จ", "อ", "พ", "พฤ", "ศ", "ส", "อา"];
+const DAY_HEADERS_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 const DAY_HEADER_COLORS = [
     "bg-emerald-600", "bg-teal-600", "bg-cyan-600", "bg-sky-600",
@@ -73,6 +79,11 @@ export default function ScheduleList({ schedules, mode = "manage" }: { schedules
     const [viewYear, setViewYear] = useState(now.getFullYear());
     const [viewMonth, setViewMonth] = useState(now.getMonth());
     const router = useRouter();
+    const t = useTranslations("AdminClasses.scheduleList");
+    const locale = useLocale();
+    const isThai = locale === "th";
+    const MONTH_NAMES = isThai ? MONTH_NAMES_TH : MONTH_NAMES_EN;
+    const DAY_HEADERS = isThai ? DAY_HEADERS_TH : DAY_HEADERS_EN;
 
     const showMsg = (msg: string) => {
         setMessage(msg);
@@ -81,7 +92,7 @@ export default function ScheduleList({ schedules, mode = "manage" }: { schedules
 
     const handleCreate = async () => {
         if (!createDate) {
-            showMsg("กรุณาเลือกวันที่");
+            showMsg(t("dateRequired"));
             return;
         }
         setLoading(true);
@@ -102,7 +113,7 @@ export default function ScheduleList({ schedules, mode = "manage" }: { schedules
         setLoading(false);
         setDeleteConfirmId(null);
         if (result.error) showMsg(result.error);
-        else showMsg("ลบตารางสำเร็จ!");
+        else showMsg(t("successDelete"));
     };
 
     const handleDuplicate = async (id: string) => {
@@ -159,7 +170,7 @@ export default function ScheduleList({ schedules, mode = "manage" }: { schedules
     return (
         <div>
             <AlertMessage
-                type={message.includes("สำเร็จ") ? "success" : "error"}
+                type={(message.includes("สำเร็จ") || message.includes("success")) ? "success" : "error"}
                 message={message}
             />
 
@@ -171,7 +182,7 @@ export default function ScheduleList({ schedules, mode = "manage" }: { schedules
                         className="flex items-center gap-2 px-4 py-2.5 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#4e7a64] transition-colors shadow-md shadow-[#81b29a]/30"
                     >
                         <Plus size={16} />
-                        สร้างตารางใหม่
+                        {t("createNew")}
                     </button>
                 </div>
             )}
@@ -181,11 +192,11 @@ export default function ScheduleList({ schedules, mode = "manage" }: { schedules
                 <Card className="mb-6">
                     <h3 className="font-semibold text-[#3d405b] mb-4 flex items-center gap-2">
                         <Sparkles size={18} className="text-amber-500" />
-                        สร้างตารางสัปดาห์ใหม่
+                        {t("createNewTitle")}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">วันเริ่มต้น (จะปรับเป็นวันจันทร์อัตโนมัติ)</label>
+                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("startDateLabel")}</label>
                             <input
                                 type="date"
                                 value={createDate}
@@ -194,12 +205,12 @@ export default function ScheduleList({ schedules, mode = "manage" }: { schedules
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">ธีมประจำสัปดาห์ (ไม่บังคับ)</label>
+                            <label className="text-xs font-medium text-[#3d405b]/60 block mb-1">{t("themeLabel")}</label>
                             <input
                                 type="text"
                                 value={createTheme}
                                 onChange={(e) => setCreateTheme(e.target.value)}
-                                placeholder="e.g. THE SECRET LIFE OF MATTER"
+                                placeholder={t("themePlaceholder")}
                                 className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20 focus:border-[#81b29a]"
                             />
                         </div>
@@ -209,7 +220,7 @@ export default function ScheduleList({ schedules, mode = "manage" }: { schedules
                             onClick={() => setShowCreate(false)}
                             className="px-4 py-2 text-sm text-[#3d405b]/50 hover:text-[#3d405b] transition-colors"
                         >
-                            ยกเลิก
+                            {t("cancel")}
                         </button>
                         <button
                             onClick={handleCreate}
@@ -217,7 +228,7 @@ export default function ScheduleList({ schedules, mode = "manage" }: { schedules
                             className="flex items-center gap-2 px-4 py-2 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#4e7a64] transition-colors disabled:opacity-50"
                         >
                             <Plus size={16} />
-                            สร้าง
+                            {t("createBtn")}
                         </button>
                     </div>
                 </Card>
@@ -231,7 +242,7 @@ export default function ScheduleList({ schedules, mode = "manage" }: { schedules
                         <ChevronLeft size={20} className="text-[#3d405b]/60" />
                     </button>
                     <h2 className="text-lg font-bold text-[#3d405b]">
-                        {MONTH_NAMES_TH[viewMonth]} {viewYear + 543}
+                        {MONTH_NAMES[viewMonth]} {isThai ? viewYear + 543 : viewYear}
                     </h2>
                     <button onClick={nextMonth} className="p-2 hover:bg-[#d1cce7]/15 rounded-lg transition-colors">
                         <ChevronRight size={20} className="text-[#3d405b]/60" />
@@ -282,7 +293,7 @@ export default function ScheduleList({ schedules, mode = "manage" }: { schedules
                                         </div>
                                     ))}
                                     {entries.length > 3 && (
-                                        <p className="text-[8px] text-[#609279] font-medium text-center">+{entries.length - 3} อื่นๆ</p>
+                                        <p className="text-[8px] text-[#609279] font-medium text-center">{t("others", { count: entries.length - 3 })}</p>
                                     )}
                                 </div>
                             </div>
@@ -293,13 +304,13 @@ export default function ScheduleList({ schedules, mode = "manage" }: { schedules
 
             {/* Weekly schedule cards for selected month */}
             <h3 className="text-sm font-semibold text-[#3d405b]/60 mb-3">
-                ตารางสัปดาห์ใน{MONTH_NAMES_TH[viewMonth]} ({monthSchedules.length} รายการ)
+                {t("monthlySchedules", { month: MONTH_NAMES[viewMonth], count: monthSchedules.length })}
             </h3>
             {monthSchedules.length === 0 ? (
                 <Card className="text-center">
                     <div className="py-6">
                         <Calendar size={36} className="mx-auto text-[#3d405b]/20 mb-2" />
-                        <p className="text-[#3d405b]/40 text-sm">ยังไม่มีตารางในเดือนนี้</p>
+                        <p className="text-[#3d405b]/40 text-sm">{t("emptyDay")}</p>
                     </div>
                 </Card>
             ) : (
@@ -319,7 +330,7 @@ export default function ScheduleList({ schedules, mode = "manage" }: { schedules
                                             </div>
                                             <div>
                                                 <p className="font-semibold text-[#3d405b] text-sm">{range}</p>
-                                                <p className="text-xs text-[#3d405b]/40">{s._count.entries} คลาส</p>
+                                                <p className="text-xs text-[#3d405b]/40">{t("classesCount", { count: s._count.entries })}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -335,10 +346,10 @@ export default function ScheduleList({ schedules, mode = "manage" }: { schedules
                                             onClick={() => handleDuplicate(s.id)}
                                             disabled={loading}
                                             className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#609279] hover:bg-[#81b29a]/10 rounded-lg transition-colors disabled:opacity-50"
-                                            title="คัดลอกไปสัปดาห์ถัดไป"
+                                            title={t("duplicateTooltip")}
                                         >
                                             <Copy size={13} />
-                                            คัดลอก
+                                            {t("duplicateBtn")}
                                         </button>
                                         {deleteConfirmId === s.id ? (
                                             <div className="flex items-center gap-1 ml-auto">
@@ -347,13 +358,13 @@ export default function ScheduleList({ schedules, mode = "manage" }: { schedules
                                                     disabled={loading}
                                                     className="px-2.5 py-1.5 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
                                                 >
-                                                    ยืนยันลบ
+                                                    {t("confirmDelete")}
                                                 </button>
                                                 <button
                                                     onClick={() => setDeleteConfirmId(null)}
                                                     className="px-2.5 py-1.5 text-xs text-[#3d405b]/50 hover:bg-[#d1cce7]/15 rounded-lg transition-colors"
                                                 >
-                                                    ยกเลิก
+                                                    {t("cancel")}
                                                 </button>
                                             </div>
                                         ) : (
@@ -361,7 +372,7 @@ export default function ScheduleList({ schedules, mode = "manage" }: { schedules
                                                 onClick={() => setDeleteConfirmId(s.id)}
                                                 disabled={loading}
                                                 className="ml-auto p-1.5 text-[#3d405b]/30 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                                                title="ลบตาราง"
+                                                title={t("deleteTooltip")}
                                             >
                                                 <Trash2 size={14} />
                                             </button>

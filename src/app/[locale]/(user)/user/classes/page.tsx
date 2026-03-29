@@ -13,7 +13,7 @@ const STATUS_CONFIG: Record<string, { color: string; bgColor: string; Icon: type
     NO_SHOW: { color: "text-red-500", bgColor: "bg-red-50", Icon: Ban },
 };
 
-const DAY_LABELS = ["จันทร์", "อังคาร", "พุธ", "พฤหัสฯ", "ศุกร์", "เสาร์", "อาทิตย์"];
+// DAY_LABELS removed — component uses t('days.X') from next-intl
 
 export default async function UserClassesPage() {
     const t = await getTranslations("UserClasses");

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Search, Calendar } from "lucide-react";
 import Card from "@/components/ui/Card";
 import DateInput from "@/components/ui/DateInput";
+import { useTranslations } from "next-intl";
 
 export default function BorrowFilters({
     defaultSearch,
@@ -15,6 +16,7 @@ export default function BorrowFilters({
     defaultFrom: string;
     defaultTo: string;
 }) {
+    const t = useTranslations("AdminBorrows.filters");
     const router = useRouter();
     const [search, setSearch] = useState(defaultSearch);
     const [from, setFrom] = useState(defaultFrom);
@@ -39,7 +41,7 @@ export default function BorrowFilters({
                     {/* Search */}
                     <div className="flex-1 min-w-[200px]">
                         <label className="block text-xs font-medium text-[#3d405b]/50 mb-1.5">
-                            ค้นหา (ชื่อลูกค้า / ชื่อหนังสือ / รหัส)
+                            {t("searchLabel")}
                         </label>
                         <div className="relative">
                             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#3d405b]/40" />
@@ -48,7 +50,7 @@ export default function BorrowFilters({
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 onKeyDown={handleKeyDown}
-                                placeholder="พิมพ์เพื่อค้นหา..."
+                                placeholder={t("searchPlaceholder")}
                                 className="w-full pl-9 pr-4 py-2.5 border border-[#d1cce7]/30 rounded-xl bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm"
                             />
                         </div>
@@ -58,7 +60,7 @@ export default function BorrowFilters({
                     <div className="min-w-[160px]">
                         <label className="block text-xs font-medium text-[#3d405b]/50 mb-1.5">
                             <Calendar size={12} className="inline mr-1" />
-                            ตั้งแต่วันที่
+                            {t("dateFrom")}
                         </label>
                         <DateInput
                             value={from}
@@ -70,7 +72,7 @@ export default function BorrowFilters({
                     <div className="min-w-[160px]">
                         <label className="block text-xs font-medium text-[#3d405b]/50 mb-1.5">
                             <Calendar size={12} className="inline mr-1" />
-                            ถึงวันที่
+                            {t("dateTo")}
                         </label>
                         <DateInput
                             value={to}
@@ -83,7 +85,7 @@ export default function BorrowFilters({
                         onClick={applyFilters}
                         className="px-5 py-2.5 bg-[#609279] hover:bg-[#609279] text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
                     >
-                        ค้นหา
+                        {t("submitBtn")}
                     </button>
                 </div>
             </div>

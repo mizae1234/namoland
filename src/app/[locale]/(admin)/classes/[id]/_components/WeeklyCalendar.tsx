@@ -11,9 +11,9 @@ import { Plus, Pencil, Trash2, Check, X, Clock, Users } from "lucide-react";
 import Card from "@/components/ui/Card";
 import AlertMessage from "@/components/ui/AlertMessage";
 import BookingPanel from "./BookingPanel";
+import { useTranslations } from "next-intl";
 
-const DAY_LABELS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
-const DAY_LABELS_TH = ["จันทร์", "อังคาร", "พุธ", "พฤหัสฯ", "ศุกร์", "เสาร์", "อาทิตย์"];
+
 
 const DAY_COLORS = [
     { bg: "bg-emerald-600", header: "bg-emerald-600", card: "bg-emerald-50 border-emerald-200" },
@@ -85,6 +85,10 @@ function maskTime(raw: string): string {
 }
 
 export default function WeeklyCalendar({ schedule, activities, teachers }: { schedule: ScheduleData; activities: ActivityData[]; teachers: TeacherData[] }) {
+    const t = useTranslations("AdminClasses.weeklyCalendar");
+    const DAY_LABELS = t.raw("dayLabelsEn") as string[];
+    const DAY_LABELS_TH = t.raw("dayLabelsTh") as string[];
+
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
     const [editingTheme, setEditingTheme] = useState(false);
@@ -139,7 +143,7 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
         setLoading(false);
         if (result.error) showMsg(result.error);
         else {
-            showMsg("อัปเดตธีมสำเร็จ!");
+            showMsg(t("successUpdateTheme"));
             setEditingTheme(false);
         }
     };
@@ -148,7 +152,7 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
         if (addingDay === null) return;
         const title = isCustomActivity ? addCustomTitle : (selectedActivity?.name || "");
         if (!title || !addStart || !addEnd) {
-            showMsg("กรุณากรอกข้อมูลให้ครบ");
+            showMsg(t("fillAllFields"));
             return;
         }
         setLoading(true);
@@ -164,7 +168,7 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
         setLoading(false);
         if (result.error) showMsg(result.error);
         else {
-            showMsg("เพิ่มคลาสสำเร็จ!");
+            showMsg(t("successAdd"));
             setAddingDay(null);
             setAddActivityId("");
             setAddStart("");
@@ -195,7 +199,7 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
         setLoading(false);
         if (result.error) showMsg(result.error);
         else {
-            showMsg("อัปเดตคลาสสำเร็จ!");
+            showMsg(t("successUpdate"));
             setEditEntryId(null);
         }
     };
@@ -206,13 +210,13 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
         setLoading(false);
         setDeleteConfirmId(null);
         if (result.error) showMsg(result.error);
-        else showMsg("ลบคลาสสำเร็จ!");
+        else showMsg(t("successDelete"));
     };
 
     return (
         <div>
             <AlertMessage
-                type={message.includes("สำเร็จ") ? "success" : "error"}
+                type={(message.includes("สำเร็จ") || message.includes("success")) ? "success" : "error"}
                 message={message}
             />
 
@@ -220,7 +224,7 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
             <Card className="mb-6 !bg-[#f4f1de] border-2 border-[#e07a5f]/20">
                 <div className="text-center">
                     <h2 className="text-xl md:text-2xl font-extrabold text-[#609279] mb-1">
-                        Weekly Calendar {formatDateRange(schedule.startDate, schedule.endDate)}
+                        {t("titlePrefix")} {formatDateRange(schedule.startDate, schedule.endDate)}
                     </h2>
                     {editingTheme ? (
                         <div className="flex items-center gap-2 justify-center mt-2">
@@ -228,7 +232,7 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
                                 type="text"
                                 value={themeInput}
                                 onChange={(e) => setThemeInput(e.target.value)}
-                                placeholder="ธีมประจำสัปดาห์..."
+                                placeholder={t("themePlaceholder")}
                                 className="px-3 py-1.5 border border-[#d1cce7]/40 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#81b29a]/20 text-center w-full max-w-md"
                             />
                             <button
@@ -249,9 +253,9 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
                         <p
                             className="text-sm md:text-base text-[#e07a5f] font-bold uppercase tracking-wide cursor-pointer hover:opacity-70 transition-opacity mt-1"
                             onClick={() => setEditingTheme(true)}
-                            title="คลิกเพื่อแก้ไขธีม"
+                            title={t("editThemeTooltip")}
                         >
-                            {schedule.theme ? `THEME: ${schedule.theme}` : "+ เพิ่มธีม"}
+                            {schedule.theme ? `THEME: ${schedule.theme}` : t("addThemeBtn")}
                         </p>
                     )}
                 </div>
@@ -308,7 +312,7 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
                                                         onChange={(e) => setEditTeacherId(e.target.value)}
                                                         className="w-full px-2 py-1 border border-gray-200 rounded text-[11px] focus:outline-none bg-white"
                                                     >
-                                                        <option value="">-- ไม่ระบุครู --</option>
+                                                        <option value="">{t("noTeacher")}</option>
                                                         {teachers.map((t) => (
                                                             <option key={t.id} value={t.id}>{t.nickname || t.name}</option>
                                                         ))}
@@ -320,13 +324,13 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
                                                         disabled={loading}
                                                         className="flex-1 py-1 text-[10px] bg-emerald-500 text-white rounded hover:bg-emerald-600 disabled:opacity-50"
                                                     >
-                                                        บันทึก
+                                                        {t("save")}
                                                     </button>
                                                     <button
                                                         onClick={() => setEditEntryId(null)}
                                                         className="flex-1 py-1 text-[10px] bg-gray-200 text-gray-600 rounded hover:bg-gray-300"
                                                     >
-                                                        ยกเลิก
+                                                        {t("cancel")}
                                                     </button>
                                                 </div>
                                             </div>
@@ -334,7 +338,7 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
                                             <div
                                                 className={`${colors.card} border rounded-lg p-2 group relative cursor-pointer`}
                                                 onClick={() => setSelectedEntry(entry)}
-                                                title="คลิกเพื่อดูผู้จอง"
+                                                title={t("viewBookingsTooltip")}
                                             >
                                                 <p className="text-[10px] font-semibold text-gray-500 flex items-center gap-0.5">
                                                     <Clock size={9} />
@@ -356,7 +360,7 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
                                                     <button
                                                         onClick={() => startEditEntry(entry)}
                                                         className="p-1 bg-white/80 rounded hover:bg-white shadow-sm"
-                                                        title="แก้ไข"
+                                                        title={t("editClassTooltip")}
                                                     >
                                                         <Pencil size={10} className="text-[#609279]" />
                                                     </button>
@@ -367,7 +371,7 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
                                                                 disabled={loading}
                                                                 className="p-1 bg-red-500 text-white rounded text-[9px] px-1.5"
                                                             >
-                                                                ลบ
+                                                                {t("deleteClassTooltip")}
                                                             </button>
                                                             <button
                                                                 onClick={() => setDeleteConfirmId(null)}
@@ -380,7 +384,7 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
                                                         <button
                                                             onClick={() => setDeleteConfirmId(entry.id)}
                                                             className="p-1 bg-white/80 rounded hover:bg-white shadow-sm"
-                                                            title="ลบ"
+                                                            title={t("deleteClassTooltip")}
                                                         >
                                                             <Trash2 size={10} className="text-red-400" />
                                                         </button>
@@ -399,10 +403,10 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
                                             onChange={(e) => { setAddActivityId(e.target.value); setAddCustomTitle(""); }}
                                             className="w-full px-2 py-1.5 border border-gray-200 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-[#81b29a]/30 bg-white"
                                         >
-                                            <option value="">-- เลือกกิจกรรม --</option>
+                                            <option value="">{t("selectActivity")}</option>
                                             {activities.map((a) => (
                                                 <option key={a.id} value={a.id}>
-                                                    {a.name} {a.coins > 0 ? `(${a.coins} เหรียญ)` : ""}
+                                                    {a.name} {a.coins > 0 ? `(${a.coins} ${t("coinsLabel")})` : ""}
                                                 </option>
                                             ))}
                                         </select>
@@ -411,7 +415,7 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
                                                 type="text"
                                                 value={addCustomTitle}
                                                 onChange={(e) => setAddCustomTitle(e.target.value)}
-                                                placeholder="ระบุชื่อกิจกรรม..."
+                                                placeholder={t("customActivityName")}
                                                 className="w-full px-2 py-1 border border-gray-200 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-[#81b29a]/30"
                                             />
                                         )}
@@ -420,7 +424,7 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
                                                 type="text"
                                                 value={addStart}
                                                 onChange={(e) => setAddStart(maskTime(e.target.value))}
-                                                placeholder="เริ่ม 10.00"
+                                                placeholder={t("startPlaceholder")}
                                                 maxLength={5}
                                                 inputMode="numeric"
                                                 className="px-2 py-1 border border-gray-200 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-[#81b29a]/30"
@@ -429,7 +433,7 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
                                                 type="text"
                                                 value={addEnd}
                                                 onChange={(e) => setAddEnd(maskTime(e.target.value))}
-                                                placeholder="จบ 12.00"
+                                                placeholder={t("endPlaceholder")}
                                                 maxLength={5}
                                                 inputMode="numeric"
                                                 className="px-2 py-1 border border-gray-200 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-[#81b29a]/30"
@@ -441,7 +445,7 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
                                                 onChange={(e) => setAddTeacherId(e.target.value)}
                                                 className="w-full px-2 py-1.5 border border-gray-200 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-[#81b29a]/30 bg-white"
                                             >
-                                                <option value="">-- เลือกครู --</option>
+                                                <option value="">{t("selectTeacher")}</option>
                                                 {teachers.map((t) => (
                                                     <option key={t.id} value={t.id}>{t.nickname || t.name}</option>
                                                 ))}
@@ -453,13 +457,13 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
                                                 disabled={loading || !addActivityId || !addStart || !addEnd}
                                                 className="flex-1 py-1 text-[10px] bg-[#609279] text-white rounded hover:bg-[#4e7a64] disabled:opacity-50 font-medium"
                                             >
-                                                เพิ่ม
+                                                {t("addBtn")}
                                             </button>
                                             <button
                                                 onClick={() => { setAddingDay(null); setAddActivityId(""); setAddStart(""); setAddEnd(""); setAddCustomTitle(""); setAddTeacherId(""); }}
                                                 className="flex-1 py-1 text-[10px] bg-gray-200 text-gray-600 rounded hover:bg-gray-300"
                                             >
-                                                ยกเลิก
+                                                {t("cancel")}
                                             </button>
                                         </div>
                                     </div>
@@ -469,7 +473,7 @@ export default function WeeklyCalendar({ schedule, activities, teachers }: { sch
                                         className="w-full py-1.5 border-2 border-dashed border-[#d1cce7]/30 rounded-lg text-[10px] text-[#3d405b]/30 hover:border-[#81b29a]/40 hover:text-[#609279] transition-colors flex items-center justify-center gap-1"
                                     >
                                         <Plus size={10} />
-                                        เพิ่มคลาส
+                                        {t("addClassBtn")}
                                     </button>
                                 )}
                             </div>

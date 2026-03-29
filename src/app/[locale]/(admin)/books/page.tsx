@@ -2,30 +2,32 @@ import { getBooks } from "@/actions/borrow";
 import Link from "next/link";
 import { BookOpen, Search } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
+import { getTranslations } from "next-intl/server";
 
 export default async function BooksPage({
     searchParams,
 }: {
     searchParams: Promise<{ search?: string; status?: string }>;
 }) {
+    const t = await getTranslations("AdminBooks");
     const params = await searchParams;
     const status = params.status || "all";
     const books = await getBooks(params.search, status === "all" ? undefined : status);
 
     const statusTabs = [
-        { key: "all", label: "ทั้งหมด" },
-        { key: "available", label: "ว่าง" },
-        { key: "borrowed", label: "ถูกยืม" },
-        { key: "inactive", label: "ปิดใช้งาน" },
+        { key: "all", label: t("tabs.all") },
+        { key: "available", label: t("tabs.available") },
+        { key: "borrowed", label: t("tabs.borrowed") },
+        { key: "inactive", label: t("tabs.inactive") },
     ];
 
     return (
         <div>
             <PageHeader
-                title="หนังสือ"
-                subtitle="จัดการหนังสือทั้งหมด"
+                title={t("title")}
+                subtitle={t("subtitle")}
                 actionHref="/books/new"
-                actionLabel="เพิ่มหนังสือ"
+                actionLabel={t("addBook")}
             />
 
             {/* Search + Status Filter */}
@@ -38,7 +40,7 @@ export default async function BooksPage({
                             name="search"
                             type="text"
                             defaultValue={params.search || ""}
-                            placeholder="ค้นหาชื่อหนังสือ, ISBN, หมวดหมู่..."
+                            placeholder={t("searchPlaceholder")}
                             className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#d1cce7]/30 rounded-xl focus:border-[#81b29a] focus:ring-2 focus:ring-[#81b29a]/20 outline-none text-sm shadow-sm"
                         />
                     </div>
@@ -59,13 +61,13 @@ export default async function BooksPage({
                 </div>
             </div>
 
-            <p className="text-sm text-[#3d405b]/40 mb-3">พบ {books.length} เล่ม</p>
+            <p className="text-sm text-[#3d405b]/40 mb-3">{t("bookCount", { count: books.length })}</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {books.length === 0 ? (
                     <div className="col-span-full text-center py-12 text-[#3d405b]/40 bg-white rounded-2xl border border-[#d1cce7]/20">
                         <BookOpen size={32} className="mx-auto mb-2 opacity-50" />
-                        ยังไม่มีหนังสือ
+                        {t("empty")}
                     </div>
                 ) : (
                     books.map((book) => {
@@ -81,7 +83,7 @@ export default async function BooksPage({
                                     <div className="flex gap-1.5 ml-2">
                                         {!book.isActive && (
                                             <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-[#d1cce7]/25 text-[#3d405b]/70">
-                                                ปิด
+                                                {t("bookCard.status.inactive")}
                                             </span>
                                         )}
                                         <span
@@ -90,23 +92,23 @@ export default async function BooksPage({
                                                 : "bg-emerald-100 text-emerald-700"
                                                 }`}
                                         >
-                                            {isBorrowed ? "ถูกยืม" : "ว่าง"}
+                                            {isBorrowed ? t("bookCard.status.borrowed") : t("bookCard.status.available")}
                                         </span>
                                     </div>
                                 </div>
                                 <div className="space-y-1 text-sm text-[#3d405b]/50">
-                                    {book.category && <p>หมวดหมู่: {book.category}</p>}
-                                    {book.ageRange && <p>ช่วงอายุ: {book.ageRange}</p>}
+                                    {book.category && <p>{t("bookCard.category", { category: book.category })}</p>}
+                                    {book.ageRange && <p>{t("bookCard.ageRange", { ageRange: book.ageRange })}</p>}
                                     <p className="text-xs font-mono text-[#3d405b]/40">{book.qrCode}</p>
                                 </div>
                                 {isBorrowed && (
                                     <p className="text-xs text-amber-600 mt-2">
-                                        ยืมโดย: {book.borrowItems[0].borrowRecord.user.parentName}
+                                        {t("bookCard.borrowedBy", { name: book.borrowItems[0].borrowRecord.user.parentName })}
                                     </p>
                                 )}
                                 {book.youtubeUrl && (
                                     <span className="inline-flex items-center gap-1 mt-3 text-xs text-red-500 font-medium">
-                                        ▶ มี YouTube
+                                        {t("bookCard.hasYoutube")}
                                     </span>
                                 )}
                             </Link>
