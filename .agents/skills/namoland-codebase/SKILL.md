@@ -381,8 +381,9 @@ To prevent mathematical drift from Weighted Average Cost (WAC) calculations over
 
 ### Class Booking Flow
 1. **Book** → no coin deduction, just a reservation
-2. **Check-in** → FIFO coin deduction using ActivityConfig pricing
+2. **Check-in** → FIFO coin deduction using ActivityConfig pricing. The transaction and package expiry dates are strictly backdated to the **exact computed class date** (Monday startDate + dayOfWeek offset), ignoring the real-time check-in click timestamp.
 3. **Cancel/No-show** → no refund needed
+4. **Unified History View** → The `MemberBookingHistory` (Admin) and `/user/classes` (User) APIs fetch and merge both native `ClassBooking` entries and manual Drop-in `CoinTransaction` (type: `CLASS_FEE` without standard class prefixes) records. Expected missing fields (e.g., `childName`, `dayOfWeek`) on manual activities are pseudo-mapped to allow seamless UI rendering in a single timeline natively sorted by `createdAt`.
 
 ### Borrow Code Generation
 - Pattern: `BOR-YYYYMM-NNNN`
