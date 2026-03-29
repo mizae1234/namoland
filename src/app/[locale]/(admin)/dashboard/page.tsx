@@ -173,25 +173,25 @@ export default async function DashboardPage() {
             </div>
 
             {/* Stat Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 {statCards.map((card) => {
                     const colors = colorMap[card.color];
                     const Icon = card.icon;
                     return (
                         <div
                             key={card.label}
-                            className="bg-white rounded-2xl p-6 border border-[#d1cce7]/20 shadow-sm hover:shadow-md transition-shadow"
+                            className="bg-white rounded-2xl p-5 border border-[#d1cce7]/20 shadow-sm hover:shadow-md transition-shadow"
                         >
                             <div className="flex items-start justify-between">
                                 <div>
-                                    <p className="text-sm text-[#3d405b]/50 font-medium">{card.label}</p>
-                                    <p className={`text-3xl font-bold ${colors.text} mt-2`}>
+                                    <p className="text-xs text-[#3d405b]/50 font-medium">{card.label}</p>
+                                    <p className={`text-2xl font-bold ${colors.text} mt-1.5`}>
                                         {card.value}
                                     </p>
                                     <p className="text-xs text-[#3d405b]/40 mt-1">{card.sub}</p>
                                 </div>
-                                <div className={`${colors.bg} p-3 rounded-xl`}>
-                                    <Icon size={22} className={colors.icon} />
+                                <div className={`${colors.bg} p-2.5 rounded-xl`}>
+                                    <Icon size={20} className={colors.icon} />
                                 </div>
                             </div>
                         </div>
