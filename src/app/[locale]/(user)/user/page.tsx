@@ -2,6 +2,8 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getTranslations, getLocale } from "next-intl/server";
 import Link from "next/link";
+import { format } from "date-fns";
+import { th, enUS } from "date-fns/locale";
 import { BookOpen, QrCode, Coins, Youtube, Plus, CalendarDays, Clock, Check } from "lucide-react";
 
 
@@ -102,7 +104,7 @@ export default async function UserHomePage() {
             </div>
 
             {/* Upcoming Bookings */}
-            <UpcomingBookings userId={userId} />
+            <UpcomingBookings userId={userId} locale={locale} />
 
             {/* Current Borrows */}
             {user.borrowRecords.length > 0 && (
@@ -160,12 +162,15 @@ export default async function UserHomePage() {
     );
 }
 
-async function UpcomingBookings({ userId }: { userId: string }) {
+async function UpcomingBookings({ userId, locale }: { userId: string, locale: string }) {
     const t = await getTranslations("UserDashboard");
+    const dateLocale = locale === "en" ? enUS : th;
     const bookings = await prisma.classBooking.findMany({
         where: { userId, status: "BOOKED" },
         include: {
-            classEntry: true,
+            classEntry: {
+                include: { schedule: true },
+            },
             child: { select: { name: true } },
         },
         orderBy: { createdAt: "desc" },
@@ -188,7 +193,16 @@ async function UpcomingBookings({ userId }: { userId: string }) {
                 </div>
             ) : (
                 <div className="space-y-2">
-                    {bookings.map((b) => (
+                    {bookings.map((b) => {
+                        let exactClassDate = "";
+                        if (b.classEntry.schedule?.startDate) {
+                            const d = new Date(b.classEntry.schedule.startDate);
+                            // Set locale manually or safely output
+                            d.setDate(d.getDate() + (b.classEntry.dayOfWeek - 1));
+                            // Using a simple format for dashboard
+                            exactClassDate = format(d, "d MMM yy", { locale: dateLocale });
+                        }
+                        return (
                         <div key={b.id} className="bg-white rounded-xl p-3 border border-[#d1cce7]/20 flex items-center gap-3">
                             <div className="w-10 h-10 bg-[#a16b9f]/10 rounded-lg flex items-center justify-center">
                                 <CalendarDays size={18} className="text-[#a16b9f]" />
@@ -196,7 +210,7 @@ async function UpcomingBookings({ userId }: { userId: string }) {
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-[#3d405b]/80 truncate">{b.classEntry.title}</p>
                                 <p className="text-xs text-[#3d405b]/40">
-                                    {t(`days.${b.classEntry.dayOfWeek}`)} {b.classEntry.startTime}-{b.classEntry.endTime}
+                                    <span className="font-semibold text-[#3d405b]/60">{t(`days.${b.classEntry.dayOfWeek}`)} {exactClassDate}</span> • {b.classEntry.startTime}-{b.classEntry.endTime}
                                     {b.child && ` • ${b.child.name}`}
                                 </p>
                             </div>
@@ -204,7 +218,8 @@ async function UpcomingBookings({ userId }: { userId: string }) {
                                 <Clock size={9} /> {t("bookings.waiting")}
                             </span>
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>

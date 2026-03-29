@@ -45,5 +45,36 @@ export async function GET(
         bookedByName: b.bookedBy.name || "Admin",
     }));
 
-    return NextResponse.json(result);
+    const manualTxs = await prisma.coinTransaction.findMany({
+        where: {
+            package: { userId },
+            type: "CLASS_FEE",
+            NOT: {
+                description: { startsWith: "Check-in:" },
+            },
+        },
+        include: { processedBy: { select: { name: true } } },
+        orderBy: { createdAt: "desc" },
+    });
+
+    const manualResults = manualTxs.map((t) => ({
+        id: t.id,
+        status: "CHECKED_IN",
+        coinsCharged: t.coinsUsed,
+        checkedInAt: t.createdAt.toISOString(),
+        createdAt: t.createdAt.toISOString(),
+        note: t.description,
+        childName: "-",
+        className: t.className || t.description || "Activity",
+        dayOfWeek: t.createdAt.getDay() === 0 ? 7 : t.createdAt.getDay(),
+        startTime: "-",
+        endTime: "-",
+        bookedByName: t.processedBy?.name || "Admin",
+    }));
+
+    const finalResult = [...result, ...manualResults].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    return NextResponse.json(finalResult);
 }

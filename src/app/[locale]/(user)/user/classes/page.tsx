@@ -36,9 +36,39 @@ export default async function UserClassesPage() {
         take: 50,
     });
 
+    const manualTxs = await prisma.coinTransaction.findMany({
+        where: {
+            package: { userId },
+            type: "CLASS_FEE",
+            NOT: { description: { startsWith: "Check-in:" } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+    });
+
+    const manualBookings = manualTxs.map((tx) => ({
+        id: tx.id,
+        status: "CHECKED_IN",
+        coinsCharged: tx.coinsUsed,
+        createdAt: tx.createdAt,
+        classEntry: {
+            title: tx.className || tx.description || "Activity",
+            dayOfWeek: tx.createdAt.getDay() === 0 ? 7 : tx.createdAt.getDay(),
+            startTime: "-",
+            endTime: "-",
+            schedule: {
+                startDate: tx.createdAt,
+                theme: tx.description !== tx.className ? tx.description : null,
+            }
+        },
+        child: null,
+    }));
+
     // Group by status
     const upcoming = bookings.filter((b) => b.status === "BOOKED");
-    const past = bookings.filter((b) => b.status !== "BOOKED");
+    const past = [...bookings.filter((b) => b.status !== "BOOKED"), ...manualBookings]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 50);
 
     return (
         <div className="p-4">
@@ -98,13 +128,20 @@ function BookingCard({ booking: b, t, dateLocale }: { booking: any; t: any; date
         ? format(new Date(b.classEntry.schedule.startDate), "d MMM yy", { locale: dateLocale })
         : "";
 
+    let exactClassDate = "";
+    if (b.classEntry.schedule.startDate) {
+        const d = new Date(b.classEntry.schedule.startDate);
+        d.setDate(d.getDate() + (b.classEntry.dayOfWeek - 1));
+        exactClassDate = format(d, "d MMM yy", { locale: dateLocale });
+    }
+
     return (
         <div className={`rounded-xl p-3 border border-[#d1cce7]/15 ${b.status === "BOOKED" ? "bg-white" : "bg-gray-50/50"}`}>
             <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-[#3d405b] truncate">{b.classEntry.title}</p>
-                    <p className="text-xs text-[#3d405b]/40 mt-0.5">
-                        {t(`days.${b.classEntry.dayOfWeek}`)} {b.classEntry.startTime}-{b.classEntry.endTime}
+                    <p className="text-xs text-[#3d405b]/60 mt-0.5 font-medium">
+                        {t(`days.${b.classEntry.dayOfWeek}`)} {exactClassDate} • <span className="text-[#3d405b]/40 font-normal">{b.classEntry.startTime}-{b.classEntry.endTime}</span>
                     </p>
                     <p className="text-[10px] text-[#3d405b]/30 mt-0.5">
                         {t("card.week")} {scheduleDate}
