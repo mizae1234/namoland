@@ -138,6 +138,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
             setSelectedPkg(null);
             setShowBuy(false);
             router.refresh();
+            window.dispatchEvent(new Event('refresh-member-data'));
             setTimeout(() => setMessage(""), 3000);
         }
     };
@@ -163,6 +164,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
             setShowUse(false);
             setPendingUse(null);
             router.refresh();
+            window.dispatchEvent(new Event('refresh-member-data'));
             setTimeout(() => setMessage(""), 3000);
         }
     };
@@ -182,6 +184,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
             setShowExtend(false);
             setExtendNote("");
             router.refresh();
+            window.dispatchEvent(new Event('refresh-member-data'));
             setTimeout(() => setMessage(""), 3000);
         }
     };
@@ -202,6 +205,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
             setDeductAmount("");
             setDeductReason("");
             router.refresh();
+            window.dispatchEvent(new Event('refresh-member-data'));
             setTimeout(() => setMessage(""), 3000);
         }
     };
@@ -222,6 +226,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
             setAddAmount("");
             setAddReason("");
             router.refresh();
+            window.dispatchEvent(new Event('refresh-member-data'));
             setTimeout(() => setMessage(""), 3000);
         }
     };

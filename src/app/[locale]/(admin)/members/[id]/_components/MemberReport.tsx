@@ -12,11 +12,15 @@ export default function MemberReport({ userId, memberName }: { userId: string; m
     const [isPending, startTransition] = useTransition();
     const [loaded, setLoaded] = useState(false);
 
-    // Auto-load on mount
+    // Auto-load on mount and listen for actions
     useEffect(() => {
         if (!loaded && !isPending) {
             loadReport();
         }
+
+        const handleRefresh = () => loadReport();
+        window.addEventListener('refresh-member-data', handleRefresh);
+        return () => window.removeEventListener('refresh-member-data', handleRefresh);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 

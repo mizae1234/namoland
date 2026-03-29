@@ -48,6 +48,10 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
         if (!loaded && !isPending) {
             loadBookings();
         }
+
+        const handleRefresh = () => loadBookings();
+        window.addEventListener('refresh-member-data', handleRefresh);
+        return () => window.removeEventListener('refresh-member-data', handleRefresh);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
