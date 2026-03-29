@@ -61,6 +61,6 @@ export default auth((req) => {
 });
 
 export const config = {
-    // Match all paths except API, static assets, images, etc.
-    matcher: ["/((?!api|_next/static|_next/image|favicon.ico|uploads).*)"],
+    // Match all paths except API, static assets, images, and public static files
+    matcher: ["/((?!api|_next/static|_next/image|favicon.ico|uploads|.*\\.png$|.*\\.jpg$|.*\\.jpeg$|.*\\.gif$|.*\\.svg$|.*\\.ico$|.*\\.webp$).*)"],
 };
