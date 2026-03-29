@@ -231,6 +231,9 @@ export async function createBorrow(formData: FormData) {
             distributeRentalToDeductions(books, deductions, depositCoins),
             "BOOK_RENTAL",
             session.user.id,
+            {
+                description: `ค่ายืมหนังสือ: ${books.map(b => b.title).join(", ")} (${code})`,
+            },
         ),
         // Mark books as unavailable
         ...bookIds.map((bookId) =>
