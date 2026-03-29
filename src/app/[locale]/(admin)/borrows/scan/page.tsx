@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { getMemberByQrCode } from "@/actions/member";
 import { getBookByQrCode } from "@/actions/borrow";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Camera, User, BookOpen } from "lucide-react";
 import BackLink from "@/components/ui/BackLink";
 import AlertMessage from "@/components/ui/AlertMessage";
@@ -16,6 +17,7 @@ type ScanResult =
 
 export default function ScanPage() {
     const router = useRouter();
+    const t = useTranslations("AdminBorrows.scan");
     const [scanning, setScanning] = useState(false);
     const [manualCode, setManualCode] = useState("");
     const [result, setResult] = useState<ScanResult>(null);
@@ -60,7 +62,7 @@ export default function ScanPage() {
         } else if (book) {
             setResult({ type: "book", data: book });
         } else {
-            setError("ไม่พบข้อมูล QR Code นี้");
+            setError(t("notFound"));
         }
 
         setLoading(false);
@@ -84,7 +86,7 @@ export default function ScanPage() {
                 () => { }
             );
         } catch {
-            setError("ไม่สามารถเปิดกล้องได้");
+            setError(t("cameraError"));
             setScanning(false);
         }
     };
@@ -114,9 +116,9 @@ export default function ScanPage() {
 
     return (
         <div className="max-w-2xl mx-auto">
-            <BackLink href="/borrows" label="กลับไปหน้ายืม-คืน" />
+            <BackLink href="/borrows" label={t("backToBorrows")} />
 
-            <h1 className="text-2xl font-bold text-[#3d405b] mb-6">สแกน QR Code</h1>
+            <h1 className="text-2xl font-bold text-[#3d405b] mb-6">{t("title")}</h1>
 
             {/* Scanner Area */}
             <Card className="mb-6">
@@ -127,7 +129,7 @@ export default function ScanPage() {
                             onClick={stopScanner}
                             className="w-full py-2.5 bg-red-500 text-white rounded-xl text-sm font-medium hover:bg-red-600"
                         >
-                            หยุดสแกน
+                            {t("stopScan")}
                         </button>
                     </div>
                 ) : (
@@ -137,20 +139,20 @@ export default function ScanPage() {
                             className="inline-flex items-center gap-2 px-6 py-3 bg-[#609279] text-white rounded-xl font-medium hover:bg-[#609279] transition-colors shadow-md shadow-[#81b29a]/30"
                         >
                             <Camera size={20} />
-                            เปิดกล้องสแกน
+                            {t("startScan")}
                         </button>
                     </div>
                 )}
 
                 {/* Manual Input */}
                 <div className="mt-6 pt-6 border-t border-[#d1cce7]/20">
-                    <p className="text-sm text-[#3d405b]/50 mb-3">หรือกรอก QR Code ด้วยตนเอง</p>
+                    <p className="text-sm text-[#3d405b]/50 mb-3">{t("manualInput")}</p>
                     <form onSubmit={handleManualSearch} className="flex gap-2">
                         <input
                             type="text"
                             value={manualCode}
                             onChange={(e) => setManualCode(e.target.value)}
-                            placeholder="NML-... หรือ BOOK-..."
+                            placeholder={t("placeholder")}
                             className="flex-1 px-4 py-2.5 border border-[#d1cce7]/30 rounded-xl text-sm bg-[#f4f1de]/50 focus:bg-white focus:border-[#81b29a] outline-none"
                         />
                         <button
@@ -158,7 +160,7 @@ export default function ScanPage() {
                             disabled={loading}
                             className="px-4 py-2.5 bg-[#3d405b] text-white rounded-xl text-sm font-medium hover:bg-[#3d405b]/80 disabled:opacity-50"
                         >
-                            ค้นหา
+                            {t("searchBtn")}
                         </button>
                     </form>
                 </div>
@@ -169,7 +171,7 @@ export default function ScanPage() {
             {loading && (
                 <div className="text-center py-8 text-[#3d405b]/40">
                     <div className="w-8 h-8 border-2 border-[#609279] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                    กำลังค้นหา...
+                    {t("searching")}
                 </div>
             )}
 
@@ -185,7 +187,7 @@ export default function ScanPage() {
                             <p className="text-sm text-[#3d405b]/50">{result.data.phone}</p>
                         </div>
                         <div className="ml-auto text-right">
-                            <p className="text-xs text-[#3d405b]/40">เหรียญคงเหลือ</p>
+                            <p className="text-xs text-[#3d405b]/40">{t("memberCoins")}</p>
                             <p className="text-xl font-bold text-emerald-600">{totalCoins}</p>
                         </div>
                     </div>
@@ -201,7 +203,7 @@ export default function ScanPage() {
                     {result.data.borrowRecords.length > 0 && (
                         <div className="bg-amber-50 rounded-xl p-3 mb-4">
                             <p className="text-xs font-semibold text-amber-700 mb-1">
-                                กำลังยืม {result.data.borrowRecords.length} รายการ
+                                {t("borrowingCount", { count: result.data.borrowRecords.length })}
                             </p>
                             {result.data.borrowRecords.map((br) => (
                                 <p key={br.id} className="text-xs text-amber-600">
@@ -216,21 +218,21 @@ export default function ScanPage() {
                             onClick={() => router.push(`/borrows/new/${result.data!.id}`)}
                             className="flex-1 py-2.5 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#609279] transition-colors"
                         >
-                            ยืมหนังสือ
+                            {t("borrowBtn")}
                         </button>
                         {result.data.borrowRecords.length > 0 && (
                             <button
                                 onClick={() => router.push(`/borrows/${result.data!.borrowRecords[0].id}`)}
                                 className="flex-1 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-medium hover:bg-emerald-600 transition-colors"
                             >
-                                คืนหนังสือ
+                                {t("returnBtn")}
                             </button>
                         )}
                         <button
                             onClick={() => router.push(`/members/${result.data!.id}`)}
                             className="flex-1 py-2.5 bg-[#d1cce7]/25 text-[#3d405b]/80 rounded-xl text-sm font-medium hover:bg-[#3d405b]/30 transition-colors"
                         >
-                            ดูโปรไฟล์
+                            {t("profileBtn")}
                         </button>
                     </div>
                 </Card>
@@ -250,7 +252,7 @@ export default function ScanPage() {
                     </div>
 
                     {result.data.category && (
-                        <p className="text-sm text-[#3d405b]/50 mb-2">หมวดหมู่: {result.data.category}</p>
+                        <p className="text-sm text-[#3d405b]/50 mb-2">{t("bookCategory", { category: result.data.category })}</p>
                     )}
 
                     <div className="flex gap-3">
@@ -261,7 +263,7 @@ export default function ScanPage() {
                                 rel="noopener noreferrer"
                                 className="flex-1 py-2.5 bg-red-500 text-white rounded-xl text-sm font-medium hover:bg-red-600 text-center transition-colors"
                             >
-                                ▶ ดู YouTube
+                                {t("youtubeBtn")}
                             </a>
                         )}
                         {result.data.isAvailable ? (
@@ -270,15 +272,15 @@ export default function ScanPage() {
                                     // Navigate to scan page with pre-selected book
                                     // User will need to scan member QR next
                                     setResult(null);
-                                    setError("กรุณาสแกน QR Code สมาชิกเพื่อยืมหนังสือเล่มนี้");
+                                    setError(t("borrowBookAlert"));
                                 }}
                                 className="flex-1 py-2.5 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#609279] text-center transition-colors"
                             >
-                                ยืมหนังสือ
+                                {t("borrowBookBtn")}
                             </button>
                         ) : (
                             <span className="flex-1 py-2.5 bg-amber-100 text-amber-700 rounded-xl text-sm font-medium text-center">
-                                ถูกยืมอยู่ — {result.data.borrowItems[0]?.borrowRecord.user.parentName}
+                                {t("borrowedBy", { name: result.data.borrowItems[0]?.borrowRecord.user.parentName })}
                             </span>
                         )}
                     </div>

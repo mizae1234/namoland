@@ -920,7 +920,26 @@
       "confirmReturn": "Confirm Return ({count})"
     },
     "scan": {
-      "cameraError": "Cannot open camera"
+      "cameraError": "Cannot open camera",
+      "title": "Scan QR Code",
+      "backToBorrows": "Back to Borrows",
+      "stopScan": "Stop Scanning",
+      "startScan": "Open Camera",
+      "manualInput": "Or enter QR Code manually",
+      "searchBtn": "Search",
+      "placeholder": "NML-... or BOOK-...",
+      "searching": "Searching...",
+      "notFound": "QR Code not found",
+      "memberCoins": "Remaining Coins",
+      "borrowingCount": "Borrowing {count} items",
+      "borrowBtn": "Borrow Books",
+      "returnBtn": "Return Books",
+      "profileBtn": "View Profile",
+      "bookCategory": "Category: {category}",
+      "youtubeBtn": "▶ Watch YouTube",
+      "borrowBookBtn": "Borrow Book",
+      "borrowBookAlert": "Please scan member QR code to borrow this book",
+      "borrowedBy": "Borrowed by — {name}"
     },
     "confirm": {
       "approve": "Approve",

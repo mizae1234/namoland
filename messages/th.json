@@ -920,7 +920,26 @@
       "confirmReturn": "ยืนยันคืน {count} เล่ม"
     },
     "scan": {
-      "cameraError": "ไม่สามารถเปิดกล้องได้"
+      "cameraError": "ไม่สามารถเปิดกล้องได้",
+      "title": "สแกน QR Code",
+      "backToBorrows": "กลับไปหน้ายืม-คืน",
+      "stopScan": "หยุดสแกน",
+      "startScan": "เปิดกล้องสแกน",
+      "manualInput": "หรือกรอก QR Code ด้วยตนเอง",
+      "searchBtn": "ค้นหา",
+      "placeholder": "NML-... หรือ BOOK-...",
+      "searching": "กำลังค้นหา...",
+      "notFound": "ไม่พบข้อมูล QR Code นี้",
+      "memberCoins": "เหรียญคงเหลือ",
+      "borrowingCount": "กำลังยืม {count} รายการ",
+      "borrowBtn": "ยืมหนังสือ",
+      "returnBtn": "คืนหนังสือ",
+      "profileBtn": "ดูโปรไฟล์",
+      "bookCategory": "หมวดหมู่: {category}",
+      "youtubeBtn": "▶ ดู YouTube",
+      "borrowBookBtn": "ยืมหนังสือ",
+      "borrowBookAlert": "กรุณาสแกน QR Code สมาชิกเพื่อยืมหนังสือเล่มนี้",
+      "borrowedBy": "ถูกยืมอยู่ — {name}"
     },
     "confirm": {
       "approve": "อนุมัติ",
