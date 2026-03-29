@@ -68,62 +68,39 @@ export async function spendCoins(formData: FormData) {
     const session = await auth();
     if (!session?.user) return { error: "Unauthorized" };
 
-    const packageId = formData.get("packageId") as string;
+    // Accept userId for FIFO, fall back to packageId for backward compat
+    const userId = formData.get("userId") as string;
     const coinsUsed = parseInt(formData.get("coinsUsed") as string);
     const className = formData.get("className") as string;
     const classHours = formData.get("classHours") as string;
     const description = formData.get("description") as string;
 
-    if (!packageId || isNaN(coinsUsed) || coinsUsed <= 0) {
+    if (!userId || isNaN(coinsUsed) || coinsUsed <= 0) {
         return { error: "ข้อมูลไม่ถูกต้อง" };
     }
 
-    const pkg = await prisma.coinPackage.findUnique({ where: { id: packageId } });
-    if (!pkg) return { error: "ไม่พบแพ็คเกจเหรียญ" };
-    if (pkg.remainingCoins < coinsUsed) return { error: "เหรียญไม่เพียงพอ" };
+    // Use shared FIFO deduction (oldest package first)
+    const { deductions, totalAvailable } = await prepareFIFODeduction(userId, coinsUsed);
+
+    if (totalAvailable < coinsUsed) {
+        return { error: `เหรียญไม่เพียงพอ (คงเหลือ ${totalAvailable} เหรียญ)` };
+    }
 
     const now = new Date();
+    const descText = description || (classHours ? `${className} (${classHours}h)` : className) || null;
 
-    // Build update data — start expiry clock on first use
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const updateData: Record<string, any> = {
-        remainingCoins: pkg.remainingCoins - coinsUsed,
-    };
-
-    let newExpiresAt: Date | null = null;
-    if (!pkg.firstUsedAt) {
-        newExpiresAt = new Date(now);
-        newExpiresAt.setMonth(newExpiresAt.getMonth() + 1);
-        updateData.firstUsedAt = now;
-        updateData.expiresAt = newExpiresAt;
-    }
-
-    await prisma.$transaction([
-        prisma.coinPackage.update({
-            where: { id: packageId },
-            data: updateData,
+    const ops = [
+        ...buildPackageDeductOps(deductions, now),
+        ...buildTransactionOps(deductions, "CLASS_FEE", session.user.id, {
+            className: className || undefined,
+            description: descText || undefined,
         }),
-        prisma.coinTransaction.create({
-            data: {
-                packageId,
-                type: "CLASS_FEE",
-                coinsUsed,
-                className: className || null,
-                classHours: classHours ? parseFloat(classHours) : null,
-                description: description || null,
-                processedById: session.user.id,
-            },
-        }),
-    ]);
+    ];
 
-    // Sync expiry override if clock just started
-    if (newExpiresAt) {
-        await syncCoinExpiryOverride(
-            pkg.userId,
-            [{ packageId: pkg.id, amount: coinsUsed, pkg: { ...pkg, firstUsedAt: null } as never }],
-            now,
-        );
-    }
+    await prisma.$transaction(ops);
+
+    // Sync expiry override if any package just started its clock
+    await syncCoinExpiryOverride(userId, deductions, now);
 
     revalidatePath("/members");
     revalidatePath("/coins");

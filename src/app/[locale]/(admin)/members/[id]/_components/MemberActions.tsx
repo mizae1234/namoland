@@ -148,7 +148,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
         if (!pendingUse) return;
         setLoading(true);
         const fd = new FormData();
-        fd.set("packageId", activePackages[0].id);
+        fd.set("userId", member.id);
         fd.set("coinsUsed", String(pendingUse.coins));
         fd.set("className", pendingUse.label);
         fd.set("classHours", String(pendingUse.hours));
