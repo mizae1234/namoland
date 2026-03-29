@@ -382,7 +382,8 @@
       "within7Days": "Within 7 days",
       "coinsPurchased": "Coins Sold (This Month)",
       "coinsUnit": "Coins",
-      "coinsRedeemed": "Coins Used (This Month)"
+      "coinsRedeemed": "Coins Used (This Month)",
+      "remainingCoins": "Total Remaining Coins"
     },
     "recentBorrows": {
       "title": "Recent Borrows",

@@ -382,7 +382,8 @@
       "within7Days": "ภายใน 7 วัน",
       "coinsPurchased": "เหรียญขายได้ (เดือนนี้)",
       "coinsUnit": "เหรียญ",
-      "coinsRedeemed": "เหรียญที่ใช้ไป (เดือนนี้)"
+      "coinsRedeemed": "เหรียญที่ใช้ไป (เดือนนี้)",
+      "remainingCoins": "จำนวนเหรียญคงเหลือ"
     },
     "recentBorrows": {
       "title": "รายการยืมล่าสุด",

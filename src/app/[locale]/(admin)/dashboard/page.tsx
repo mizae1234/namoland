@@ -24,6 +24,7 @@ async function getDashboardStats() {
         expiringPackages,
         totalCoinsPurchased,
         totalCoinsRedeemed,
+        remainingCoinsAgg,
     ] = await Promise.all([
         prisma.user.count(),
         prisma.child.count(),
@@ -51,6 +52,10 @@ async function getDashboardStats() {
             _sum: { coinsUsed: true },
             where: { createdAt: { gte: monthStart } },
         }),
+        prisma.coinPackage.aggregate({
+            _sum: { remainingCoins: true },
+            where: { isExpired: false, remainingCoins: { gt: 0 } },
+        }),
     ]);
 
     return {
@@ -61,6 +66,7 @@ async function getDashboardStats() {
         expiringPackages,
         coinsPurchasedThisMonth: totalCoinsPurchased._sum.totalCoins || 0,
         coinsRedeemedThisMonth: totalCoinsRedeemed._sum.coinsUsed || 0,
+        totalRemainingCoins: remainingCoinsAgg._sum.remainingCoins || 0,
     };
 }
 
@@ -137,6 +143,13 @@ export default async function DashboardPage() {
             icon: TrendingDown,
             color: "purple",
         },
+        {
+            label: t("stats.remainingCoins"),
+            value: stats.totalRemainingCoins,
+            sub: t("stats.coinsUnit"),
+            icon: Coins,
+            color: "teal",
+        },
     ];
 
     const colorMap: Record<string, { bg: string; text: string; icon: string }> = {
@@ -146,6 +159,7 @@ export default async function DashboardPage() {
         red: { bg: "bg-red-50", text: "text-red-600", icon: "text-red-500" },
         blue: { bg: "bg-blue-50", text: "text-blue-600", icon: "text-blue-500" },
         purple: { bg: "bg-purple-50", text: "text-purple-600", icon: "text-purple-500" },
+        teal: { bg: "bg-teal-50", text: "text-teal-600", icon: "text-teal-500" },
     };
 
 
