@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { purchasePackage, spendCoins, extendExpiry, deductCoins, adjustCoinsUp } from "@/actions/coin";
 import { Coins, ShoppingCart, Banknote, CreditCard, CalendarPlus, MinusCircle, PlusCircle, BookOpen } from "lucide-react";
 import Link from "next/link";
@@ -45,6 +46,7 @@ interface MemberActionsProps {
 export default function MemberActions({ member, packages, activities }: MemberActionsProps) {
     const t = useTranslations("AdminMembers.detail.actions");
     const locale = useLocale();
+    const router = useRouter();
     const dateLocale = locale === "en" ? enUS : th;
     const [showBuy, setShowBuy] = useState(false);
     const [showUse, setShowUse] = useState(false);
@@ -135,6 +137,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
             setMessage(t("buySuccess"));
             setSelectedPkg(null);
             setShowBuy(false);
+            router.refresh();
             setTimeout(() => setMessage(""), 3000);
         }
     };
@@ -159,6 +162,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
             setMessage(t("useSuccess"));
             setShowUse(false);
             setPendingUse(null);
+            router.refresh();
             setTimeout(() => setMessage(""), 3000);
         }
     };
@@ -177,6 +181,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
             setMessage(t("extendSuccess"));
             setShowExtend(false);
             setExtendNote("");
+            router.refresh();
             setTimeout(() => setMessage(""), 3000);
         }
     };
@@ -196,6 +201,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
             setShowDeduct(false);
             setDeductAmount("");
             setDeductReason("");
+            router.refresh();
             setTimeout(() => setMessage(""), 3000);
         }
     };
@@ -215,6 +221,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
             setShowAdjustUp(false);
             setAddAmount("");
             setAddReason("");
+            router.refresh();
             setTimeout(() => setMessage(""), 3000);
         }
     };
