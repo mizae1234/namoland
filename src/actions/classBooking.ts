@@ -25,7 +25,7 @@ export async function searchMembersForBooking(query: string) {
             children: true,
             coinPackages: {
                 where: { isExpired: false, remainingCoins: { gt: 0 } },
-                orderBy: { createdAt: "asc" },
+                orderBy: { purchaseDate: "asc" },
             },
         },
         take: 10,

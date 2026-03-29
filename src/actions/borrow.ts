@@ -285,7 +285,7 @@ export async function returnBooks(formData: FormData) {
 
     const record = await prisma.borrowRecord.findUnique({
         where: { id: borrowId },
-        include: { items: true, user: { include: { coinPackages: { where: { isExpired: false, remainingCoins: { gt: 0 } } } } } },
+        include: { items: true, user: { include: { coinPackages: { where: { isExpired: false, remainingCoins: { gt: 0 } }, orderBy: { purchaseDate: "asc" } } } } },
     });
 
     if (!record) return { error: "ไม่พบรายการยืม" };
@@ -653,7 +653,7 @@ export async function cancelReservation(borrowId: string) {
     const refundCoins = record.rentalCoins;
     const packages = await prisma.coinPackage.findMany({
         where: { userId: record.userId, isExpired: false },
-        orderBy: { createdAt: "asc" },
+        orderBy: { purchaseDate: "asc" },
     });
 
     // Refund to the earliest non-expired package
@@ -665,6 +665,16 @@ export async function cancelReservation(borrowId: string) {
         prisma.coinPackage.update({
             where: { id: targetPkg.id },
             data: { remainingCoins: { increment: refundCoins } },
+        }),
+        // Log refund transaction
+        prisma.coinTransaction.create({
+            data: {
+                packageId: targetPkg.id,
+                type: "BOOK_RENTAL",
+                coinsUsed: -refundCoins, // negative = refund
+                description: `คืนค่ายืมหนังสือ (ยกเลิกจอง ${record.code})`,
+                processedById: session.user.id,
+            },
         }),
         // Release books
         ...record.items.map((item) =>

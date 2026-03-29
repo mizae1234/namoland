@@ -241,7 +241,7 @@ export async function adjustCoinsUp(formData: FormData) {
         // Add to the oldest active package, or create a new adjustment package
         const activePackage = await prisma.coinPackage.findFirst({
             where: { userId, isExpired: false, remainingCoins: { gt: 0 } },
-            orderBy: { createdAt: "asc" },
+            orderBy: { purchaseDate: "asc" },
         });
 
         if (activePackage) {

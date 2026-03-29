@@ -107,7 +107,7 @@ export async function getMemberById(id: string) {
             children: true,
             coinPackages: {
                 include: { transactions: { orderBy: { createdAt: "desc" }, take: 50 } },
-                orderBy: { createdAt: "desc" },
+                orderBy: { purchaseDate: "desc" },
             },
             borrowRecords: {
                 include: { items: { include: { book: true } } },
@@ -129,7 +129,7 @@ export async function getMemberByQrCode(qrCode: string) {
             children: true,
             coinPackages: {
                 where: { isExpired: false, remainingCoins: { gt: 0 } },
-                orderBy: { createdAt: "desc" },
+                orderBy: { purchaseDate: "desc" },
             },
             borrowRecords: {
                 where: { status: "BORROWED" },

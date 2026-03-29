@@ -35,7 +35,7 @@ export async function prepareFIFODeduction(
 ): Promise<FIFOResult> {
     const packages = await prisma.coinPackage.findMany({
         where: { userId, isExpired: false, remainingCoins: { gt: 0 } },
-        orderBy: { createdAt: "asc" },
+        orderBy: { purchaseDate: "asc" },
     });
 
     const totalAvailable = packages.reduce((s, p) => s + p.remainingCoins, 0);
