@@ -92,6 +92,7 @@ export function buildTransactionOps(
     opts: {
         className?: string;
         description?: string;
+        createdAt?: Date;
     } = {},
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any[] {
@@ -104,6 +105,7 @@ export function buildTransactionOps(
                 className: opts.className || null,
                 description: opts.description || null,
                 processedById,
+                createdAt: opts.createdAt,
             },
         }),
     );

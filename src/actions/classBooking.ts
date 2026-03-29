@@ -102,7 +102,9 @@ export async function checkInBooking(bookingId: string) {
     const booking = await prisma.classBooking.findUnique({
         where: { id: bookingId },
         include: {
-            classEntry: true,
+            classEntry: {
+                include: { schedule: true }
+            },
             user: true,
         },
     });
@@ -117,7 +119,18 @@ export async function checkInBooking(bookingId: string) {
     }
 
     const coinCost = activity.coins;
-    const now = new Date();
+
+    // Determine exact class time for backdated accuracy
+    const classDate = new Date(booking.classEntry.schedule.startDate);
+    const dayOffset = booking.classEntry.dayOfWeek - 1; // 1=Mon, 7=Sun
+    classDate.setDate(classDate.getDate() + dayOffset);
+    if (booking.classEntry.startTime) {
+        const [hours, minutes] = booking.classEntry.startTime.split(':').map(Number);
+        if (!isNaN(hours) && !isNaN(minutes)) {
+            classDate.setHours(hours, minutes, 0, 0);
+        }
+    }
+    const now = classDate;
 
     if (coinCost > 0) {
         // FIFO coin deduction (shared service)
@@ -132,6 +145,7 @@ export async function checkInBooking(bookingId: string) {
             ...buildTransactionOps(deductions, "CLASS_FEE", session.user.id, {
                 className: booking.classEntry.title,
                 description: `Check-in: ${booking.classEntry.title} (${booking.classEntry.startTime}-${booking.classEntry.endTime})`,
+                createdAt: now,
             }),
             prisma.classBooking.update({
                 where: { id: bookingId },
