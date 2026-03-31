@@ -338,6 +338,23 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                                     />
                                 </div>
                             </div>
+                            <div>
+                                <label className="text-xs font-medium text-[#3d405b] block mb-1">
+                                    {t("purchaseDate")} <span className="font-normal text-[#3d405b]/40">({t("purchaseDateHint")})</span>
+                                </label>
+                                <input
+                                    type="date"
+                                    value={purchaseDate}
+                                    onChange={(e) => setPurchaseDate(e.target.value)}
+                                    max={format(new Date(), "yyyy-MM-dd")}
+                                    className="w-full px-3 py-2 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#a16b9f]/20 focus:border-[#a16b9f]"
+                                />
+                                {purchaseDate !== format(new Date(), "yyyy-MM-dd") && (
+                                    <p className="text-xs text-amber-600 mt-1 font-medium">
+                                        ⏳ {t("purchaseDatePreview", { date: format(new Date(purchaseDate + "T00:00:00"), "d MMMM yyyy", { locale: dateLocale }) })}
+                                    </p>
+                                )}
+                            </div>
                             {customCoins && customPrice && (
                                 <p className="text-xs text-[#a16b9f] font-medium">
                                     ✓ {customCoins} {t("coinsUnit")} · {Number(customPrice).toLocaleString()} {t("baht")}
