@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Upload, Trash2, ImageIcon, Loader2, Save, CheckCircle } from "lucide-react";
-import Image from "next/image";
+import { useState, useCallback } from "react";
+import { Upload, Trash2, ImageIcon, Loader2, Save, CheckCircle, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import AlertMessage from "@/components/ui/AlertMessage";
 import { useTranslations } from "next-intl";
@@ -27,6 +26,7 @@ export default function ScheduleImageUploader({
     const [pendingFile, setPendingFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
     const [message, setMessage] = useState("");
+    const [imageError, setImageError] = useState(false);
 
     // What's currently showing
     const displayUrl = previewUrl || savedUrl;
@@ -55,6 +55,7 @@ export default function ScheduleImageUploader({
         const objectUrl = URL.createObjectURL(file);
         setPreviewUrl(objectUrl);
         setPendingFile(file);
+        setImageError(false);
         e.target.value = "";
     };
 
@@ -75,6 +76,7 @@ export default function ScheduleImageUploader({
                 setSavedUrl(data.url);
                 setPreviewUrl(null);
                 setPendingFile(null);
+                setImageError(false);
                 showMsg(t("messages.saveSuccess"));
                 router.refresh();
             }
@@ -103,6 +105,7 @@ export default function ScheduleImageUploader({
                 setSavedUrl(null);
                 setPreviewUrl(null);
                 setPendingFile(null);
+                setImageError(false);
                 showMsg(t("messages.deleteSuccess"));
                 router.refresh();
             }
@@ -111,6 +114,17 @@ export default function ScheduleImageUploader({
         }
         setUploading(false);
     };
+
+    // Handle broken images — auto-clear to show upload zone
+    const handleImageError = useCallback(() => {
+        // Only handle errors for saved URLs, not local preview blobs
+        if (!previewUrl && savedUrl) {
+            setImageError(true);
+        }
+    }, [previewUrl, savedUrl]);
+
+    // If saved image is broken, show error state with delete option
+    const showBrokenState = imageError && !previewUrl && savedUrl;
 
     return (
         <div>
@@ -127,7 +141,39 @@ export default function ScheduleImageUploader({
                 message={message}
             />
 
-            {displayUrl ? (
+            {showBrokenState ? (
+                /* Broken image state — show warning + upload/delete options */
+                <div className="space-y-4">
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+                        <AlertTriangle size={20} className="text-amber-500 mt-0.5 shrink-0" />
+                        <div>
+                            <p className="text-sm text-amber-700 font-medium">รูปภาพไม่พบในระบบ</p>
+                            <p className="text-xs text-amber-600/70 mt-1">ไฟล์รูปภาพอาจถูกลบหรือย้ายออกจากระบบแล้ว กรุณาอัพโหลดใหม่หรือลบออก</p>
+                        </div>
+                    </div>
+                    <div className="flex gap-2">
+                        <label className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[#609279] text-white rounded-xl text-sm font-medium hover:bg-[#4e7a64] transition-colors cursor-pointer">
+                            <Upload size={16} />
+                            {t("changeBtn")}
+                            <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                onChange={handleSelectFile}
+                                disabled={uploading}
+                                className="hidden"
+                            />
+                        </label>
+                        <button
+                            onClick={handleRemove}
+                            disabled={uploading}
+                            className="px-4 py-2.5 bg-red-50 text-red-500 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-50 flex items-center gap-2"
+                        >
+                            <Trash2 size={16} />
+                            {t("removeBtn")}
+                        </button>
+                    </div>
+                </div>
+            ) : displayUrl ? (
                 <div className="space-y-4">
                     {/* Pending save indicator */}
                     {pendingFile && (
@@ -149,15 +195,14 @@ export default function ScheduleImageUploader({
                         </div>
                     )}
 
-                    {/* Preview */}
+                    {/* Preview — use native img to support onError */}
                     <div className="relative border border-[#d1cce7]/20 rounded-xl overflow-hidden">
-                        <Image
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
                             src={displayUrl}
                             alt={title || "Schedule Image"}
-                            width={800}
-                            height={600}
                             className="w-full h-auto object-contain"
-                            unoptimized
+                            onError={handleImageError}
                         />
                     </div>
 
@@ -231,3 +276,4 @@ export default function ScheduleImageUploader({
         </div>
     );
 }
+
