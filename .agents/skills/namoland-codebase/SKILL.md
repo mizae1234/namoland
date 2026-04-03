@@ -94,7 +94,7 @@ prisma/
 |---|---|---|
 | `PackageConfig` | key (unique), label, coins, price, bonus, sortOrder, isActive | Configurable coin packages |
 | `ActivityConfig` | name, description?, icon?, iconImageUrl?, coins, sortOrder, isActive, showOnLanding | Activity types with pricing |
-| `ShopInfo` | shopName, bankName?, accountNumber?, accountName?, note?, scheduleImageUrl?, weeklyScheduleImageUrl? | Shop settings (singleton) |
+| `ShopInfo` | shopName, bankName?, accountNumber?, accountName?, note?, scheduleImageUrl?, weeklyScheduleImageUrl?, heroImageUrl? | Shop settings (singleton) |
 
 ### Enums
 
@@ -309,7 +309,7 @@ Protected by middleware (requires ADMIN session).
 
 | Route | Purpose |
 |---|---|
-| `/` | Landing page (schedule + activities) |
+| `/` | Landing page (dynamic hero image from ShopInfo, schedule + activities) |
 | `/login` | Admin login |
 | `/user/login` | User login |
 | `/user/register` | User registration |
@@ -322,7 +322,7 @@ Protected by middleware (requires ADMIN session).
 |---|---|
 | `/api/auth/[...nextauth]` | NextAuth handler |
 | `/api/members/[id]/bookings` | Member bookings API |
-| `/api/upload` | File upload endpoint |
+| `/api/upload` | File upload endpoint (types: monthly, weekly, heroImage, activityIcon, bookCover) |
 
 ---
 
