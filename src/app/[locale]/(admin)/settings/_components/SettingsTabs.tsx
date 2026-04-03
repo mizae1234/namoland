@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Store, Package, CalendarDays, Calendar, UserCog, ImageIcon, GraduationCap } from "lucide-react";
+import { Store, Package, CalendarDays, Calendar, UserCog, ImageIcon, GraduationCap, Sparkles } from "lucide-react";
 
 import ShopInfoForm from "./ShopInfoForm";
 import PackageManager from "../../coins/packages/_components/PackageManager";
@@ -26,6 +26,7 @@ const TABS: TabConfig[] = [
     { key: "teachers", labelKey: "teachers", icon: GraduationCap },
     { key: "classes", labelKey: "classes", icon: Calendar },
     { key: "schedule", labelKey: "schedule", icon: ImageIcon },
+    { key: "landing", labelKey: "landing", icon: Sparkles },
     { key: "users", labelKey: "users", icon: UserCog },
 ];
 
@@ -39,6 +40,7 @@ interface SettingsTabsProps {
         note: string | null;
         scheduleImageUrl: string | null;
         weeklyScheduleImageUrl: string | null;
+        heroImageUrl: string | null;
     };
     packages: {
         id: string;
@@ -172,6 +174,16 @@ export default function SettingsTabs({
                             type="weekly"
                             title={t("scheduleTab.weeklyTitle")}
                             description={t("scheduleTab.weeklyDesc")}
+                        />
+                    </div>
+                )}
+                {activeTab === "landing" && (
+                    <div className="max-w-xl">
+                        <ScheduleImageUploader
+                            currentImageUrl={shopInfo.heroImageUrl}
+                            type="heroImage"
+                            title={t("landingTab.heroTitle")}
+                            description={t("landingTab.heroDesc")}
                         />
                     </div>
                 )}

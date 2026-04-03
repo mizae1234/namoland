@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
         let prefix = type === "weekly" ? "weekly_schedule" : "schedule";
         if (type === "activityIcon") prefix = "activity_icon";
         if (type === "bookCover") prefix = "book_cover";
+        if (type === "heroImage") prefix = "hero_image";
         const filename = `${prefix}_${Date.now()}.${ext}`;
         
         // Use separate folder for books
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
                 revalidatePath(`/books/${bookId}`);
             }
         } else {
-            // Save to ShopInfo (schedule images)
+            // Save to ShopInfo (schedule or hero images)
             let shop = await prisma.shopInfo.findFirst();
             if (!shop) {
                 shop = await prisma.shopInfo.create({
@@ -91,7 +92,8 @@ export async function POST(req: NextRequest) {
                 });
             }
 
-            const dbField = type === "weekly" ? "weeklyScheduleImageUrl" : "scheduleImageUrl";
+            let dbField = type === "weekly" ? "weeklyScheduleImageUrl" : "scheduleImageUrl";
+            if (type === "heroImage") dbField = "heroImageUrl";
             await prisma.shopInfo.update({
                 where: { id: shop.id },
                 data: { [dbField]: url },
@@ -143,7 +145,8 @@ export async function DELETE(req: NextRequest) {
         } else {
             const shop = await prisma.shopInfo.findFirst();
             if (shop) {
-                const dbField = type === "weekly" ? "weeklyScheduleImageUrl" : "scheduleImageUrl";
+                let dbField = type === "weekly" ? "weeklyScheduleImageUrl" : "scheduleImageUrl";
+                if (type === "heroImage") dbField = "heroImageUrl";
                 await prisma.shopInfo.update({
                     where: { id: shop.id },
                     data: { [dbField]: null },

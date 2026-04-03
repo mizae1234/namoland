@@ -75,6 +75,7 @@ model ShopInfo {
   note             String?
   scheduleImageUrl        String?
   weeklyScheduleImageUrl  String?
+  heroImageUrl            String?
   updatedAt               DateTime @updatedAt
 }
 

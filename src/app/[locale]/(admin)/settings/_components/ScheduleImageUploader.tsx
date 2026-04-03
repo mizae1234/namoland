@@ -9,7 +9,7 @@ import { useTranslations } from "next-intl";
 
 interface ScheduleImageUploaderProps {
     currentImageUrl: string | null;
-    type?: "monthly" | "weekly";
+    type?: "monthly" | "weekly" | "heroImage";
     title?: string;
     description?: string;
 }

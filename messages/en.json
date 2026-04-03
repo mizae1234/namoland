@@ -1267,7 +1267,12 @@
       "teachers": "Teachers",
       "classes": "Class Schedules",
       "schedule": "Event Schedules",
+      "landing": "Landing Page",
       "users": "Manage Users"
+    },
+    "landingTab": {
+      "heroTitle": "Hero Section Image",
+      "heroDesc": "Main image displayed at the top of the Landing Page — 1:1 or portrait ratio recommended"
     },
     "scheduleTab": {
       "monthlyTitle": "Monthly Event Schedule",

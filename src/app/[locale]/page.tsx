@@ -135,12 +135,13 @@ export default async function LandingPage() {
               <div className="absolute inset-0 bg-gradient-to-br from-[#81b29a]/10 via-[#ecb4ce]/10 to-[#f2cc8f]/10 rounded-[3rem] rotate-3" />
               <div className="relative w-full max-w-[480px] rounded-[2.5rem] overflow-hidden shadow-2xl shadow-[#3d405b]/10 border-4 border-white">
                 <Image
-                  src="/hero-kids.png"
+                  src={shopInfo.heroImageUrl || "/hero-kids.png"}
                   alt="เด็กๆ กำลังสร้างสรรค์ผลงานศิลปะที่ NAMOLAND"
                   width={480}
                   height={480}
                   className="w-full h-auto object-cover"
                   priority
+                  unoptimized={!!shopInfo.heroImageUrl}
                 />
               </div>
               {/* Floating badges — hidden on mobile to avoid overlap */}

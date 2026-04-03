@@ -1267,7 +1267,12 @@
       "teachers": "ครูผู้สอน",
       "classes": "ตารางคลาส",
       "schedule": "ตารางกิจกรรม",
+      "landing": "หน้าเว็บ",
       "users": "จัดการผู้ใช้"
+    },
+    "landingTab": {
+      "heroTitle": "ภาพ Hero Section",
+      "heroDesc": "รูปภาพหลักที่แสดงในส่วนบนของ Landing Page — แนะนำภาพสัดส่วน 1:1 หรือแนวตั้ง"
     },
     "scheduleTab": {
       "monthlyTitle": "ตารางกิจกรรมประจำเดือน",
