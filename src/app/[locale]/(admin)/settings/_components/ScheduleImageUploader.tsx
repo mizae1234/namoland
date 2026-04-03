@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Upload, Trash2, ImageIcon, Loader2, Save, CheckCircle, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import AlertMessage from "@/components/ui/AlertMessage";
@@ -27,6 +27,12 @@ export default function ScheduleImageUploader({
     const [uploading, setUploading] = useState(false);
     const [message, setMessage] = useState("");
     const [imageError, setImageError] = useState(false);
+
+    // Sync savedUrl when the prop changes (e.g., after router.refresh())
+    useEffect(() => {
+        setSavedUrl(currentImageUrl);
+        setImageError(false);
+    }, [currentImageUrl]);
 
     // What's currently showing
     const displayUrl = previewUrl || savedUrl;
