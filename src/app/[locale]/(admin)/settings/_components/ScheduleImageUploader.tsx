@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Upload, Trash2, ImageIcon, Loader2, Save, CheckCircle, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import AlertMessage from "@/components/ui/AlertMessage";
@@ -28,14 +28,33 @@ export default function ScheduleImageUploader({
     const [message, setMessage] = useState("");
     const [imageError, setImageError] = useState(false);
 
+    // Track the URL we just saved to prevent useEffect from reverting it
+    // when router.refresh() delivers a stale prop before revalidation completes
+    const lastSavedUrlRef = useRef<string | null>(null);
+
     // Sync savedUrl when the prop changes (e.g., after router.refresh())
+    // BUT skip if the incoming prop is stale (doesn't match what we just saved)
     useEffect(() => {
-        setSavedUrl(currentImageUrl);
+        if (lastSavedUrlRef.current) {
+            // We just saved — only accept the prop if it matches what we saved
+            // (i.e., revalidation has caught up), or if it's a new different value
+            // from a different source
+            const savedBase = lastSavedUrlRef.current.split("?")[0];
+            const propBase = (currentImageUrl || "").split("?")[0];
+            if (propBase === savedBase || currentImageUrl === lastSavedUrlRef.current) {
+                // Server has caught up — clear the guard
+                lastSavedUrlRef.current = null;
+                setSavedUrl(currentImageUrl);
+            }
+            // Otherwise: prop is still stale, keep our locally saved URL
+        } else {
+            setSavedUrl(currentImageUrl);
+        }
         setImageError(false);
     }, [currentImageUrl]);
 
-    // What's currently showing
-    const displayUrl = previewUrl || savedUrl;
+    // What's currently showing — add cache buster for saved URLs to prevent browser caching
+    const displayUrl = previewUrl || (savedUrl ? `${savedUrl}${savedUrl.includes("?") ? "&" : "?"}v=${Date.now()}` : null);
 
     const showMsg = (msg: string) => {
         setMessage(msg);
@@ -79,6 +98,8 @@ export default function ScheduleImageUploader({
             if (!res.ok || data.error) {
                 showMsg(data.error || t("messages.saveErr"));
             } else {
+                // Save the URL and guard it from stale prop overwrites
+                lastSavedUrlRef.current = data.url;
                 setSavedUrl(data.url);
                 setPreviewUrl(null);
                 setPendingFile(null);
