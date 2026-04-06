@@ -8,9 +8,7 @@ services:
       dockerfile: Dockerfile
     restart: always
     network_mode: host
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - AUTH_SECRET=${AUTH_SECRET}
-      - TZ=Asia/Bangkok
+    env_file:
+      - .env
     volumes:
       - ./uploads:/app/public/uploads
