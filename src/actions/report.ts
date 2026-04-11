@@ -488,9 +488,10 @@ export async function getMemberReport(userId: string): Promise<MemberReportData>
 }
 
 function formatReportDate(d: Date): string {
-    const day = d.getDate().toString().padStart(2, "0");
+    const bkkDate = new Date(d.getTime() + 7 * 60 * 60 * 1000); // Shift to BKK time (+7 hours)
+    const day = bkkDate.getUTCDate().toString().padStart(2, "0");
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const month = months[d.getMonth()];
-    const year = d.getFullYear().toString().slice(-2);
+    const month = months[bkkDate.getUTCMonth()];
+    const year = bkkDate.getUTCFullYear().toString().slice(-2);
     return `${day}-${month}-${year}`;
 }

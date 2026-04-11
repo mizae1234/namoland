@@ -120,16 +120,18 @@ export async function checkInBooking(bookingId: string) {
 
     const coinCost = activity.coins;
 
-    // Determine exact class time for backdated accuracy
-    const classDate = new Date(booking.classEntry.schedule.startDate);
+    // Determine exact class time for backdated accuracy (Timezone-safe for UTC servers)
+    const classDate = new Date(booking.classEntry.schedule.startDate.getTime());
+    classDate.setUTCHours(classDate.getUTCHours() + 7); // Shift to BKK time
     const dayOffset = booking.classEntry.dayOfWeek - 1; // 1=Mon, 7=Sun
-    classDate.setDate(classDate.getDate() + dayOffset);
+    classDate.setUTCDate(classDate.getUTCDate() + dayOffset);
     if (booking.classEntry.startTime) {
         const [hours, minutes] = booking.classEntry.startTime.split(':').map(Number);
         if (!isNaN(hours) && !isNaN(minutes)) {
-            classDate.setHours(hours, minutes, 0, 0);
+            classDate.setUTCHours(hours, minutes, 0, 0);
         }
     }
+    classDate.setUTCHours(classDate.getUTCHours() - 7); // Shift back to absolute UTC
     const now = classDate;
 
     if (coinCost > 0) {
