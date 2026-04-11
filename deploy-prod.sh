@@ -6,7 +6,7 @@ set -e
 #  Usage: bash deploy-prod.sh
 # ============================================
 
-SERVER="root@72.60.209.183"
+SERVER="root@srv1562380.hstgr.cloud"
 REMOTE_DIR="/home/web/namoland"
 
 echo ""

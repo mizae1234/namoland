@@ -10,7 +10,5 @@ services:
     network_mode: host
     env_file:
       - .env
-    environment:
-      - PORT=3008
     volumes:
       - ./uploads:/app/public/uploads
