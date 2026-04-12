@@ -562,6 +562,7 @@
         "notePlaceholder": "e.g. Slip received, paid with class fee...",
         "buySuccess": "Coins purchased successfully!",
         "useTitle": "Use Coins — Select Activity",
+        "selectDateLabel": "Class Date",
         "noCoins": "No coins available",
         "confirmUse": "Confirm coin usage",
         "willDeduct": "Will deduct {coins} coins",

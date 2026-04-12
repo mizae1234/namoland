@@ -22,6 +22,9 @@ export async function GET(
                     dayOfWeek: true,
                     startTime: true,
                     endTime: true,
+                    schedule: {
+                        select: { startDate: true }
+                    }
                 },
             },
             child: { select: { name: true } },
@@ -30,20 +33,32 @@ export async function GET(
         orderBy: { createdAt: "desc" },
     });
 
-    const result = bookings.map((b) => ({
-        id: b.id,
-        status: b.status,
-        coinsCharged: b.coinsCharged,
-        checkedInAt: b.checkedInAt?.toISOString() || null,
-        createdAt: b.createdAt.toISOString(),
-        note: b.note,
-        childName: b.child?.name || null,
-        className: b.classEntry.title,
-        dayOfWeek: b.classEntry.dayOfWeek,
-        startTime: b.classEntry.startTime,
-        endTime: b.classEntry.endTime,
-        bookedByName: b.bookedBy.name || "Admin",
-    }));
+    const result = bookings.map((b) => {
+        let classDateIso = b.createdAt.toISOString();
+        if (b.classEntry?.schedule?.startDate) {
+            const classDate = new Date(b.classEntry.schedule.startDate.getTime());
+            classDate.setUTCHours(classDate.getUTCHours() + 7);
+            classDate.setUTCDate(classDate.getUTCDate() + b.classEntry.dayOfWeek);
+            classDate.setUTCHours(classDate.getUTCHours() - 7);
+            classDateIso = classDate.toISOString();
+        }
+
+        return {
+            id: b.id,
+            status: b.status,
+            coinsCharged: b.coinsCharged,
+            checkedInAt: b.checkedInAt?.toISOString() || null,
+            createdAt: b.createdAt.toISOString(),
+            classDate: classDateIso,
+            note: b.note,
+            childName: b.child?.name || null,
+            className: b.classEntry.title,
+            dayOfWeek: b.classEntry.dayOfWeek,
+            startTime: b.classEntry.startTime,
+            endTime: b.classEntry.endTime,
+            bookedByName: b.bookedBy.name || "Admin",
+        };
+    });
 
     const manualTxs = await prisma.coinTransaction.findMany({
         where: {
@@ -63,10 +78,11 @@ export async function GET(
         coinsCharged: t.coinsUsed,
         checkedInAt: t.createdAt.toISOString(),
         createdAt: t.createdAt.toISOString(),
+        classDate: t.createdAt.toISOString(),
         note: t.description,
         childName: "-",
         className: t.className || t.description || "Activity",
-        dayOfWeek: t.createdAt.getDay() === 0 ? 7 : t.createdAt.getDay(),
+        dayOfWeek: t.createdAt.getDay(),
         startTime: "-",
         endTime: "-",
         bookedByName: t.processedBy?.name || "Admin",

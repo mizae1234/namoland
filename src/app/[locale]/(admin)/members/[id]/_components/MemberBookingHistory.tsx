@@ -13,6 +13,7 @@ type BookingRecord = {
     coinsCharged: number;
     checkedInAt: string | null;
     createdAt: string;
+    classDate: string;
     note: string | null;
     childName: string | null;
     className: string;
@@ -103,7 +104,7 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
             const statusStyle = { ...normalCenter, fill: statusColors[b.status] || { fgColor: { rgb: "FFFFFF" } } };
             const style = normalStyle;
 
-            ws[`A${r}`] = { v: format(new Date(b.createdAt), "dd/MM/yyyy", { locale: dateLocale }), s: normalCenter };
+            ws[`A${r}`] = { v: format(new Date(b.classDate), "dd/MM/yyyy", { locale: dateLocale }), s: normalCenter };
             ws[`B${r}`] = { v: b.className, s: style };
             ws[`C${r}`] = { v: b.childName || "-", s: style };
             ws[`D${r}`] = { v: `${t(`days.${b.dayOfWeek}`)} ${b.startTime}-${b.endTime}`, s: style };
@@ -247,7 +248,7 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
                                     return (
                                         <tr key={b.id} className="border-b border-[#d1cce7]/10 hover:bg-[#f4f1de]/20 transition-colors">
                                             <td className="px-3 py-2.5 text-[#3d405b]/70 whitespace-nowrap text-xs">
-                                                {format(new Date(b.createdAt), "d MMM yy", { locale: dateLocale })}
+                                                {format(new Date(b.classDate), "d MMM yy", { locale: dateLocale })}
                                             </td>
                                             <td className="px-3 py-2.5 text-[#3d405b] font-medium text-xs max-w-[200px] truncate">
                                                 {b.className}

@@ -1,18 +1,29 @@
-const startDate = new Date("2025-05-11T17:00:00.000Z");
-const dayOffset = 3 - 1; // Wednesday = 3
-const classDate = new Date(startDate);
-classDate.setDate(classDate.getDate() + dayOffset);
-classDate.setHours(15, 30, 0, 0);
+const classEntry = {
+    dayOfWeek: 0,
+    startTime: "10:00",
+    schedule: {
+        // "14th of April" midnight BKK is "13th 17:00 UTC"
+        startDate: new Date("2026-04-13T17:00:00.000Z")
+    }
+};
 
-console.log("OS Timezone:", Intl.DateTimeFormat().resolvedOptions().timeZone);
-console.log("startDate:", startDate.toISOString());
-console.log("classDate:", classDate.toISOString());
+const classDate = new Date(classEntry.schedule.startDate.getTime());
+console.log("1. Initial:", classDate.toISOString());
 
-function formatReportDate(d) {
-    const day = d.getDate().toString().padStart(2, "0");
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const month = months[d.getMonth()];
-    const year = d.getFullYear().toString().slice(-2);
-    return `${day}-${month}-${year}`;
+classDate.setUTCHours(classDate.getUTCHours() + 7); // Shift to BKK time
+console.log("2. After +7:", classDate.toISOString());
+
+const dayOffset = classEntry.dayOfWeek;
+classDate.setUTCDate(classDate.getUTCDate() + dayOffset);
+console.log("3. After offset:", classDate.toISOString());
+
+if (classEntry.startTime) {
+    const [hours, minutes] = classEntry.startTime.split(':').map(Number);
+    if (!isNaN(hours) && !isNaN(minutes)) {
+        classDate.setUTCHours(hours, minutes, 0, 0);
+    }
 }
-console.log("Report display:", formatReportDate(classDate));
+console.log("4. After time set:", classDate.toISOString());
+
+classDate.setUTCHours(classDate.getUTCHours() - 7);
+console.log("5. Final:", classDate.toISOString());

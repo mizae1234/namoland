@@ -562,6 +562,7 @@
         "notePlaceholder": "เช่น รับสลิปแล้ว, ชำระพร้อมค่าเรียน...",
         "buySuccess": "ซื้อเหรียญสำเร็จ!",
         "useTitle": "ใช้เหรียญ — เลือกกิจกรรม",
+        "selectDateLabel": "วันที่เรียน (Class Date)",
         "noCoins": "ไม่มีเหรียญคงเหลือ",
         "confirmUse": "ยืนยันการใช้เหรียญ",
         "willDeduct": "จะหัก {coins} เหรียญ",
