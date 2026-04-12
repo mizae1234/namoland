@@ -45,6 +45,8 @@ export async function GET(
 
         return {
             id: b.id,
+            recordId: b.id,
+            isManual: false,
             status: b.status,
             coinsCharged: b.coinsCharged,
             checkedInAt: b.checkedInAt?.toISOString() || null,
@@ -74,6 +76,8 @@ export async function GET(
 
     const manualResults = manualTxs.map((t) => ({
         id: t.id,
+        recordId: t.id,
+        isManual: true,
         status: "CHECKED_IN",
         coinsCharged: t.coinsUsed,
         checkedInAt: t.createdAt.toISOString(),

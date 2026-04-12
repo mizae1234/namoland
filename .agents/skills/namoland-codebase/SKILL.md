@@ -219,6 +219,11 @@ prisma/
 
 **Key: `findActivityConfig(classTitle)` — 3-tier matching: exact → contains → reverse-contains**
 
+### refundCheckIn.ts — Cancellation and Auto-Refunds
+| Function | Auth | Purpose |
+|---|---|---|
+| `cancelAndRefundCheckIn(recordId, isManual)` | Admin | Erases an incorrectly keyed Check-In `CoinTransaction` entirely, safely incrementing the exact deducted coins back into their *original* FIFO packages (`remainingCoins += coinsUsed`). Supports both Native Bookings and Manual Drop-ins (including FIFO-split bounds). Preserves reporting accuracy by acting as a strict delete rather than an "Adjustment". |
+
 ### classSchedule.ts (206 lines) — Schedule CRUD
 
 | Function | Auth | Purpose |
@@ -383,7 +388,12 @@ To prevent mathematical drift from Weighted Average Cost (WAC) calculations over
 1. **Book** → no coin deduction, just a reservation
 2. **Check-in** → FIFO coin deduction using ActivityConfig pricing. The transaction and package expiry dates are strictly backdated to the **exact computed class date** (Monday startDate + dayOfWeek offset), ignoring the real-time check-in click timestamp.
 3. **Cancel/No-show** → no refund needed
-4. **Unified History View** → The `MemberBookingHistory` (Admin) and `/user/classes` (User) APIs fetch and merge both native `ClassBooking` entries and manual Drop-in `CoinTransaction` (type: `CLASS_FEE` without standard class prefixes) records. Expected missing fields (e.g., `childName`, `dayOfWeek`) on manual activities are pseudo-mapped to allow seamless UI rendering in a single timeline natively sorted by `createdAt`.
+4. **Unified History View** → The `MemberBookingHistory` (Admin) and `/user/classes` (User) APIs fetch and merge both native `ClassBooking` entries and manual Drop-in `CoinTransaction` (type: `CLASS_FEE` without standard class prefixes) records. Expected missing fields (e.g., `childName`, `dayOfWeek`) on manual activities are pseudo-mapped. Crucially, the UI and API natively compute and expose the precise `classDate` for sorting and rendering, instead of relying on the `createdAt` timestamp, ensuring accuracy for advance bookings.
+
+### Timezone Safety & Absolute Midnight Handling
+The platform runs on UTC servers but operates in the Bangkok timezone (UTC+7). To prevent date-shifting defects during exact-date mapping (e.g., backend calculations vs frontend reports):
+- Computed UTC times temporally shift bounds to UTC+7 (`classDate.setUTCHours(classDate.getUTCHours() + 7)`), manipulate days/hours, and shift back to UTC.
+- This explicit pattern is used during `checkInBooking`, Booking history APIs, and transaction reports.
 
 ### Borrow Code Generation
 - Pattern: `BOR-YYYYMM-NNNN`
@@ -444,7 +454,7 @@ To prevent mathematical drift from Weighted Average Cost (WAC) calculations over
 
 ## Deployment Workflow
 
-The project uses a custom bash script for remote deployment.
-1. Commit all changes to the `main` branch.
-2. Run `bash deploy.sh` from the root directory.
-3. The script connects to the remote server via SSH, pulls the latest `main` branch, recreates the `uploads` directory permissions, and rebuilds the `namoland-app` Docker image using `docker compose`.
+The project uses custom bash scripts (`deploy-prod.sh`) for remote deployment.
+1. Deploy to central production server by running `bash deploy-prod.sh`.
+2. The script connects to the remote server via SSH, pulls the latest `main` branch, re-applies the `uploads` directory ownership (`1001:1001`), and executes `docker compose -f docker-compose.prod.yml build --no-cache && docker compose up -d`.
+3. Caddy has been removed from the individual service level in favor of a central reverse proxy on the host server. The app runs mapped to port `3008` externally.

@@ -3,12 +3,17 @@
 import { useState, useTransition, useEffect } from "react";
 import { format } from "date-fns";
 import { th, enUS } from "date-fns/locale";
-import { CalendarCheck, Check, Clock, XCircle, Ban, RefreshCw, Coins } from "lucide-react";
+import { CalendarCheck, Check, Clock, XCircle, Ban, RefreshCw, Coins, RotateCcw } from "lucide-react";
 import Card from "@/components/ui/Card";
 import { useTranslations, useLocale } from "next-intl";
+import Modal from "@/components/ui/Modal";
+import AlertMessage from "@/components/ui/AlertMessage";
+import { cancelAndRefundCheckIn } from "@/actions/refundCheckIn";
 
 type BookingRecord = {
     id: string;
+    recordId: string;
+    isManual: boolean;
     status: string;
     coinsCharged: number;
     checkedInAt: string | null;
@@ -37,6 +42,8 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
     const [isPending, startTransition] = useTransition();
     const [loaded, setLoaded] = useState(false);
     const [filter, setFilter] = useState<string>("ALL");
+    const [cancelModal, setCancelModal] = useState<{ recordId: string; isManual: boolean; isLoading: boolean } | null>(null);
+    const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
     const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: React.ReactNode }> = {
         CHECKED_IN: { label: t("statusCheckedIn"), color: "text-emerald-700", bgColor: "bg-emerald-100", icon: <Check size={12} /> },
@@ -62,6 +69,25 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
             setBookings(data);
             setLoaded(true);
         });
+    }
+
+    async function handleCancelCheckIn() {
+        if (!cancelModal) return;
+        setCancelModal({ ...cancelModal, isLoading: true });
+        
+        const res = await cancelAndRefundCheckIn(cancelModal.recordId, cancelModal.isManual);
+        
+        if (res.error) {
+            setMessage({ text: res.error, isError: true });
+            setCancelModal({ ...cancelModal, isLoading: false });
+        } else {
+            setMessage({ text: "ยกเลิกเช็คอินและคืนเหรียญเข้าแพ็คเกจสำเร็จ", isError: false });
+            setCancelModal(null);
+            loadBookings();
+            window.dispatchEvent(new Event('refresh-member-data'));
+        }
+        
+        setTimeout(() => setMessage(null), 3000);
     }
 
     function exportToExcel() {
@@ -240,6 +266,7 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
                                     <th className="text-center px-3 py-2.5 font-semibold text-[#3d405b]/70 text-xs">{t("thCoins")}</th>
                                     <th className="text-left px-3 py-2.5 font-semibold text-[#3d405b]/70 text-xs">{t("thCheckin")}</th>
                                     <th className="text-left px-3 py-2.5 font-semibold text-[#3d405b]/70 text-xs">{t("thBookedBy")}</th>
+                                    <th className="px-3 py-2.5 text-center font-semibold text-[#3d405b]/70 text-xs"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -257,7 +284,11 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
                                                 {b.childName || "-"}
                                             </td>
                                             <td className="px-3 py-2.5 text-[#3d405b]/50 whitespace-nowrap text-xs">
-                                                {t(`days.${b.dayOfWeek}`)} {b.startTime}-{b.endTime}
+                                                {b.isManual ? (
+                                                    <span className="italic opacity-60">Drop-in</span>
+                                                ) : (
+                                                    <>{t(`days.${b.dayOfWeek}`)} {b.startTime}-{b.endTime}</>
+                                                )}
                                             </td>
                                             <td className="px-3 py-2.5 text-center">
                                                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${st.bgColor} ${st.color}`}>
@@ -274,13 +305,25 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
                                                 )}
                                             </td>
                                             <td className="px-3 py-2.5 text-[#3d405b]/50 text-xs whitespace-nowrap">
-                                                {b.checkedInAt
-                                                    ? format(new Date(b.checkedInAt), "HH:mm", { locale: dateLocale })
-                                                    : "—"
-                                                }
+                                                {(() => {
+                                                    if (!b.checkedInAt) return "—";
+                                                    const timeStr = format(new Date(b.checkedInAt), "HH:mm", { locale: dateLocale });
+                                                    return (b.isManual && timeStr === "00:00") ? "—" : timeStr;
+                                                })()}
                                             </td>
                                             <td className="px-3 py-2.5 text-[#3d405b]/40 text-xs">
                                                 {b.bookedByName}
+                                            </td>
+                                            <td className="px-3 py-2.5 text-center">
+                                                {b.status === "CHECKED_IN" && (
+                                                    <button
+                                                        onClick={() => setCancelModal({ recordId: b.recordId, isManual: b.isManual, isLoading: false })}
+                                                        title="ยกเลิกเช็คอินและคืนเหรียญ"
+                                                        className="text-red-500 hover:text-red-600 transition-colors bg-red-50 hover:bg-red-100 p-1.5 rounded-md flex items-center justify-center mx-auto"
+                                                    >
+                                                        <RotateCcw size={14} />
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     );
@@ -294,6 +337,28 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
                     </div>
                 </>
             )}
+
+            {/* Cancel Check-In Modal */}
+            <Modal
+                open={!!cancelModal}
+                onClose={() => !cancelModal?.isLoading && setCancelModal(null)}
+                title="ยืนยันการยกเลิก"
+                onConfirm={handleCancelCheckIn}
+                loading={cancelModal?.isLoading}
+                confirmLabel="ยืนยันการคืนเหรียญ"
+            >
+                <div>
+                    <p className="text-sm text-[#3d405b] mb-4">
+                        คุณต้องการยกเลิกประวัติการตัดเหรียญนี้ใช่หรือไม่?<br/>
+                        <span className="text-red-600 font-semibold mt-2 inline-block">เหรียญจำนวนนี้จะถูกคืนเข้าไปยังแพ็คเกจเดิมโดยอัตโนมัติ</span>
+                    </p>
+                    {message && (
+                        <div className="mb-2">
+                            <AlertMessage type={message.isError ? "error" : "success"} message={message.text} />
+                        </div>
+                    )}
+                </div>
+            </Modal>
         </Card>
     );
 }
