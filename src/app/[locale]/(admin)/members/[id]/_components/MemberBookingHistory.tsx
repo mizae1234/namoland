@@ -133,7 +133,7 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
             ws[`A${r}`] = { v: format(new Date(b.classDate), "dd/MM/yyyy", { locale: dateLocale }), s: normalCenter };
             ws[`B${r}`] = { v: b.className, s: style };
             ws[`C${r}`] = { v: b.childName || "-", s: style };
-            ws[`D${r}`] = { v: `${t(`days.${b.dayOfWeek}`)} ${b.startTime}-${b.endTime}`, s: style };
+            ws[`D${r}`] = { v: `${b.startTime}-${b.endTime}`, s: style };
             ws[`E${r}`] = { v: st.label, s: statusStyle };
             ws[`F${r}`] = { v: b.coinsCharged > 0 ? b.coinsCharged : "-", s: normalCenter };
             ws[`G${r}`] = { v: b.checkedInAt ? format(new Date(b.checkedInAt), "HH:mm", { locale: dateLocale }) : "-", s: normalCenter };
@@ -287,7 +287,7 @@ export default function MemberBookingHistory({ userId, memberName }: { userId: s
                                                 {b.isManual ? (
                                                     <span className="italic opacity-60">Drop-in</span>
                                                 ) : (
-                                                    <>{t(`days.${b.dayOfWeek}`)} {b.startTime}-{b.endTime}</>
+                                                    <>{b.startTime}-{b.endTime}</>
                                                 )}
                                             </td>
                                             <td className="px-3 py-2.5 text-center">
