@@ -174,27 +174,27 @@ export default function MemberActions({ member, packages, activities }: MemberAc
         fd.set("coinsUsed", String(pendingUse.coins));
         fd.set("className", pendingUse.label);
         fd.set("classHours", String(pendingUse.hours));
-        if (selectedTargetDate && selectedTargetDate !== format(new Date(), "yyyy-MM-dd")) {
-            // Find the class entry to include time in the date if possible
-            const selectedClass = classOptions.find(c => c.date.startsWith(selectedTargetDate));
-            if (selectedClass) {
-                fd.set("targetDate", selectedClass.date); // Use full ISO string
-                fd.set("classEntryId", selectedClass.id);
-                fd.set("classEntryTitle", selectedClass.title);
-                fd.set("classEntryTime", `${selectedClass.startTime}-${selectedClass.endTime}`);
+        
+        if (selectedTargetDate) {
+            const selectedClassById = classOptions.find(c => c.id === selectedTargetDate);
+            if (selectedClassById) {
+                fd.set("targetDate", selectedClassById.date);
+                fd.set("classEntryId", selectedClassById.id);
+                fd.set("classEntryTitle", selectedClassById.title);
+                fd.set("classEntryTime", `${selectedClassById.startTime}-${selectedClassById.endTime}`);
             } else {
-                fd.set("targetDate", selectedTargetDate); // Use YYYY-MM-DD
-            }
-        } else if (selectedTargetDate === format(new Date(), "yyyy-MM-dd")) {
-            // Same check for current day
-            const selectedClass = classOptions.find(c => c.date.startsWith(selectedTargetDate));
-            if (selectedClass) {
-                fd.set("targetDate", selectedClass.date);
-                fd.set("classEntryId", selectedClass.id);
-                fd.set("classEntryTitle", selectedClass.title);
-                fd.set("classEntryTime", `${selectedClass.startTime}-${selectedClass.endTime}`);
+                const selectedClassByDate = classOptions.find(c => c.date.startsWith(selectedTargetDate));
+                if (selectedClassByDate) {
+                    fd.set("targetDate", selectedClassByDate.date);
+                    fd.set("classEntryId", selectedClassByDate.id);
+                    fd.set("classEntryTitle", selectedClassByDate.title);
+                    fd.set("classEntryTime", `${selectedClassByDate.startTime}-${selectedClassByDate.endTime}`);
+                } else {
+                    fd.set("targetDate", selectedTargetDate);
+                }
             }
         }
+        
         const result = await spendCoins(fd);
         setLoading(false);
         if (result.error) setMessage(result.error);
@@ -517,7 +517,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                                             {classOptions.map((c) => {
                                                 const d = new Date(c.date);
                                                 return (
-                                                    <option key={`${c.id}-${c.date}`} value={c.date.split('T')[0]}>
+                                                    <option key={`${c.id}-${c.date}`} value={c.id}>
                                                         {format(d, "d MMM yyyy", { locale: dateLocale })} — {c.startTime}-{c.endTime} {c.teacherName ? `(T.${c.teacherName})` : ''}
                                                     </option>
                                                 );
