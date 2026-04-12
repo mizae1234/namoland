@@ -76,6 +76,9 @@ export async function spendCoins(formData: FormData) {
     const description = formData.get("description") as string;
 
     const targetDateStr = formData.get("targetDate") as string;
+    const classEntryId = formData.get("classEntryId") as string;
+    const classEntryTitle = formData.get("classEntryTitle") as string;
+    const classEntryTime = formData.get("classEntryTime") as string;
     
     if (!userId || isNaN(coinsUsed) || coinsUsed <= 0) {
         return { error: "ข้อมูลไม่ถูกต้อง" };
@@ -88,10 +91,29 @@ export async function spendCoins(formData: FormData) {
         return { error: `เหรียญไม่เพียงพอ (คงเหลือ ${totalAvailable} เหรียญ)` };
     }
 
-    const now = targetDateStr ? new Date(targetDateStr) : new Date();
-    const descText = description || (classHours ? `${className} (${classHours}h)` : className) || null;
+    let now = targetDateStr ? new Date(targetDateStr) : new Date();
 
-    const ops = [
+    if (classEntryTime && targetDateStr) {
+        const [startStr] = classEntryTime.split('-');
+        if (startStr) {
+            const [hours, minutes] = startStr.split(':').map(Number);
+            if (!isNaN(hours) && !isNaN(minutes)) {
+                // targetDateStr from getRecentClassEntries is a BKK midnight converted to UTC.
+                // Revert to BKK, set hour/minute, then back to UTC.
+                now.setUTCHours(now.getUTCHours() + 7);
+                now.setUTCHours(hours, minutes, 0, 0);
+                now.setUTCHours(now.getUTCHours() - 7);
+            }
+        }
+    }
+
+    let descText = description || (classHours ? `${className} (${classHours}h)` : className) || null;
+    if (classEntryId && classEntryTitle && classEntryTime) {
+        // Must start with `Check-in: ` so it doesn't double-register in booking history under manualTxs
+        descText = `Check-in: ${classEntryTitle} (${classEntryTime})`;
+    }
+
+    const ops: any[] = [
         ...buildPackageDeductOps(deductions, now),
         ...buildTransactionOps(deductions, "CLASS_FEE", session.user.id, {
             className: className || undefined,
@@ -99,6 +121,22 @@ export async function spendCoins(formData: FormData) {
             createdAt: now,
         }),
     ];
+
+    if (classEntryId) {
+        ops.push(
+            prisma.classBooking.create({
+                data: {
+                    classEntryId,
+                    userId,
+                    coinsCharged: coinsUsed,
+                    status: "CHECKED_IN",
+                    note: "Checked in via Use Coins",
+                    bookedById: session.user.id,
+                    checkedInAt: now,
+                }
+            })
+        );
+    }
 
     await prisma.$transaction(ops);
 

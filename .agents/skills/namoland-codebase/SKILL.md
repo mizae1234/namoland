@@ -389,6 +389,7 @@ To prevent mathematical drift from Weighted Average Cost (WAC) calculations over
 2. **Check-in** → FIFO coin deduction using ActivityConfig pricing. The transaction and package expiry dates are strictly backdated to the **exact computed class date** (Monday startDate + dayOfWeek offset), ignoring the real-time check-in click timestamp.
 3. **Cancel/No-show** → no refund needed
 4. **Unified History View** → The `MemberBookingHistory` (Admin) and `/user/classes` (User) APIs fetch and merge both native `ClassBooking` entries and manual Drop-in `CoinTransaction` (type: `CLASS_FEE` without standard class prefixes) records. Expected missing fields (e.g., `childName`, `dayOfWeek`) on manual activities are pseudo-mapped. Crucially, the UI and API natively compute and expose the precise `classDate` for sorting and rendering, instead of relying on the `createdAt` timestamp, ensuring accuracy for advance bookings.
+5. **Member Drop-ins ("Use Coins")** → Checking into a scheduled class ad-hoc via the Member profile creates a native `ClassBooking` linked to the `classEntryId` and automatically computes the exact class timeframe, perfectly mimicking the standard booking/check-in cadence, while tagging the Transaction log as `Check-in: Title...` to avoid redundant history generation.
 
 ### Timezone Safety & Absolute Midnight Handling
 The platform runs on UTC servers but operates in the Bangkok timezone (UTC+7). To prevent date-shifting defects during exact-date mapping (e.g., backend calculations vs frontend reports):

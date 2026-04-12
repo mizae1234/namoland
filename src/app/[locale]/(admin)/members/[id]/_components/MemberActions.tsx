@@ -179,8 +179,20 @@ export default function MemberActions({ member, packages, activities }: MemberAc
             const selectedClass = classOptions.find(c => c.date.startsWith(selectedTargetDate));
             if (selectedClass) {
                 fd.set("targetDate", selectedClass.date); // Use full ISO string
+                fd.set("classEntryId", selectedClass.id);
+                fd.set("classEntryTitle", selectedClass.title);
+                fd.set("classEntryTime", `${selectedClass.startTime}-${selectedClass.endTime}`);
             } else {
                 fd.set("targetDate", selectedTargetDate); // Use YYYY-MM-DD
+            }
+        } else if (selectedTargetDate === format(new Date(), "yyyy-MM-dd")) {
+            // Same check for current day
+            const selectedClass = classOptions.find(c => c.date.startsWith(selectedTargetDate));
+            if (selectedClass) {
+                fd.set("targetDate", selectedClass.date);
+                fd.set("classEntryId", selectedClass.id);
+                fd.set("classEntryTitle", selectedClass.title);
+                fd.set("classEntryTime", `${selectedClass.startTime}-${selectedClass.endTime}`);
             }
         }
         const result = await spendCoins(fd);
