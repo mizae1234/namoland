@@ -123,7 +123,7 @@ export async function checkInBooking(bookingId: string) {
     // Determine exact class time for backdated accuracy (Timezone-safe for UTC servers)
     const classDate = new Date(booking.classEntry.schedule.startDate.getTime());
     classDate.setUTCHours(classDate.getUTCHours() + 7); // Shift to BKK time
-    const dayOffset = booking.classEntry.dayOfWeek - 1; // 1=Mon, 7=Sun
+    const dayOffset = booking.classEntry.dayOfWeek; // 0=StartDate, 6=StartDate+6
     classDate.setUTCDate(classDate.getUTCDate() + dayOffset);
     if (booking.classEntry.startTime) {
         const [hours, minutes] = booking.classEntry.startTime.split(':').map(Number);

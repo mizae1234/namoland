@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { purchasePackage, spendCoins, extendExpiry, deductCoins, adjustCoinsUp } from "@/actions/coin";
+import { getRecentClassEntriesByActivity } from "@/actions/classSchedule";
 import { Coins, ShoppingCart, Banknote, CreditCard, CalendarPlus, MinusCircle, PlusCircle, BookOpen } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -56,10 +57,13 @@ export default function MemberActions({ member, packages, activities }: MemberAc
     const [loading, setLoading] = useState(false);
 
     // Use coins confirm state
-    const [pendingUse, setPendingUse] = useState<{ coins: number; label: string; hours: number } | null>(null);
+    const [pendingUse, setPendingUse] = useState<{ coins: number; label: string; hours: number; isCustom?: boolean } | null>(null);
     const [customActivity, setCustomActivity] = useState(false);
     const [customActivityName, setCustomActivityName] = useState("");
     const [customActivityCoins, setCustomActivityCoins] = useState("");
+    const [classOptions, setClassOptions] = useState<Array<{id: string; title: string; date: string; startTime: string; endTime: string; teacherName: string | null}>>([]);
+    const [selectedTargetDate, setSelectedTargetDate] = useState<string>("");
+    const [fetchingClasses, setFetchingClasses] = useState(false);
     const [message, setMessage] = useState("");
 
     // Deduct state
@@ -143,9 +147,23 @@ export default function MemberActions({ member, packages, activities }: MemberAc
         }
     };
 
-    const handleSelectActivity = (cls: { coins: number; label: string; hours: number }) => {
+    const handleSelectActivity = async (cls: { coins: number; label: string; hours: number; isCustom?: boolean }) => {
         setPendingUse(cls);
         setCustomActivity(false);
+        setSelectedTargetDate(format(new Date(), "yyyy-MM-dd"));
+        
+        if (!cls.isCustom) {
+            setFetchingClasses(true);
+            try {
+                const results = await getRecentClassEntriesByActivity(cls.label);
+                setClassOptions(results);
+            } catch (err) {
+                console.error(err);
+            }
+            setFetchingClasses(false);
+        } else {
+            setClassOptions([]);
+        }
     };
 
     const handleConfirmUse = async () => {
@@ -156,6 +174,15 @@ export default function MemberActions({ member, packages, activities }: MemberAc
         fd.set("coinsUsed", String(pendingUse.coins));
         fd.set("className", pendingUse.label);
         fd.set("classHours", String(pendingUse.hours));
+        if (selectedTargetDate && selectedTargetDate !== format(new Date(), "yyyy-MM-dd")) {
+            // Find the class entry to include time in the date if possible
+            const selectedClass = classOptions.find(c => c.date.startsWith(selectedTargetDate));
+            if (selectedClass) {
+                fd.set("targetDate", selectedClass.date); // Use full ISO string
+            } else {
+                fd.set("targetDate", selectedTargetDate); // Use YYYY-MM-DD
+            }
+        }
         const result = await spendCoins(fd);
         setLoading(false);
         if (result.error) setMessage(result.error);
@@ -457,6 +484,44 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                                 <p className="text-lg font-bold text-[#3d405b] mt-1">{pendingUse.label}</p>
                                 <p className="text-sm text-amber-600 mt-1">{t("willDeduct", { coins: pendingUse.coins })}</p>
                             </div>
+                            
+                            <div className="bg-white border rounded-xl p-4">
+                                <label className="text-sm font-medium text-[#3d405b] block mb-2">
+                                    {t("selectDateLabel", { fallback: "วันที่เรียน (Class Date)" })}
+                                </label>
+                                {fetchingClasses ? (
+                                    <div className="flex items-center gap-2 text-sm text-[#3d405b]/50">
+                                        <div className="w-4 h-4 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+                                        กำลังโหลดตารางคลาส...
+                                    </div>
+                                ) : !pendingUse.isCustom && classOptions.length > 0 ? (
+                                    <select
+                                        value={selectedTargetDate}
+                                        onChange={(e) => setSelectedTargetDate(e.target.value)}
+                                        className="w-full px-3 py-2.5 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 bg-white"
+                                    >
+                                        <option value={format(new Date(), "yyyy-MM-dd")}>ใช้วันที่ปัจจุบัน ({format(new Date(), "d MMM yyyy", { locale: dateLocale })})</option>
+                                        <optgroup label="ตารางคลาสที่บันทึกไว้">
+                                            {classOptions.map((c) => {
+                                                const d = new Date(c.date);
+                                                return (
+                                                    <option key={`${c.id}-${c.date}`} value={c.date.split('T')[0]}>
+                                                        {format(d, "d MMM yyyy", { locale: dateLocale })} — {c.startTime}-{c.endTime} {c.teacherName ? `(T.${c.teacherName})` : ''}
+                                                    </option>
+                                                );
+                                            })}
+                                        </optgroup>
+                                    </select>
+                                ) : (
+                                    <input
+                                        type="date"
+                                        value={selectedTargetDate.split('T')[0]} // Handle ISO string fallback
+                                        onChange={(e) => setSelectedTargetDate(e.target.value)}
+                                        max={format(new Date(), "yyyy-MM-dd")}
+                                        className="w-full px-3 py-2.5 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400"
+                                    />
+                                )}
+                            </div>
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => setPendingUse(null)}
@@ -520,7 +585,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                                             {t("~Common.cancel")}
                                         </button>
                                         <button
-                                            onClick={() => handleSelectActivity({ label: customActivityName || t("otherActivity"), coins: parseInt(customActivityCoins) || 1, hours: 0 })}
+                                            onClick={() => handleSelectActivity({ label: customActivityName || t("otherActivity"), coins: parseInt(customActivityCoins) || 1, hours: 0, isCustom: true })}
                                             disabled={!customActivityCoins || parseInt(customActivityCoins) <= 0}
                                             className="flex-1 py-2 bg-[#609279] text-white rounded-lg text-sm font-medium hover:bg-[#4e7a64] disabled:opacity-50"
                                         >

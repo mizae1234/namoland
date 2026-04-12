@@ -203,3 +203,54 @@ export async function duplicateSchedule(id: string) {
     revalidatePath("/classes");
     return { success: true, id: newSchedule.id };
 }
+
+export async function getRecentClassEntriesByActivity(activityTitle: string) {
+    if (!activityTitle) return [];
+
+    const twoWeeksFuture = new Date();
+    twoWeeksFuture.setDate(twoWeeksFuture.getDate() + 14);
+
+    const schedules = await prisma.classSchedule.findMany({
+        where: {
+            startDate: { lte: twoWeeksFuture }
+        },
+        include: {
+            entries: {
+                where: { title: { contains: activityTitle, mode: 'insensitive' } },
+                include: { teacher: { select: { name: true, nickname: true } } }
+            }
+        }
+    });
+
+    const results: {
+        id: string;
+        title: string;
+        date: string;
+        startTime: string;
+        endTime: string;
+        teacherName: string | null;
+    }[] = [];
+
+    for (const s of schedules) {
+        for (const e of s.entries) {
+            // Reconstruct the exact localized date 
+            const classDate = new Date(s.startDate.getTime());
+            classDate.setUTCHours(classDate.getUTCHours() + 7);
+            const dayOffset = e.dayOfWeek;
+            classDate.setUTCDate(classDate.getUTCDate() + dayOffset);
+            classDate.setUTCHours(classDate.getUTCHours() - 7);
+
+            results.push({
+                id: e.id,
+                title: e.title,
+                date: classDate.toISOString(),
+                startTime: e.startTime,
+                endTime: e.endTime,
+                teacherName: e.teacher?.nickname || e.teacher?.name || null
+            });
+        }
+    }
+    
+    // Sort by chronological date (newest first for UI dropdown)
+    return results.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}

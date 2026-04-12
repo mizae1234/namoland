@@ -75,6 +75,8 @@ export async function spendCoins(formData: FormData) {
     const classHours = formData.get("classHours") as string;
     const description = formData.get("description") as string;
 
+    const targetDateStr = formData.get("targetDate") as string;
+    
     if (!userId || isNaN(coinsUsed) || coinsUsed <= 0) {
         return { error: "ข้อมูลไม่ถูกต้อง" };
     }
@@ -86,7 +88,7 @@ export async function spendCoins(formData: FormData) {
         return { error: `เหรียญไม่เพียงพอ (คงเหลือ ${totalAvailable} เหรียญ)` };
     }
 
-    const now = new Date();
+    const now = targetDateStr ? new Date(targetDateStr) : new Date();
     const descText = description || (classHours ? `${className} (${classHours}h)` : className) || null;
 
     const ops = [
@@ -94,6 +96,7 @@ export async function spendCoins(formData: FormData) {
         ...buildTransactionOps(deductions, "CLASS_FEE", session.user.id, {
             className: className || undefined,
             description: descText || undefined,
+            createdAt: now,
         }),
     ];
 
