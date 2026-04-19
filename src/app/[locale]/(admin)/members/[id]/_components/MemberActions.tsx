@@ -410,7 +410,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                                 disabled={!customCoins || !customPrice || parseInt(customCoins) <= 0 || parseInt(customPrice) < 0}
                                 className="w-full mt-2 py-2.5 bg-[#a16b9f] text-white rounded-xl text-sm font-medium hover:bg-[#8a5a88] transition-colors disabled:opacity-50"
                             >
-                                {t("~Common.confirm") || "ดำเนินการต่อฉบับปรับแต่ง"}
+                                {t("confirmBuyBtn") || "ดำเนินการต่อ"}
                             </button>
                         </div>
                     )}
@@ -607,7 +607,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                                             onClick={() => { setCustomActivity(false); setCustomActivityName(""); setCustomActivityCoins(""); }}
                                             className="flex-1 py-2 text-sm text-[#3d405b]/50 hover:text-[#3d405b]"
                                         >
-                                            {t("~Common.cancel")}
+                                            {"ยกเลิก / Cancel"}
                                         </button>
                                         <button
                                             onClick={() => handleSelectActivity({ label: customActivityName || t("otherActivity"), coins: parseInt(customActivityCoins) || 1, hours: 0, isCustom: true })}
