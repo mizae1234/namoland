@@ -234,6 +234,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
     const handleDeduct = async () => {
         if (!deductAmount) return;
         setLoading(true);
+        const fd = new FormData();
         fd.set("userId", member.id);
         fd.set("coinsToDeduct", deductAmount);
         if (deductReason.trim()) fd.set("reason", deductReason.trim());
