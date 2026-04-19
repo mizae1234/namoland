@@ -24,6 +24,7 @@ export async function getOwnerDashboardData() {
         borrowedCount,
         overdueRecords,
         totalRemainingCoins,
+        allAdjustTxs,
     ] = await Promise.all([
         // Today revenue (Transactions)
         prisma.coinTransaction.findMany({
@@ -82,12 +83,29 @@ export async function getOwnerDashboardData() {
             _sum: { remainingCoins: true },
             where: { isExpired: false },
         }),
+        // All adjustment transactions ever (to calc original coins accurately)
+        prisma.coinTransaction.findMany({
+            where: { type: "ADJUSTMENT", coinsUsed: { lt: 0 } },
+            select: { packageId: true, coinsUsed: true },
+        }),
     ]);
+
+    const adjustUpByPkg = new Map<string, number>();
+    for (const tx of allAdjustTxs) {
+        adjustUpByPkg.set(tx.packageId, (adjustUpByPkg.get(tx.packageId) || 0) + Math.abs(tx.coinsUsed));
+    }
 
     const calculateRevenue = (transactions: any[]) => {
         return Math.round(transactions.reduce((s, tx) => {
-            if (tx.package.totalCoins <= 0) return s;
-            const val = Number(tx.package.pricePaid) / tx.package.totalCoins;
+            if (tx.type === "ADJUSTMENT" || tx.type === "EXTENSION" || tx.type === "EXPIRED") return s;
+            if (tx.coinsUsed === 0) return s;
+
+            const adjustUp = adjustUpByPkg.get(tx.packageId) || 0;
+            const origCoins = tx.package.totalCoins - adjustUp;
+            
+            if (origCoins <= 0) return s; // Fully free/adjusted package
+            
+            const val = Number(tx.package.pricePaid) / origCoins;
             return s + (tx.coinsUsed * val);
         }, 0));
     };
@@ -258,14 +276,23 @@ export async function getOwnerDashboardData() {
     });
 
     // ─── Financial Summary ──────────────────────────
-    const totalCoinsPurchased = await prisma.coinPackage.aggregate({
-        _sum: { totalCoins: true },
-        where: { purchaseDate: { gte: monthStart } },
+    const purchasedPackagesThisMonth = await prisma.coinPackage.findMany({
+        where: { purchaseDate: { gte: monthStart }, packageType: { not: "ADJUSTMENT" } },
+        select: { id: true, totalCoins: true },
     });
 
-    const totalCoinsRedeemed = await prisma.coinTransaction.aggregate({
+    let totalCoinsPurchasedCount = 0;
+    for (const pkg of purchasedPackagesThisMonth) {
+        const adjustUp = adjustUpByPkg.get(pkg.id) || 0;
+        totalCoinsPurchasedCount += (pkg.totalCoins - adjustUp);
+    }
+
+    const totalCoinsRedeemedResult = await prisma.coinTransaction.aggregate({
         _sum: { coinsUsed: true },
-        where: { createdAt: { gte: monthStart } },
+        where: { 
+            createdAt: { gte: monthStart },
+            type: { notIn: ["ADJUSTMENT", "EXTENSION", "EXPIRED"] }
+        },
     });
 
     return {
@@ -317,8 +344,8 @@ export async function getOwnerDashboardData() {
         financial: {
             thisMonthRevenue,
             lastMonthRevenue,
-            coinsPurchased: totalCoinsPurchased._sum.totalCoins || 0,
-            coinsRedeemed: totalCoinsRedeemed._sum.coinsUsed || 0,
+            coinsPurchased: totalCoinsPurchasedCount,
+            coinsRedeemed: totalCoinsRedeemedResult._sum.coinsUsed || 0,
         },
     };
 }

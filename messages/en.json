@@ -1183,8 +1183,24 @@
         "pctDisc": "% Disc",
         "bf": "B/F",
         "total": "Total",
-        "current": "Current"
+        "current": "Current",
+        "detail": "Detail"
       }
+    },
+    "outstandingDetail": {
+      "title": "Outstanding Coin Detail",
+      "subtitle": "{count} members with outstanding coins",
+      "exportBtn": "Export Excel",
+      "tableTitle": "Per-member Breakdown",
+      "members": "members",
+      "memberName": "Member",
+      "phone": "Phone",
+      "coinBalance": "Coin Balance",
+      "amount": "Amount",
+      "gross": "Gross",
+      "discount": "Discount",
+      "total": "Total",
+      "noData": "No outstanding coins for this month"
     },
     "attendance": {
       "summary": {

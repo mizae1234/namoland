@@ -55,20 +55,28 @@ export async function getOutstandingCoinReport(year: number): Promise<Outstandin
     availableYears.sort((a, b) => b - a);
 
     const targetYearEnd = new Date(year + 1, 0, 1);
-    const [allPackages, allTransactions, allAdjustPackages] = await Promise.all([
+    const [allPackages, allTransactions, allAdjustTxsEver] = await Promise.all([
         prisma.coinPackage.findMany({
-            where: { purchaseDate: { lt: targetYearEnd }, packageType: { not: "ADJUSTMENT" } },
-            select: { id: true, totalCoins: true, pricePaid: true, bonusAmount: true, purchaseDate: true },
+            where: { purchaseDate: { lt: targetYearEnd } },
+            select: { id: true, totalCoins: true, pricePaid: true, bonusAmount: true, purchaseDate: true, packageType: true },
         }),
         prisma.coinTransaction.findMany({
             where: { createdAt: { lt: targetYearEnd } },
             select: { packageId: true, type: true, coinsUsed: true, createdAt: true },
         }),
-        prisma.coinPackage.findMany({
-            where: { purchaseDate: { lt: targetYearEnd }, packageType: "ADJUSTMENT" },
-            select: { totalCoins: true, purchaseDate: true },
-        })
+        // Get ALL adjustment txs (no date filter) for correct origCoins calculation
+        prisma.coinTransaction.findMany({
+            where: { type: "ADJUSTMENT", coinsUsed: { lt: 0 } },
+            select: { packageId: true, coinsUsed: true },
+        }),
     ]);
+
+    // Precompute per-package adjustUpTotal (total coins ever added via adjustCoinsUp)
+    const adjustUpTotalByPkg = new Map<string, number>();
+    for (const tx of allAdjustTxsEver) {
+        const current = adjustUpTotalByPkg.get(tx.packageId) || 0;
+        adjustUpTotalByPkg.set(tx.packageId, current + Math.abs(tx.coinsUsed));
+    }
 
     const snapshotAt = (date: Date) => {
         let balance = 0;
@@ -79,27 +87,37 @@ export async function getOutstandingCoinReport(year: number): Promise<Outstandin
         for (const pkg of allPackages) {
             if (pkg.purchaseDate >= date) continue;
 
-            const txs = allTransactions.filter(t => t.packageId === pkg.id && t.createdAt < date);
-            const consumed = txs.reduce((sum, t) => sum + t.coinsUsed, 0);
-            const remaining = pkg.totalCoins - consumed;
+            const pkgTxs = allTransactions.filter(t => t.packageId === pkg.id);
+            const adjustUpTotal = adjustUpTotalByPkg.get(pkg.id) || 0;
+            const origCoins = pkg.totalCoins - adjustUpTotal;
+
+            // Reconstruct totalCoins at the snapshot date
+            const adjustUpBeforeDate = pkgTxs
+                .filter(t => t.type === "ADJUSTMENT" && t.coinsUsed < 0 && t.createdAt < date)
+                .reduce((s, t) => s + Math.abs(t.coinsUsed), 0);
+            const totalCoinsAtDate = origCoins + adjustUpBeforeDate;
+
+            // Calculate consumption (only positive coinsUsed = actual spending)
+            const positiveConsumed = pkgTxs
+                .filter(t => t.coinsUsed > 0 && t.createdAt < date)
+                .reduce((s, t) => s + t.coinsUsed, 0);
+
+            const remaining = Math.max(0, totalCoinsAtDate - positiveConsumed);
 
             if (remaining > 0) {
                 balance += remaining;
-                const ratio = remaining / pkg.totalCoins;
-                amount += Number(pkg.pricePaid) * ratio;
-                discount += Number(pkg.bonusAmount) * ratio;
-                grossAmount += (Number(pkg.pricePaid) + Number(pkg.bonusAmount)) * ratio;
+
+                // Monetary values: only count paid (original) coins, adjusted coins are free
+                if (origCoins > 0) {
+                    const paidConsumed = Math.min(positiveConsumed, origCoins);
+                    const paidRemaining = Math.max(0, origCoins - paidConsumed);
+                    const ratio = paidRemaining / origCoins;
+                    amount += Number(pkg.pricePaid) * ratio;
+                    discount += Number(pkg.bonusAmount) * ratio;
+                    grossAmount += (Number(pkg.pricePaid) + Number(pkg.bonusAmount)) * ratio;
+                }
             }
         }
-
-        for (const adj of allAdjustPackages) {
-            if (adj.purchaseDate < date) balance += adj.totalCoins;
-        }
-
-        const adminAdded = allTransactions
-            .filter(t => t.createdAt < date && t.type === "ADJUSTMENT" && t.coinsUsed < 0)
-            .reduce((s, t) => s + Math.abs(t.coinsUsed), 0);
-        balance += adminAdded;
 
         return { balance, amount, discount, grossAmount };
     };
@@ -112,18 +130,20 @@ export async function getOutstandingCoinReport(year: number): Promise<Outstandin
         const monthStart = new Date(year, m, 1);
         const monthEnd = new Date(year, m + 1, 1);
 
-        const monthPackages = allPackages.filter(p => p.purchaseDate >= monthStart && p.purchaseDate < monthEnd);
-        const purchase = monthPackages.reduce((s, p) => s + p.totalCoins, 0);
+        // Purchase: use origCoins (exclude adjusted coins) for non-ADJUSTMENT packages
+        const monthPackages = allPackages.filter(
+            p => p.purchaseDate >= monthStart && p.purchaseDate < monthEnd && p.packageType !== "ADJUSTMENT"
+        );
+        const purchase = monthPackages.reduce((s, p) => {
+            const adjUp = adjustUpTotalByPkg.get(p.id) || 0;
+            return s + (p.totalCoins - adjUp);
+        }, 0);
 
-        const monthAdjustPackages = allAdjustPackages.filter(p => p.purchaseDate >= monthStart && p.purchaseDate < monthEnd);
-        const adjustUpFromPackages = monthAdjustPackages.reduce((s, p) => s + p.totalCoins, 0);
-
+        // AdjustUp: count from ADJUSTMENT transactions in the month (handles both existing pkg adjustments and new ADJUSTMENT packages)
         const monthTransactions = allTransactions.filter(t => t.createdAt >= monthStart && t.createdAt < monthEnd);
-
-        const adjustUpFromExisting = monthTransactions
+        const adjustUp = monthTransactions
             .filter(t => t.type === "ADJUSTMENT" && t.coinsUsed < 0)
             .reduce((s, t) => s + Math.abs(t.coinsUsed), 0);
-        const adjustUp = adjustUpFromPackages + adjustUpFromExisting;
 
         const usage = monthTransactions
             .filter(t => t.type !== "ADJUSTMENT" && t.coinsUsed > 0)
@@ -159,6 +179,127 @@ export async function getOutstandingCoinReport(year: number): Promise<Outstandin
         bfDiscountPercent: bf.grossAmount > 0 ? Math.round((bf.discount / bf.grossAmount) * 100) / 100 : 0,
         months,
         availableYears,
+    };
+}
+
+// ─── Outstanding Coin Detail (per-member breakdown) ──────────────────
+
+export type OutstandingCoinDetailRow = {
+    userId: string;
+    memberName: string;
+    phone: string;
+    coinBalance: number;
+    amount: number;
+    grossAmount: number;
+    discount: number;
+};
+
+export type OutstandingCoinDetailData = {
+    year: number;
+    month: string;
+    monthIndex: number;
+    rows: OutstandingCoinDetailRow[];
+    totals: { coinBalance: number; amount: number; grossAmount: number; discount: number };
+};
+
+export async function getOutstandingCoinDetail(year: number, monthIndex: number): Promise<OutstandingCoinDetailData> {
+    const monthEnd = new Date(year, monthIndex + 1, 1);
+
+    const [allPackages, allTransactions, allAdjustTxsEver] = await Promise.all([
+        prisma.coinPackage.findMany({
+            where: { purchaseDate: { lt: monthEnd } },
+            select: {
+                id: true, totalCoins: true, pricePaid: true, bonusAmount: true,
+                purchaseDate: true, packageType: true, userId: true,
+                user: { select: { parentName: true, phone: true } },
+            },
+        }),
+        prisma.coinTransaction.findMany({
+            where: { createdAt: { lt: monthEnd } },
+            select: { packageId: true, type: true, coinsUsed: true, createdAt: true },
+        }),
+        prisma.coinTransaction.findMany({
+            where: { type: "ADJUSTMENT", coinsUsed: { lt: 0 } },
+            select: { packageId: true, coinsUsed: true },
+        }),
+    ]);
+
+    const adjustUpTotalByPkg = new Map<string, number>();
+    for (const tx of allAdjustTxsEver) {
+        const current = adjustUpTotalByPkg.get(tx.packageId) || 0;
+        adjustUpTotalByPkg.set(tx.packageId, current + Math.abs(tx.coinsUsed));
+    }
+
+    const userMap = new Map<string, {
+        memberName: string; phone: string;
+        coinBalance: number; amount: number; grossAmount: number; discount: number;
+    }>();
+
+    for (const pkg of allPackages) {
+        if (pkg.purchaseDate >= monthEnd) continue;
+
+        const pkgTxs = allTransactions.filter(t => t.packageId === pkg.id);
+        const adjustUpTotal = adjustUpTotalByPkg.get(pkg.id) || 0;
+        const origCoins = pkg.totalCoins - adjustUpTotal;
+
+        const adjustUpBeforeDate = pkgTxs
+            .filter(t => t.type === "ADJUSTMENT" && t.coinsUsed < 0 && t.createdAt < monthEnd)
+            .reduce((s, t) => s + Math.abs(t.coinsUsed), 0);
+        const totalCoinsAtDate = origCoins + adjustUpBeforeDate;
+
+        const positiveConsumed = pkgTxs
+            .filter(t => t.coinsUsed > 0 && t.createdAt < monthEnd)
+            .reduce((s, t) => s + t.coinsUsed, 0);
+
+        const remaining = Math.max(0, totalCoinsAtDate - positiveConsumed);
+        if (remaining <= 0) continue;
+
+        let amt = 0, disc = 0, gross = 0;
+        if (origCoins > 0) {
+            const paidConsumed = Math.min(positiveConsumed, origCoins);
+            const paidRemaining = Math.max(0, origCoins - paidConsumed);
+            const ratio = paidRemaining / origCoins;
+            amt = Number(pkg.pricePaid) * ratio;
+            disc = Number(pkg.bonusAmount) * ratio;
+            gross = amt + disc;
+        }
+
+        const existing = userMap.get(pkg.userId) || {
+            memberName: pkg.user.parentName, phone: pkg.user.phone,
+            coinBalance: 0, amount: 0, grossAmount: 0, discount: 0,
+        };
+        existing.coinBalance += remaining;
+        existing.amount += amt;
+        existing.grossAmount += gross;
+        existing.discount += disc;
+        userMap.set(pkg.userId, existing);
+    }
+
+    const rows: OutstandingCoinDetailRow[] = Array.from(userMap.entries())
+        .map(([userId, data]) => ({
+            userId,
+            memberName: data.memberName,
+            phone: data.phone,
+            coinBalance: data.coinBalance,
+            amount: Math.round(data.amount * 100) / 100,
+            grossAmount: Math.round(data.grossAmount * 100) / 100,
+            discount: Math.round(data.discount * 100) / 100,
+        }))
+        .sort((a, b) => b.amount - a.amount);
+
+    const totals = {
+        coinBalance: rows.reduce((s, r) => s + r.coinBalance, 0),
+        amount: Math.round(rows.reduce((s, r) => s + r.amount, 0) * 100) / 100,
+        grossAmount: Math.round(rows.reduce((s, r) => s + r.grossAmount, 0) * 100) / 100,
+        discount: Math.round(rows.reduce((s, r) => s + r.discount, 0) * 100) / 100,
+    };
+
+    return {
+        year,
+        month: MONTH_NAMES[monthIndex],
+        monthIndex,
+        rows,
+        totals,
     };
 }
 

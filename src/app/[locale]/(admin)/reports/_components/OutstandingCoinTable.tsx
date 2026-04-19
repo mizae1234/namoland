@@ -3,7 +3,9 @@
 import { useState, useTransition } from "react";
 import { OutstandingCoinReport } from "@/actions/report";
 import { getOutstandingCoinReport } from "@/actions/report";
-import { ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Eye } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import Card from "@/components/ui/Card";
 import * as XLSX from "xlsx";
 import { useTranslations } from "next-intl";
@@ -31,6 +33,8 @@ export default function OutstandingCoinTable({
     const t = useTranslations("AdminReports.outstandingCoin");
     const [data, setData] = useState(initialData);
     const [isPending, startTransition] = useTransition();
+    const router = useRouter();
+    const locale = useLocale();
 
     function changeYear(newYear: number) {
         startTransition(async () => {
@@ -216,6 +220,7 @@ export default function OutstandingCoinTable({
                                 <th className="text-right px-4 py-3 font-semibold text-[#3d405b]/70">
                                     {t("table.pctDisc")}
                                 </th>
+                                <th className="px-2 py-3 w-[40px]"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -244,6 +249,7 @@ export default function OutstandingCoinTable({
                                 <td className="px-4 py-3 text-right font-mono text-[#3d405b]/50">
                                     {fmtPct(data.bfDiscountPercent)}
                                 </td>
+                                <td></td>
                             </tr>
 
                             {/* Monthly Rows */}
@@ -307,6 +313,16 @@ export default function OutstandingCoinTable({
                                         <td className="px-4 py-3 text-right font-mono text-[#3d405b]/50">
                                             {fmtPct(m.discountPercent)}
                                         </td>
+                                        <td className="px-2 py-3 text-center">
+                                            {(isPastMonth || isCurrentMonth) && (
+                                                <button
+                                                    onClick={() => router.push(`/${locale}/reports/outstanding/${data.year}/${m.monthIndex}`)}
+                                                    className="p-1.5 rounded-md hover:bg-[#609279]/10 text-[#609279] transition-colors" title={t("table.detail")}
+                                                >
+                                                    <Eye size={14} />
+                                                </button>
+                                            )}
+                                        </td>
                                     </tr>
                                 );
                             })}
@@ -344,6 +360,7 @@ export default function OutstandingCoinTable({
                                 <td className="px-4 py-3 text-right font-mono text-[#3d405b]/70">
                                     {totalGross > 0 ? (totalDiscount / totalGross).toFixed(2) : ""}
                                 </td>
+                                <td></td>
                             </tr>
                         </tbody>
                     </table>

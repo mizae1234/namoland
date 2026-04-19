@@ -1183,8 +1183,24 @@
         "pctDisc": "% Disc",
         "bf": "B/F",
         "total": "รวม",
-        "current": "ปัจจุบัน"
+        "current": "ปัจจุบัน",
+        "detail": "รายละเอียด"
       }
+    },
+    "outstandingDetail": {
+      "title": "รายละเอียดเหรียญคงค้าง",
+      "subtitle": "{count} สมาชิกที่มีเหรียญคงค้าง",
+      "exportBtn": "Export Excel",
+      "tableTitle": "รายละเอียดรายสมาชิก",
+      "members": "คน",
+      "memberName": "ชื่อสมาชิก",
+      "phone": "เบอร์โทร",
+      "coinBalance": "เหรียญคงเหลือ",
+      "amount": "Amount",
+      "gross": "Gross",
+      "discount": "Discount",
+      "total": "รวม",
+      "noData": "ไม่มีข้อมูลเหรียญคงค้างในเดือนนี้"
     },
     "attendance": {
       "summary": {
