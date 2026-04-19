@@ -239,7 +239,9 @@ export async function deductCoins(formData: FormData) {
             return { error: `เหรียญไม่เพียงพอ (คงเหลือ ${totalAvailable} เหรียญ)` };
         }
 
-        const now = new Date();
+        const targetDateStr = formData.get("targetDate") as string;
+        const now = targetDateStr ? new Date(targetDateStr) : new Date();
+
         const ops = [
             ...buildPackageDeductOps(deductions, now),
             ...deductions.map((d) =>
@@ -250,6 +252,7 @@ export async function deductCoins(formData: FormData) {
                         coinsUsed: d.amount,
                         description: reason,
                         processedById: session.user.id,
+                        createdAt: now,
                     },
                 }),
             ),

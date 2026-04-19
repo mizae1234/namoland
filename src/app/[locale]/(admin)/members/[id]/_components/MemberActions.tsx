@@ -66,9 +66,9 @@ export default function MemberActions({ member, packages, activities }: MemberAc
     const [fetchingClasses, setFetchingClasses] = useState(false);
     const [message, setMessage] = useState("");
 
-    // Deduct state
     const [deductAmount, setDeductAmount] = useState("");
     const [deductReason, setDeductReason] = useState("");
+    const [deductDate, setDeductDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
 
     // Adjust up state
     const [addAmount, setAddAmount] = useState("");
@@ -141,6 +141,9 @@ export default function MemberActions({ member, packages, activities }: MemberAc
             setMessage(t("buySuccess"));
             setSelectedPkg(null);
             setShowBuy(false);
+            setShowCustom(false);
+            setCustomCoins("");
+            setCustomPrice("");
             router.refresh();
             window.dispatchEvent(new Event('refresh-member-data'));
             setTimeout(() => setMessage(""), 3000);
@@ -231,10 +234,10 @@ export default function MemberActions({ member, packages, activities }: MemberAc
     const handleDeduct = async () => {
         if (!deductAmount) return;
         setLoading(true);
-        const fd = new FormData();
         fd.set("userId", member.id);
         fd.set("coinsToDeduct", deductAmount);
         if (deductReason.trim()) fd.set("reason", deductReason.trim());
+        if (deductDate) fd.set("targetDate", deductDate);
         const result = await deductCoins(fd);
         setLoading(false);
         if (result.error) setMessage(result.error);
@@ -792,6 +795,19 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                                     value={deductReason}
                                     onChange={(e) => setDeductReason(e.target.value)}
                                     placeholder={t("deductPlaceholder")}
+                                    className="w-full px-3 py-2.5 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-sm font-medium text-[#3d405b] block mb-2">
+                                    {t("purchaseDate")}
+                                </label>
+                                <input
+                                    type="date"
+                                    value={deductDate}
+                                    onChange={(e) => setDeductDate(e.target.value)}
+                                    max={format(new Date(), "yyyy-MM-dd")}
                                     className="w-full px-3 py-2.5 border border-[#d1cce7]/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400"
                                 />
                             </div>
