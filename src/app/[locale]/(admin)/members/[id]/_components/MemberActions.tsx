@@ -82,6 +82,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
 
     // Custom purchase state
     const [showCustom, setShowCustom] = useState(false);
+    const [openCustomModal, setOpenCustomModal] = useState(false);
     const [customCoins, setCustomCoins] = useState("");
     const [customPrice, setCustomPrice] = useState("");
 
@@ -142,6 +143,7 @@ export default function MemberActions({ member, packages, activities }: MemberAc
             setSelectedPkg(null);
             setShowBuy(false);
             setShowCustom(false);
+            setOpenCustomModal(false);
             setCustomCoins("");
             setCustomPrice("");
             router.refresh();
@@ -403,6 +405,13 @@ export default function MemberActions({ member, packages, activities }: MemberAc
                                     ✓ {customCoins} {t("coinsUnit")} · {Number(customPrice).toLocaleString()} {t("baht")}
                                 </p>
                             )}
+                            <button
+                                onClick={() => setOpenCustomModal(true)}
+                                disabled={!customCoins || !customPrice || parseInt(customCoins) <= 0 || parseInt(customPrice) < 0}
+                                className="w-full mt-2 py-2.5 bg-[#a16b9f] text-white rounded-xl text-sm font-medium hover:bg-[#8a5a88] transition-colors disabled:opacity-50"
+                            >
+                                {t("~Common.confirm") || "ดำเนินการต่อฉบับปรับแต่ง"}
+                            </button>
                         </div>
                     )}
                 </Card>
@@ -410,8 +419,8 @@ export default function MemberActions({ member, packages, activities }: MemberAc
 
             {/* Buy Confirmation Modal */}
             <Modal
-                open={!!selectedPkg && !showCustom || (showCustom && !!customCoins && !!customPrice)}
-                onClose={() => { setSelectedPkg(null); setShowCustom(false); }}
+                open={(!!selectedPkg && !showCustom) || openCustomModal}
+                onClose={() => { setSelectedPkg(null); setShowCustom(false); setOpenCustomModal(false); }}
                 title={t("confirmBuy")}
                 confirmLabel={t("confirmBuyBtn")}
                 onConfirm={handleConfirmBuy}
