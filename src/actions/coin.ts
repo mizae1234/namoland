@@ -13,7 +13,7 @@ import {
 
 export async function purchasePackage(formData: FormData) {
     const session = await auth();
-    if (!session?.user) return { error: "Unauthorized" };
+    if (!session?.user || session.user.type !== "ADMIN") return { error: "Unauthorized" };
 
     const userId = formData.get("userId") as string;
     const packageType = formData.get("packageType") as string;
@@ -66,7 +66,7 @@ export async function purchasePackage(formData: FormData) {
 
 export async function spendCoins(formData: FormData) {
     const session = await auth();
-    if (!session?.user) return { error: "Unauthorized" };
+    if (!session?.user || session.user.type !== "ADMIN") return { error: "Unauthorized" };
 
     // Accept userId for FIFO, fall back to packageId for backward compat
     const userId = formData.get("userId") as string;

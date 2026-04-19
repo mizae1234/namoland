@@ -24,6 +24,7 @@ export default function ExpiryActions({ userId, remainingCoins, currentExpiry }:
     const [showExtend, setShowExtend] = useState(false);
     const [loading, setLoading] = useState(false);
     const [confirmDeduct, setConfirmDeduct] = useState(false);
+    const [deductDate, setDeductDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
 
     // Extend state — date picker (same as member page)
     const currentDate = currentExpiry ? new Date(currentExpiry) : null;
@@ -56,6 +57,7 @@ export default function ExpiryActions({ userId, remainingCoins, currentExpiry }:
         fd.set("userId", userId);
         fd.set("coinsToDeduct", String(remainingCoins));
         fd.set("reason", "เหรียญหมดอายุ — ตัดออก");
+        if (deductDate) fd.set("targetDate", deductDate);
         await deductCoins(fd);
         setLoading(false);
         router.refresh();
@@ -147,7 +149,6 @@ export default function ExpiryActions({ userId, remainingCoins, currentExpiry }:
                 )}
             </div>
 
-            {/* Confirm Deduct Modal */}
             <Modal
                 open={confirmDeduct}
                 onClose={() => setConfirmDeduct(false)}
@@ -156,7 +157,20 @@ export default function ExpiryActions({ userId, remainingCoins, currentExpiry }:
                 confirmLabel={t("confirmDeductBtn")}
                 onConfirm={handleDeductAll}
                 loading={loading}
-            />
+            >
+                <div className="mt-4 border-t border-[#d1cce7]/20 pt-4 -mx-[46px] px-[46px]">
+                    <label className="text-xs text-[#3d405b]/60 font-medium block mb-1">
+                        {"วันที่ระบุในรายงาน (Report Date)"}
+                    </label>
+                    <DateInput
+                        value={deductDate}
+                        onChange={(val) => setDeductDate(val)}
+                    />
+                    <p className="text-[11px] text-[#3d405b]/40 mt-1">
+                        {"ระบบจะยึดตามวันที่นี้ไปโผล่ในหน้ารายงานประจำเดือน"}
+                    </p>
+                </div>
+            </Modal>
         </>
     );
 }
