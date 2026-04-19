@@ -52,7 +52,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             async authorize(credentials) {
                 if (!credentials?.phone || !credentials?.password) return null;
 
-                const phone = credentials.phone as string;
+                const phoneInput = credentials.phone as string;
+                const phone = phoneInput.replace(/\D/g, "");
+                
                 const user = await prisma.user.findUnique({
                     where: { phone },
                 });

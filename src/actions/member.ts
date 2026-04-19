@@ -6,12 +6,14 @@ import crypto from "crypto";
 
 export async function createMember(formData: FormData) {
     const parentName = formData.get("parentName") as string;
-    const phone = formData.get("phone") as string;
+    let phone = formData.get("phone") as string;
     const childrenJson = formData.get("children") as string;
 
     if (!parentName || !phone) {
         return { error: "กรุณากรอกข้อมูลให้ครบ" };
     }
+
+    phone = phone.replace(/\D/g, "");
 
     const existing = await prisma.user.findUnique({ where: { phone } });
     if (existing) {
@@ -142,12 +144,14 @@ export async function getMemberByQrCode(qrCode: string) {
 export async function updateMember(formData: FormData) {
     const id = formData.get("id") as string;
     const parentName = formData.get("parentName") as string;
-    const phone = formData.get("phone") as string;
+    let phone = formData.get("phone") as string;
     const childrenJson = formData.get("children") as string;
 
     if (!id || !parentName || !phone) {
         return { error: "กรุณากรอกข้อมูลให้ครบ" };
     }
+
+    phone = phone.replace(/\D/g, "");
 
     // Check phone uniqueness
     const existing = await prisma.user.findFirst({
@@ -236,12 +240,14 @@ export async function updateSelfProfile(formData: FormData) {
 
     const userId = session.user.id;
     const parentName = formData.get("parentName") as string;
-    const phone = formData.get("phone") as string;
+    let phone = formData.get("phone") as string;
     const childrenJson = formData.get("children") as string;
 
     if (!parentName || !phone) {
         return { error: "กรุณากรอกข้อมูลให้ครบ" };
     }
+
+    phone = phone.replace(/\D/g, "");
 
     // Check phone uniqueness
     const existing = await prisma.user.findFirst({

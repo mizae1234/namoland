@@ -187,6 +187,7 @@ export async function getOutstandingCoinReport(year: number): Promise<Outstandin
 export type OutstandingCoinDetailRow = {
     userId: string;
     memberName: string;
+    childrenNames: string;
     phone: string;
     coinBalance: number;
     amount: number;
@@ -211,7 +212,7 @@ export async function getOutstandingCoinDetail(year: number, monthIndex: number)
             select: {
                 id: true, totalCoins: true, pricePaid: true, bonusAmount: true,
                 purchaseDate: true, packageType: true, userId: true,
-                user: { select: { parentName: true, phone: true } },
+                user: { select: { parentName: true, phone: true, children: { select: { name: true } } } },
             },
         }),
         prisma.coinTransaction.findMany({
@@ -231,7 +232,7 @@ export async function getOutstandingCoinDetail(year: number, monthIndex: number)
     }
 
     const userMap = new Map<string, {
-        memberName: string; phone: string;
+        memberName: string; childrenNames: string; phone: string;
         coinBalance: number; amount: number; grossAmount: number; discount: number;
     }>();
 
@@ -264,8 +265,9 @@ export async function getOutstandingCoinDetail(year: number, monthIndex: number)
             gross = amt + disc;
         }
 
+        const childrenNames = pkg.user.children.map((c: any) => c.name).join(", ");
         const existing = userMap.get(pkg.userId) || {
-            memberName: pkg.user.parentName, phone: pkg.user.phone,
+            memberName: pkg.user.parentName, childrenNames, phone: pkg.user.phone,
             coinBalance: 0, amount: 0, grossAmount: 0, discount: 0,
         };
         existing.coinBalance += remaining;
@@ -279,6 +281,7 @@ export async function getOutstandingCoinDetail(year: number, monthIndex: number)
         .map(([userId, data]) => ({
             userId,
             memberName: data.memberName,
+            childrenNames: data.childrenNames,
             phone: data.phone,
             coinBalance: data.coinBalance,
             amount: Math.round(data.amount * 100) / 100,

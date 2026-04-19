@@ -5,13 +5,15 @@ import crypto from "crypto";
 
 export async function registerUser(formData: FormData) {
     const parentName = formData.get("parentName") as string;
-    const phone = formData.get("phone") as string;
+    let phone = formData.get("phone") as string;
     const password = formData.get("password") as string;
     const childrenJson = formData.get("children") as string;
 
     if (!parentName || !phone || !password) {
         return { error: "กรุณากรอกชื่อ เบอร์โทร และรหัสผ่าน" };
     }
+
+    phone = phone.replace(/\D/g, "");
 
     if (password.length < 4) {
         return { error: "รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร" };

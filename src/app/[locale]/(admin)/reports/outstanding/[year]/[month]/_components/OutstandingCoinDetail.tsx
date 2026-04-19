@@ -22,6 +22,7 @@ export default function OutstandingCoinDetail({ data }: { data: OutstandingCoinD
         const rows = data.rows.map((r, i) => ({
             "#": i + 1,
             [t("memberName")]: r.memberName,
+            "Children": r.childrenNames,
             [t("phone")]: r.phone,
             [t("coinBalance")]: r.coinBalance,
             [t("amount")]: r.amount,
@@ -31,6 +32,7 @@ export default function OutstandingCoinDetail({ data }: { data: OutstandingCoinD
         rows.push({
             "#": "",
             [t("memberName")]: t("total"),
+            "Children": "",
             [t("phone")]: "",
             [t("coinBalance")]: data.totals.coinBalance,
             [t("amount")]: data.totals.amount,
@@ -40,7 +42,7 @@ export default function OutstandingCoinDetail({ data }: { data: OutstandingCoinD
 
         const ws = XLSX.utils.json_to_sheet(rows);
         ws["!cols"] = [
-            { wch: 5 }, { wch: 20 }, { wch: 14 },
+            { wch: 5 }, { wch: 20 }, { wch: 20 }, { wch: 14 },
             { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 14 },
         ];
         const wb = XLSX.utils.book_new();
@@ -130,13 +132,18 @@ export default function OutstandingCoinDetail({ data }: { data: OutstandingCoinD
                                 {data.rows.map((row, idx) => (
                                     <tr key={row.userId} className="hover:bg-[#f4f1de]/30 transition-colors">
                                         <td className="py-2 px-4 text-[#3d405b]/40 text-xs">{idx + 1}</td>
-                                        <td className="py-2 px-4">
+                                        <td className="py-2 px-4 whitespace-nowrap">
                                             <Link
                                                 href={`/${locale}/members/${row.userId}`}
                                                 className="text-sm font-medium text-[#609279] hover:underline"
                                             >
                                                 {row.memberName}
                                             </Link>
+                                            {row.childrenNames && (
+                                                <div className="text-xs text-[#3d405b]/50 mt-0.5 truncate max-w-[150px]" title={row.childrenNames}>
+                                                    ({row.childrenNames})
+                                                </div>
+                                            )}
                                         </td>
                                         <td className="py-2 px-4 text-[#3d405b]/60 text-xs">{row.phone}</td>
                                         <td className="py-2 px-3 text-right font-mono text-sm font-medium text-[#3d405b]">
