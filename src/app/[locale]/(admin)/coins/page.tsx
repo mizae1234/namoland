@@ -17,13 +17,20 @@ export default async function CoinsPage() {
         APPROVED: { label: t("statusApproved"), className: "bg-emerald-100 text-emerald-700" },
         REJECTED: { label: t("statusRejected"), className: "bg-red-100 text-red-700" },
     };
-    const [expiring, topUps] = await Promise.all([
+    const [rawExpiring, topUps] = await Promise.all([
         getExpiringPackages(),
         getAllTopUps(),
     ]);
 
-    const pending = topUps.filter(t => t.status === "PENDING");
-    const others = topUps.filter(t => t.status !== "PENDING");
+    const sortByChildName = (a: any, b: any) => {
+        const nameA = a.user?.children?.[0]?.name || a.user?.parentName || "";
+        const nameB = b.user?.children?.[0]?.name || b.user?.parentName || "";
+        return nameA.localeCompare(nameB, isThai ? "th" : "en");
+    };
+
+    const expiring = rawExpiring.sort(sortByChildName);
+    const pending = topUps.filter(t => t.status === "PENDING").sort(sortByChildName);
+    const others = topUps.filter(t => t.status !== "PENDING").sort(sortByChildName);
 
     return (
         <div>
@@ -55,7 +62,9 @@ export default async function CoinsPage() {
                             <div key={req.id} className="px-6 py-3">
                                 <div className="flex items-center justify-between gap-3">
                                     <div className="min-w-0">
-                                        <p className="font-medium text-[#3d405b]/80 text-sm">{req.user.parentName}</p>
+                                        <p className="font-medium text-[#3d405b]/80 text-sm">
+                                            {req.user.children?.[0]?.name ? `${req.user.children[0].name} (${req.user.parentName})` : req.user.parentName}
+                                        </p>
                                         <div className="flex items-center gap-3 text-xs text-[#3d405b]/40 mt-0.5">
                                             <span className="font-semibold text-amber-600">{req.coins} {t("coinsLabel")}</span>
                                             <span>฿{Number(req.amount).toLocaleString()}</span>
@@ -89,7 +98,9 @@ export default async function CoinsPage() {
                                     <div key={req.id} className="px-6 py-3">
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <p className="text-sm font-medium text-[#3d405b]/70">{req.user.parentName}</p>
+                                                <p className="text-sm font-medium text-[#3d405b]/70">
+                                                    {req.user.children?.[0]?.name ? `${req.user.children[0].name} (${req.user.parentName})` : req.user.parentName}
+                                                </p>
                                                 <div className="flex items-center gap-3 text-xs text-[#3d405b]/40 mt-0.5">
                                                     <span>{req.coins} {t("coinsLabel")}</span>
                                                     <span>฿{Number(req.amount).toLocaleString()}</span>
@@ -142,7 +153,9 @@ export default async function CoinsPage() {
                             <div key={pkg.id} className="px-6 py-4">
                                 <div className="flex items-center justify-between mb-3">
                                     <div>
-                                        <p className="font-medium text-[#3d405b]/80">{pkg.user.parentName}</p>
+                                        <p className="font-medium text-[#3d405b]/80">
+                                            {pkg.user.children?.[0]?.name ? `${pkg.user.children[0].name} (${pkg.user.parentName})` : pkg.user.parentName}
+                                        </p>
                                         <p className="text-sm text-[#3d405b]/50">{pkg.user.phone}</p>
                                         <p className="text-xs text-[#3d405b]/40 mt-1">
                                             {t("remainingCoins")} <span className="font-semibold text-amber-600">{pkg.remainingCoins} {t("coinsLabel")}</span>

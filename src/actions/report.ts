@@ -631,6 +631,102 @@ export async function getMemberReport(userId: string): Promise<MemberReportData>
     };
 }
 
+// ─── Financial Report (Monthly Income & Deductions) ──────────────────
+
+export type FinancialMonthRow = {
+    month: string;
+    monthIndex: number;
+    income: number;        // Sum of pricePaid (THB) from CoinPackage
+    deductions: number;    // Sum of coinsUsed from CoinTransaction (positive = spent)
+};
+
+export type FinancialReportData = {
+    year: number;
+    months: FinancialMonthRow[];
+    totalIncome: number;
+    totalDeductions: number;
+    availableYears: number[];
+};
+
+export async function getFinancialReport(year: number): Promise<FinancialReportData> {
+    const yearStart = new Date(year, 0, 1);
+    const yearEnd = new Date(year + 1, 0, 1);
+
+    // Determine available years from CoinPackage dates
+    const earliestPackage = await prisma.coinPackage.findFirst({
+        orderBy: { purchaseDate: "asc" },
+        select: { purchaseDate: true },
+    });
+    const latestPackage = await prisma.coinPackage.findFirst({
+        orderBy: { purchaseDate: "desc" },
+        select: { purchaseDate: true },
+    });
+
+    const startYear = earliestPackage ? earliestPackage.purchaseDate.getFullYear() : year;
+    const endYear = latestPackage ? latestPackage.purchaseDate.getFullYear() : year;
+    const availableYears: number[] = [];
+    for (let y = startYear; y <= endYear; y++) {
+        availableYears.push(y);
+    }
+    if (!availableYears.includes(year)) {
+        availableYears.push(year);
+    }
+    availableYears.sort((a, b) => b - a);
+
+    const [packages, transactions] = await Promise.all([
+        prisma.coinPackage.findMany({
+            where: {
+                purchaseDate: { gte: yearStart, lt: yearEnd },
+                packageType: { not: "ADJUSTMENT" },
+            },
+            select: { pricePaid: true, purchaseDate: true },
+        }),
+        prisma.coinTransaction.findMany({
+            where: {
+                createdAt: { gte: yearStart, lt: yearEnd },
+                coinsUsed: { gt: 0 },
+                type: { notIn: ["ADJUSTMENT", "EXTENSION", "EXPIRED"] },
+            },
+            select: { coinsUsed: true, createdAt: true },
+        }),
+    ]);
+
+    const months: FinancialMonthRow[] = [];
+    let totalIncome = 0;
+    let totalDeductions = 0;
+
+    for (let m = 0; m < 12; m++) {
+        const monthStart = new Date(year, m, 1);
+        const monthEnd = new Date(year, m + 1, 1);
+
+        const income = packages
+            .filter(p => p.purchaseDate >= monthStart && p.purchaseDate < monthEnd)
+            .reduce((s, p) => s + Number(p.pricePaid), 0);
+
+        const deductions = transactions
+            .filter(t => t.createdAt >= monthStart && t.createdAt < monthEnd)
+            .reduce((s, t) => s + t.coinsUsed, 0);
+
+        totalIncome += income;
+        totalDeductions += deductions;
+
+        months.push({
+            month: MONTH_NAMES[m],
+            monthIndex: m,
+            income: Math.round(income * 100) / 100,
+            deductions,
+        });
+    }
+
+    return {
+        year,
+        months,
+        totalIncome: Math.round(totalIncome * 100) / 100,
+        totalDeductions,
+        availableYears,
+    };
+}
+
 function formatReportDate(d: Date): string {
     const bkkDate = new Date(d.getTime() + 7 * 60 * 60 * 1000); // Shift to BKK time (+7 hours)
     const day = bkkDate.getUTCDate().toString().padStart(2, "0");

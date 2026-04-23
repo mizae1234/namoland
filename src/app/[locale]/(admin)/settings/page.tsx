@@ -39,6 +39,7 @@ export default async function SettingsPage() {
                     teachers={JSON.parse(JSON.stringify(teachers))}
                     adminUsers={adminUsers}
                     currentUserId={session?.user?.id || ""}
+                    userRole={session?.user?.role || "ADMIN"}
                 />
             </Suspense>
         </div>

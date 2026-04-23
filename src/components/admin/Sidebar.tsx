@@ -41,8 +41,8 @@ const menuItems: MenuItem[] = [
     { key: "borrows", href: "/borrows", icon: ArrowLeftRight, roles: ["ADMIN", "SUPER_ADMIN"] },
     { key: "scan", href: "/borrows/scan", icon: QrCode, roles: ["ADMIN", "SUPER_ADMIN"] },
     { key: "classes", href: "/classes", icon: Calendar, roles: ["ADMIN", "SUPER_ADMIN"] },
-    { key: "reports", href: "/reports", icon: BarChart3, roles: ["SUPER_ADMIN"] },
-    { key: "settings", href: "/settings", icon: Settings, roles: ["SUPER_ADMIN"] },
+    { key: "reports", href: "/reports", icon: BarChart3, roles: ["ADMIN", "SUPER_ADMIN"] },
+    { key: "settings", href: "/settings", icon: Settings, roles: ["ADMIN", "SUPER_ADMIN"] },
 ];
 
 export default function Sidebar({ userName, userRole }: { userName: string; userRole: string }) {

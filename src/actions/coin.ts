@@ -160,7 +160,7 @@ export async function getExpiringPackages() {
                 lte: sevenDaysFromNow,
             },
         },
-        include: { user: true },
+        include: { user: { include: { children: { select: { name: true } } } } },
         orderBy: { expiresAt: "asc" },
     });
 }
@@ -392,7 +392,15 @@ export async function getPendingTopUps() {
 
 export async function getAllTopUps() {
     return prisma.topUpRequest.findMany({
-        include: { user: { select: { parentName: true, phone: true } } },
+        include: { 
+            user: { 
+                select: { 
+                    parentName: true, 
+                    phone: true,
+                    children: { select: { name: true } }
+                } 
+            } 
+        },
         orderBy: { createdAt: "desc" },
         take: 100,
     });

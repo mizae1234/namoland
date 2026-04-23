@@ -1159,12 +1159,14 @@
     "tabs": {
       "coin": "Outstanding Coin",
       "attendance": "Class Attendance",
-      "member": "Individual Report"
+      "member": "Individual Report",
+      "financial": "Income / Deductions"
     },
     "descriptions": {
       "coin": "Summary of outstanding coins in the system by month",
       "attendance": "Booking and class attendance report with details",
-      "member": "View individual member's coin top-ups (in) and usages (out)"
+      "member": "View individual member's coin top-ups (in) and usages (out)",
+      "financial": "Monthly income from package sales and coin deductions summary"
     },
     "outstandingCoin": {
       "exportBtn": "Export Excel",
@@ -1271,6 +1273,18 @@
         "BorrowFee": "Borrow Fee",
         "LateFee": "Late Fee"
       }
+    },
+    "financial": {
+      "loading": "Loading data...",
+      "totalIncome": "Total Income (Year)",
+      "totalDeductions": "Total Deductions (Year)",
+      "coinsUnit": "coins",
+      "chartTitle": "Monthly Income / Deductions Chart",
+      "tableTitle": "Monthly Income / Deductions Table",
+      "month": "Month",
+      "monthlyIncome": "Income (THB)",
+      "monthlyDeductions": "Deductions (Coins)",
+      "total": "Total"
     }
   },
   "AdminSettings": {

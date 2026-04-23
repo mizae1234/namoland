@@ -93,6 +93,7 @@ interface SettingsTabsProps {
         sortOrder: number;
     }[];
     currentUserId: string;
+    userRole: string;
 }
 
 export default function SettingsTabs({
@@ -103,13 +104,17 @@ export default function SettingsTabs({
     adminUsers,
     teachers,
     currentUserId,
+    userRole,
 }: SettingsTabsProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const tabParam = searchParams.get("tab");
     const t = useTranslations("AdminSettings");
+
+    const visibleTabs = userRole === "SUPER_ADMIN" ? TABS : TABS.filter(tab => tab.key !== "users");
+
     const [activeTab, setActiveTab] = useState(
-        TABS.some((t) => t.key === tabParam) ? tabParam! : "shop"
+        visibleTabs.some((t) => t.key === tabParam) ? tabParam! : "shop"
     );
 
     // Sync URL when tab changes
@@ -131,7 +136,7 @@ export default function SettingsTabs({
         <div>
             {/* Tab Bar */}
             <div className="flex gap-1 overflow-x-auto pb-1 mb-6 border-b border-[#d1cce7]/20 -mx-1 px-1">
-                {TABS.map((tab) => {
+                {visibleTabs.map((tab) => {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.key;
                     return (

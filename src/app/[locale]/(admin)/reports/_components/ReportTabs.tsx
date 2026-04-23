@@ -3,35 +3,51 @@
 import { useState } from "react";
 import { OutstandingCoinReport } from "@/actions/report";
 import { ClassAttendanceReport as AttendanceReportData } from "@/actions/report";
-import { Coins, CalendarDays, User } from "lucide-react";
+import { Coins, CalendarDays, User, DollarSign } from "lucide-react";
 import OutstandingCoinTable from "./OutstandingCoinTable";
 import ClassAttendanceReport from "./ClassAttendanceReport";
 import MemberCoinReport from "./MemberCoinReport";
+import FinancialReport from "./FinancialReport";
 import { useTranslations } from "next-intl";
 
-type Tab = "coin" | "attendance" | "member";
+type Tab = "coin" | "attendance" | "member" | "financial";
+
+type TabDef = {
+    key: Tab;
+    label: string;
+    icon: React.ReactNode;
+    superAdminOnly: boolean;
+};
 
 export default function ReportTabs({
     coinData,
     attendanceData,
+    userRole,
 }: {
     coinData: OutstandingCoinReport;
     attendanceData: AttendanceReportData;
+    userRole: string;
 }) {
-    const [activeTab, setActiveTab] = useState<Tab>("coin");
     const t = useTranslations("AdminReports");
 
-    const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
-        { key: "coin", label: t("tabs.coin"), icon: <Coins size={16} /> },
-        { key: "attendance", label: t("tabs.attendance"), icon: <CalendarDays size={16} /> },
-        { key: "member", label: t("tabs.member"), icon: <User size={16} /> },
+    const allTabs: TabDef[] = [
+        { key: "coin", label: t("tabs.coin"), icon: <Coins size={16} />, superAdminOnly: true },
+        { key: "attendance", label: t("tabs.attendance"), icon: <CalendarDays size={16} />, superAdminOnly: false },
+        { key: "member", label: t("tabs.member"), icon: <User size={16} />, superAdminOnly: false },
+        { key: "financial", label: t("tabs.financial"), icon: <DollarSign size={16} />, superAdminOnly: true },
     ];
+
+    const visibleTabs = userRole === "SUPER_ADMIN"
+        ? allTabs
+        : allTabs.filter(tab => !tab.superAdminOnly);
+
+    const [activeTab, setActiveTab] = useState<Tab>(visibleTabs[0]?.key || "attendance");
 
     return (
         <div>
             {/* Tab Header */}
             <div className="flex items-center gap-1 mb-6 border-b border-[#d1cce7]/30">
-                {tabs.map((tab) => (
+                {visibleTabs.map((tab) => (
                     <button
                         key={tab.key}
                         onClick={() => setActiveTab(tab.key)}
@@ -92,7 +108,21 @@ export default function ReportTabs({
                     <MemberCoinReport />
                 </div>
             )}
+
+            {activeTab === "financial" && (
+                <div>
+                    <div className="mb-6">
+                        <h1 className="text-2xl font-bold text-[#3d405b] flex items-center gap-3">
+                            <DollarSign size={24} className="text-emerald-500" />
+                            {t("tabs.financial")}
+                        </h1>
+                        <p className="text-[#3d405b]/50 mt-1">
+                            {t("descriptions.financial")}
+                        </p>
+                    </div>
+                    <FinancialReport />
+                </div>
+            )}
         </div>
     );
 }
-
