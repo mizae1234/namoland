@@ -364,18 +364,74 @@ export async function getClassAttendanceReport(
         ];
     }
 
+    // 1) ClassBooking records (from class schedule bookings and check-ins via Use Coins with classEntryId)
     const bookings = await prisma.classBooking.findMany({
         where,
         include: {
             classEntry: true,
-            user: { select: { parentName: true, phone: true } },
+            user: { select: { parentName: true, phone: true, children: { select: { name: true } } } },
             child: { select: { name: true } },
             bookedBy: { select: { name: true } },
         },
         orderBy: { createdAt: "desc" },
-        take: 500,
     });
 
+    // Collect classBooking IDs that reference a transaction via description matching
+    const bookingClassEntryIds = new Set(bookings.map(b => b.classEntryId));
+
+    // 2) CoinTransaction CLASS_FEE records that DON'T have a ClassBooking (manual coin usage from Use Coins page)
+    //    These have description NOT starting with "Check-in: " (those have ClassBooking already)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const manualTxWhere: any = {
+        type: "CLASS_FEE",
+        createdAt: { gte: from, lte: to },
+        NOT: {
+            description: { startsWith: "Check-in: " },
+        },
+    };
+
+    if (search && search.trim()) {
+        const q = search.trim();
+        manualTxWhere.OR = [
+            { package: { user: { parentName: { contains: q, mode: "insensitive" } } } },
+            { className: { contains: q, mode: "insensitive" } },
+            { description: { contains: q, mode: "insensitive" } },
+        ];
+    }
+
+    // Skip manual txs if filtering by booking-specific status
+    const skipManualTxs = status && status !== "ALL" && status !== "CHECKED_IN";
+
+    const manualTxs = skipManualTxs ? [] : await prisma.coinTransaction.findMany({
+        where: manualTxWhere,
+        include: {
+            package: {
+                include: {
+                    user: { select: { parentName: true, phone: true, children: { select: { name: true } } } },
+                },
+            },
+            processedBy: { select: { name: true } },
+        },
+        orderBy: { createdAt: "desc" },
+    });
+
+    // Deduplicate: group manual txs by unique (userId+createdAt rounded to minute) to avoid FIFO split duplicates
+    const seenManualKeys = new Set<string>();
+    const dedupedManualTxs = manualTxs.filter(tx => {
+        const key = `${tx.package.userId}_${tx.className}_${Math.floor(tx.createdAt.getTime() / 60000)}`;
+        if (seenManualKeys.has(key)) return false;
+        seenManualKeys.add(key);
+        return true;
+    });
+
+    // Aggregate coins for deduplicated manual txs (sum split FIFO entries)
+    const manualCoinsMap = new Map<string, number>();
+    for (const tx of manualTxs) {
+        const key = `${tx.package.userId}_${tx.className}_${Math.floor(tx.createdAt.getTime() / 60000)}`;
+        manualCoinsMap.set(key, (manualCoinsMap.get(key) || 0) + tx.coinsUsed);
+    }
+
+    // Build rows from ClassBooking
     const rows: ClassAttendanceRow[] = bookings.map((b) => ({
         id: b.id,
         className: b.classEntry.title,
@@ -391,6 +447,35 @@ export async function getClassAttendanceReport(
         createdAt: b.createdAt.toISOString(),
         bookedByName: b.bookedBy.name,
     }));
+
+    // Append manual CoinTransaction rows
+    for (const tx of dedupedManualTxs) {
+        const key = `${tx.package.userId}_${tx.className}_${Math.floor(tx.createdAt.getTime() / 60000)}`;
+        const totalCoins = manualCoinsMap.get(key) || tx.coinsUsed;
+
+        // Parse time from description if available (e.g. "Free Play (1h)")
+        const descMatch = tx.description?.match(/\((.+?)\)/);
+        const timeInfo = descMatch?.[1] || "";
+
+        rows.push({
+            id: `tx-${tx.id}`,
+            className: tx.className || tx.description || "Use Coins",
+            startTime: "",
+            endTime: "",
+            dayOfWeek: tx.createdAt.getDay() === 0 ? 6 : tx.createdAt.getDay() - 1, // Convert JS day to Mon=0
+            participantName: tx.package.user.children?.[0]?.name || tx.package.user.parentName,
+            parentName: tx.package.user.parentName,
+            phone: tx.package.user.phone,
+            status: "CHECKED_IN",
+            coinsCharged: totalCoins,
+            checkedInAt: tx.createdAt.toISOString(),
+            createdAt: tx.createdAt.toISOString(),
+            bookedByName: tx.processedBy.name,
+        });
+    }
+
+    // Sort all rows by createdAt descending
+    rows.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     const summary = {
         total: rows.length,

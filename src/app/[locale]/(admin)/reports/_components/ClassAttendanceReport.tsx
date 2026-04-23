@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { getClassAttendanceReport, ClassAttendanceReport as ReportData } from "@/actions/report";
 import {
     Search,
@@ -13,17 +13,14 @@ import {
     Filter,
     Users,
     Download,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
 import Card from "@/components/ui/Card";
 import * as XLSX from "xlsx";
 import { useTranslations, useLocale } from "next-intl";
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: React.ReactNode }> = {
-    CHECKED_IN: { label: "เข้าเรียนแล้ว", color: "text-emerald-700", bgColor: "bg-emerald-100", icon: <Check size={12} /> },
-    BOOKED: { label: "จองแล้ว", color: "text-blue-700", bgColor: "bg-blue-100", icon: <Clock size={12} /> },
-    CANCELLED: { label: "ยกเลิก", color: "text-gray-500", bgColor: "bg-gray-100", icon: <XCircle size={12} /> },
-    NO_SHOW: { label: "ไม่มาเรียน", color: "text-red-600", bgColor: "bg-red-100", icon: <Ban size={12} /> },
-};
+const PAGE_SIZE = 20;
 
 const DAY_LABELS_TH = ["จันทร์", "อังคาร", "พุธ", "พฤหัสฯ", "ศุกร์", "เสาร์", "อาทิตย์"];
 const DAY_LABELS_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -56,6 +53,7 @@ export default function ClassAttendanceReport({ initialData }: { initialData: Re
 
     const [data, setData] = useState(initialData);
     const [isPending, startTransition] = useTransition();
+    const [currentPage, setCurrentPage] = useState(1);
 
     const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: React.ReactNode }> = {
         CHECKED_IN: { label: t("status.CHECKED_IN"), color: "text-emerald-700", bgColor: "bg-emerald-100", icon: <Check size={12} /> },
@@ -70,7 +68,15 @@ export default function ClassAttendanceReport({ initialData }: { initialData: Re
     const [statusFilter, setStatusFilter] = useState("ALL");
     const [searchQuery, setSearchQuery] = useState("");
 
+    // Pagination
+    const totalPages = Math.max(1, Math.ceil(data.rows.length / PAGE_SIZE));
+    const paginatedRows = useMemo(() => {
+        const start = (currentPage - 1) * PAGE_SIZE;
+        return data.rows.slice(start, start + PAGE_SIZE);
+    }, [data.rows, currentPage]);
+
     function handleSearch() {
+        setCurrentPage(1);
         startTransition(async () => {
             const result = await getClassAttendanceReport(
                 dateFrom,
@@ -110,6 +116,22 @@ export default function ClassAttendanceReport({ initialData }: { initialData: Re
     }
 
     const { summary } = data;
+
+    // Generate page numbers with ellipsis
+    function getPageNumbers(): (number | "...")[] {
+        if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+        const pages: (number | "...")[] = [];
+        if (currentPage <= 4) {
+            for (let i = 1; i <= 5; i++) pages.push(i);
+            pages.push("...", totalPages);
+        } else if (currentPage >= totalPages - 3) {
+            pages.push(1, "...");
+            for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
+        } else {
+            pages.push(1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages);
+        }
+        return pages;
+    }
 
     return (
         <div>
@@ -240,7 +262,7 @@ export default function ClassAttendanceReport({ initialData }: { initialData: Re
                             </tr>
                         </thead>
                         <tbody>
-                            {data.rows.length === 0 ? (
+                            {paginatedRows.length === 0 ? (
                                 <tr>
                                     <td colSpan={7} className="text-center py-12 text-[#3d405b]/30">
                                         <Users size={32} className="mx-auto mb-2 opacity-40" />
@@ -248,7 +270,7 @@ export default function ClassAttendanceReport({ initialData }: { initialData: Re
                                     </td>
                                 </tr>
                             ) : (
-                                data.rows.map((row) => {
+                                paginatedRows.map((row) => {
                                     const st = STATUS_CONFIG[row.status] || STATUS_CONFIG.BOOKED;
                                     return (
                                         <tr key={row.id} className="border-b border-[#d1cce7]/15 hover:bg-[#f4f1de]/30 transition-colors">
@@ -266,7 +288,11 @@ export default function ClassAttendanceReport({ initialData }: { initialData: Re
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap">
                                                 <p className="text-[#3d405b]/70">{DAY_LABELS[row.dayOfWeek]}</p>
-                                                <p className="text-xs text-[#3d405b]/40">{row.startTime}-{row.endTime}</p>
+                                                {row.startTime && row.endTime ? (
+                                                    <p className="text-xs text-[#3d405b]/40">{row.startTime}-{row.endTime}</p>
+                                                ) : (
+                                                    <p className="text-xs text-[#3d405b]/30">—</p>
+                                                )}
                                             </td>
                                             <td className="px-4 py-3 text-center">
                                                 <span className={`${st.bgColor} ${st.color} px-2.5 py-1 rounded-full text-[11px] font-medium inline-flex items-center gap-1`}>
@@ -294,9 +320,51 @@ export default function ClassAttendanceReport({ initialData }: { initialData: Re
                         </tbody>
                     </table>
                 </div>
+
+                {/* Footer: showing count + pagination */}
                 {data.rows.length > 0 && (
-                    <div className="px-4 py-3 bg-[#f4f1de]/30 border-t border-[#d1cce7]/20 text-xs text-[#3d405b]/40">
-                        {t("table.showing", { count: data.rows.length })}
+                    <div className="px-4 py-3 bg-[#f4f1de]/30 border-t border-[#d1cce7]/20 flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <span className="text-xs text-[#3d405b]/40">
+                            {t("table.showing", { count: data.rows.length })} · {isThai ? "หน้า" : "Page"} {currentPage}/{totalPages}
+                        </span>
+
+                        {totalPages > 1 && (
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    className="p-1.5 rounded-lg hover:bg-[#d1cce7]/20 disabled:opacity-30 transition-colors"
+                                >
+                                    <ChevronLeft size={16} className="text-[#3d405b]/60" />
+                                </button>
+
+                                {getPageNumbers().map((page, i) =>
+                                    page === "..." ? (
+                                        <span key={`dots-${i}`} className="px-1 text-xs text-[#3d405b]/30">…</span>
+                                    ) : (
+                                        <button
+                                            key={page}
+                                            onClick={() => setCurrentPage(page)}
+                                            className={`min-w-[28px] h-7 rounded-lg text-xs font-medium transition-colors ${
+                                                currentPage === page
+                                                    ? "bg-[#609279] text-white"
+                                                    : "text-[#3d405b]/60 hover:bg-[#d1cce7]/20"
+                                            }`}
+                                        >
+                                            {page}
+                                        </button>
+                                    )
+                                )}
+
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="p-1.5 rounded-lg hover:bg-[#d1cce7]/20 disabled:opacity-30 transition-colors"
+                                >
+                                    <ChevronRight size={16} className="text-[#3d405b]/60" />
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
             </Card>
