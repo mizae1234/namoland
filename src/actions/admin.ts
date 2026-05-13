@@ -117,3 +117,30 @@ export async function deleteAdminUser(id: string) {
     revalidatePath("/settings");
     return { success: true };
 }
+
+export async function changeSelfAdminPassword(formData: FormData) {
+    const session = await auth();
+    if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes(session.user.type)) {
+        return { error: "Unauthorized" };
+    }
+
+    const userId = session.user.id;
+    const currentPassword = formData.get("currentPassword") as string;
+    const newPassword = formData.get("newPassword") as string;
+
+    if (!currentPassword || !newPassword) return { error: "กรุณากรอกรหัสผ่านให้ครบ" };
+    if (newPassword.length < 4) return { error: "รหัสผ่านต้องมีอย่างน้อย 4 ตัว" };
+
+    const user = await prisma.adminUser.findUnique({ where: { id: userId }, select: { password: true } });
+    if (!user?.password) return { error: "ไม่พบข้อมูล" };
+
+    const bcryptModule = await import("bcryptjs");
+    const bcrypt = bcryptModule.default || bcryptModule;
+    const valid = await bcrypt.compare(currentPassword, user.password);
+    if (!valid) return { error: "รหัสผ่านเดิมไม่ถูกต้อง" };
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await prisma.adminUser.update({ where: { id: userId }, data: { password: hashed } });
+
+    return { success: true };
+}

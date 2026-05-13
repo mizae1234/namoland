@@ -1299,6 +1299,7 @@
       "classes": "Class Schedules",
       "schedule": "Event Schedules",
       "landing": "Landing Page",
+      "profile": "My Profile",
       "users": "Manage Users"
     },
     "landingTab": {
@@ -1310,6 +1311,16 @@
       "monthlyDesc": "Monthly event schedule image displayed on the Landing Page (left side)",
       "weeklyTitle": "Weekly Event Schedule",
       "weeklyDesc": "Weekly event schedule image displayed on the Landing Page (right side)"
+    },
+    "adminProfile": {
+      "title": "My Profile",
+      "changePassword": "Change Password",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "cancel": "Cancel",
+      "save": "Change Password",
+      "saving": "Saving...",
+      "success": "Password changed successfully!"
     },
     "shopInfo": {
       "saveSuccess": "Saved successfully",

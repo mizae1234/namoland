@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Store, Package, CalendarDays, Calendar, UserCog, ImageIcon, GraduationCap, Sparkles } from "lucide-react";
+import { Store, Package, CalendarDays, Calendar, UserCog, ImageIcon, GraduationCap, Sparkles, Lock } from "lucide-react";
 
 import ShopInfoForm from "./ShopInfoForm";
 import PackageManager from "../../coins/packages/_components/PackageManager";
@@ -11,6 +11,7 @@ import TeacherManager from "./TeacherManager";
 import ScheduleList from "../../classes/_components/ScheduleList";
 import AdminUsersManager from "./AdminUsersManager";
 import ScheduleImageUploader from "./ScheduleImageUploader";
+import AdminProfileManager from "./AdminProfileManager";
 import { useTranslations } from "next-intl";
 
 interface TabConfig {
@@ -27,6 +28,7 @@ const TABS: TabConfig[] = [
     { key: "classes", labelKey: "classes", icon: Calendar },
     { key: "schedule", labelKey: "schedule", icon: ImageIcon },
     { key: "landing", labelKey: "landing", icon: Sparkles },
+    { key: "profile", labelKey: "profile", icon: Lock },
     { key: "users", labelKey: "users", icon: UserCog },
 ];
 
@@ -191,6 +193,9 @@ export default function SettingsTabs({
                             description={t("landingTab.heroDesc")}
                         />
                     </div>
+                )}
+                {activeTab === "profile" && (
+                    <AdminProfileManager />
                 )}
                 {activeTab === "users" && (
                     <AdminUsersManager users={adminUsers} currentUserId={currentUserId} />

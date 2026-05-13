@@ -1299,6 +1299,7 @@
       "classes": "ตารางคลาส",
       "schedule": "ตารางกิจกรรม",
       "landing": "หน้าเว็บ",
+      "profile": "โปรไฟล์ส่วนตัว",
       "users": "จัดการผู้ใช้"
     },
     "landingTab": {
@@ -1310,6 +1311,16 @@
       "monthlyDesc": "รูปตารางกิจกรรมรายเดือนสำหรับแสดงใน Landing Page (ด้านซ้าย)",
       "weeklyTitle": "ตารางกิจกรรมประจำสัปดาห์",
       "weeklyDesc": "รูปตารางกิจกรรมรายสัปดาห์สำหรับแสดงใน Landing Page (ด้านขวา)"
+    },
+    "adminProfile": {
+      "title": "โปรไฟล์ส่วนตัว",
+      "changePassword": "เปลี่ยนรหัสผ่าน",
+      "currentPassword": "รหัสผ่านเดิม",
+      "newPassword": "รหัสผ่านใหม่",
+      "cancel": "ยกเลิก",
+      "save": "เปลี่ยนรหัสผ่าน",
+      "saving": "กำลังบันทึก...",
+      "success": "เปลี่ยนรหัสผ่านสำเร็จ!"
     },
     "shopInfo": {
       "saveSuccess": "บันทึกสำเร็จ",
