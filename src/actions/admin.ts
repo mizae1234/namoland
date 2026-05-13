@@ -120,7 +120,7 @@ export async function deleteAdminUser(id: string) {
 
 export async function changeSelfAdminPassword(formData: FormData) {
     const session = await auth();
-    if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes(session.user.type)) {
+    if (!session?.user || (session.user.type !== "ADMIN" && session.user.type !== "SUPER_ADMIN")) {
         return { error: "Unauthorized" };
     }
 
