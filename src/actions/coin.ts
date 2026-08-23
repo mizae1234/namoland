@@ -64,6 +64,66 @@ export async function purchasePackage(formData: FormData) {
     return { success: true };
 }
 
+export async function deleteCoinPackage(packageId: string) {
+    const session = await auth();
+    if (!session?.user || session.user.type !== "ADMIN") return { error: "Unauthorized" };
+
+    if (!packageId) return { error: "ข้อมูลไม่ถูกต้อง" };
+
+    try {
+        const pkg = await prisma.coinPackage.findUnique({
+            where: { id: packageId },
+            include: {
+                transactions: true,
+                user: { select: { id: true, coinExpiryOverride: true } },
+            },
+        });
+
+        if (!pkg) return { error: "ไม่พบแพ็คเกจเหรียญนี้ในระบบ" };
+
+        // Safety check: package must not have been used
+        if (pkg.remainingCoins !== pkg.totalCoins || pkg.transactions.length > 0) {
+            return { error: "ไม่สามารถลบได้เนื่องจากมีการใช้งานเหรียญในแพ็คเกจนี้ไปแล้ว" };
+        }
+
+        const userId = pkg.userId;
+
+        // Perform deletion
+        await prisma.coinPackage.delete({
+            where: { id: packageId },
+        });
+
+        // Check if user has any remaining active packages with coins
+        const remainingActivePackages = await prisma.coinPackage.findMany({
+            where: {
+                userId,
+                isExpired: false,
+                remainingCoins: { gt: 0 },
+            },
+            orderBy: { expiresAt: "desc" },
+        });
+
+        // If no active packages left, clear coinExpiryOverride
+        if (remainingActivePackages.length === 0) {
+            await prisma.user.update({
+                where: { id: userId },
+                data: { coinExpiryOverride: null },
+            });
+        }
+
+        revalidatePath("/members");
+        revalidatePath(`/members/${userId}`);
+        revalidatePath("/coins");
+        revalidatePath("/reports");
+        revalidatePath("/dashboard");
+        revalidatePath("/owner");
+        return { success: true };
+    } catch (err) {
+        console.error("deleteCoinPackage error:", err);
+        return { error: `เกิดข้อผิดพลาด: ${err instanceof Error ? err.message : "Unknown"}` };
+    }
+}
+
 export async function spendCoins(formData: FormData) {
     const session = await auth();
     if (!session?.user || session.user.type !== "ADMIN") return { error: "Unauthorized" };

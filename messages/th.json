@@ -517,7 +517,14 @@
         "filterAll": "ทั้งหมด",
         "filterIn": "เข้า",
         "filterOut": "ออก",
-        "itemsCount": "{count} รายการ"
+        "itemsCount": "{count} รายการ",
+        "deletePurchase": "ลบรายการซื้อ",
+        "deleteConfirmTitle": "ยืนยันการลบรายการซื้อเหรียญ",
+        "deleteConfirmMessage": "คุณต้องการลบรายการซื้อแพ็คเกจนี้ใช่หรือไม่? ระบบจะลบจำนวนเหรียญและประวัติของแพ็คเกจนี้ออกทันที",
+        "deleteSuccess": "ลบรายการซื้อเหรียญสำเร็จ",
+        "confirmDeleteBtn": "ยืนยันลบ",
+        "cancelDeleteBtn": "ยกเลิก",
+        "coinsUnit": "เหรียญ"
       },
       "topUpRequests": {
         "title": "คำขอเติมเหรียญ",

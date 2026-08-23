@@ -517,7 +517,14 @@
         "filterAll": "All",
         "filterIn": "In",
         "filterOut": "Out",
-        "itemsCount": "{count} items"
+        "itemsCount": "{count} items",
+        "deletePurchase": "Delete Purchase",
+        "deleteConfirmTitle": "Confirm Delete Coin Purchase",
+        "deleteConfirmMessage": "Are you sure you want to delete this coin purchase? The coins and package record will be removed immediately.",
+        "deleteSuccess": "Coin purchase deleted successfully",
+        "confirmDeleteBtn": "Confirm Delete",
+        "cancelDeleteBtn": "Cancel",
+        "coinsUnit": "Coins"
       },
       "topUpRequests": {
         "title": "Top-up Requests",

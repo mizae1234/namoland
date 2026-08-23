@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { th, enUS } from "date-fns/locale";
-import { ArrowUpCircle, ArrowDownCircle, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowUpCircle, ArrowDownCircle, RefreshCw, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
+import { deleteCoinPackage } from "@/actions/coin";
+import Modal from "@/components/ui/Modal";
 
 type Transaction = {
     id: string;
@@ -65,6 +68,8 @@ type TimelineEvent = {
     detail: string | null;
     coins: number;
     source: string;
+    packageId?: string;
+    canDelete?: boolean;
 };
 
 type FilterType = "ALL" | "IN" | "OUT";
@@ -80,11 +85,39 @@ export default function MemberCoinHistory({
     expiryLogs?: ExpiryLogEntry[];
     actualBalance: number;
 }) {
+    const router = useRouter();
     const t = useTranslations("AdminMembers.detail.coinHistory");
     const locale = useLocale();
     const dateLocale = locale === "en" ? enUS : th;
     const [filterType, setFilterType] = useState<FilterType>("ALL");
     const [expanded, setExpanded] = useState(true);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<{
+        packageId: string;
+        label: string;
+        detail: string | null;
+        coins: number;
+    } | null>(null);
+
+    async function handleDeletePackage() {
+        if (!deleteTarget) return;
+        setIsDeleting(true);
+        try {
+            const res = await deleteCoinPackage(deleteTarget.packageId);
+            if (res.error) {
+                alert(res.error);
+            } else {
+                setDeleteTarget(null);
+                window.dispatchEvent(new Event('refresh-member-data'));
+                router.refresh();
+            }
+        } catch (err) {
+            console.error("Delete package failed:", err);
+            alert("เกิดข้อผิดพลาดในการลบรายการ");
+        } finally {
+            setIsDeleting(false);
+        }
+    }
 
     const TX_TYPE_MAP: Record<string, { label: string; type: TimelineEvent["type"] }> = {
         CLASS_FEE: { label: t("txTypes.CLASS_FEE"), type: "OUT" },
@@ -109,6 +142,7 @@ export default function MemberCoinHistory({
 
     // 1. Package purchases (coins IN)
     for (const pkg of packages) {
+        const canDelete = Number(pkg.remainingCoins) === Number(pkg.totalCoins) && (!pkg.transactions || pkg.transactions.length === 0);
         events.push({
             date: new Date(pkg.purchaseDate),
             type: "IN",
@@ -119,7 +153,9 @@ export default function MemberCoinHistory({
                 pkg.note,
             ].filter(Boolean).join(" · "),
             coins: parseInt(pkg.packageType) || pkg.totalCoins,
-            source: "purchase",
+            source: `purchase-${pkg.id}`,
+            packageId: pkg.id,
+            canDelete,
         });
 
         // Package transactions
@@ -365,14 +401,33 @@ export default function MemberCoinHistory({
                                                 <p className="text-xs text-[#3d405b]/40 mt-0.5 truncate">{event.detail}</p>
                                             )}
                                         </div>
-                                        <span className={`text-sm font-bold shrink-0 ${event.type === "IN" || event.type === "REFUND"
-                                            ? "text-emerald-600"
-                                            : event.type === "OUT"
-                                                ? "text-red-500"
-                                                : "text-amber-500"
-                                            }`}>
-                                            {config.sign}{event.coins}
-                                        </span>
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                            <span className={`text-sm font-bold ${event.type === "IN" || event.type === "REFUND"
+                                                ? "text-emerald-600"
+                                                : event.type === "OUT"
+                                                    ? "text-red-500"
+                                                    : "text-amber-500"
+                                                }`}>
+                                                {config.sign}{event.coins}
+                                            </span>
+                                            {event.packageId && event.canDelete && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setDeleteTarget({
+                                                            packageId: event.packageId!,
+                                                            label: event.label,
+                                                            detail: event.detail,
+                                                            coins: event.coins,
+                                                        });
+                                                    }}
+                                                    title={t("deletePurchase")}
+                                                    className="p-1 text-[#3d405b]/30 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors ml-1"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                     <p className="text-[10px] text-[#3d405b]/30 mt-1">
                                         {format(event.date, "d MMM yyyy · HH:mm", { locale: dateLocale })}
@@ -383,6 +438,29 @@ export default function MemberCoinHistory({
                     })}
                 </div>
             )}
+
+            {/* Delete Confirmation Modal */}
+            <Modal
+                open={!!deleteTarget}
+                onClose={() => {
+                    if (!isDeleting) setDeleteTarget(null);
+                }}
+                title={t("deleteConfirmTitle")}
+                message={t("deleteConfirmMessage")}
+                variant="confirm"
+                confirmLabel={t("confirmDeleteBtn")}
+                cancelLabel={t("cancelDeleteBtn")}
+                loading={isDeleting}
+                onConfirm={handleDeletePackage}
+            >
+                {deleteTarget && (
+                    <div className="bg-[#f4f1de]/50 p-3 rounded-xl text-xs space-y-1">
+                        <p className="font-semibold text-[#3d405b]">{deleteTarget.label}</p>
+                        {deleteTarget.detail && <p className="text-[#3d405b]/60">{deleteTarget.detail}</p>}
+                        <p className="text-emerald-600 font-bold">+{deleteTarget.coins} {t("coinsUnit") || "เหรียญ"}</p>
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 }
